@@ -1,0 +1,91 @@
+{
+  "name": "Astro Tarot – Celestial Art Deco",
+  "version": "1.0.0",
+  "canvas": { "width": 512, "height": 768, "aspectRatio": "2:3" },
+  "variants": ["positive", "shadow"],
+  "formats": ["png", "webp"],
+  "pathTemplates": {
+    "majorFigure": "assets/figures/major-arcana/{format}/{id}-{variant}.{format}",
+    "minorFigure": "assets/figures/minor-arcana/{format}/{suit}-{rank}-{variant}.{format}",
+    "background": "assets/backgrounds/{group}/{format}/{id}-{variant}.{format}"
+  },
+  "majorArcana": [
+    { "id": "00-the-fool", "hu": "A Bolond" },
+    { "id": "01-the-magician", "hu": "A Mágus" },
+    { "id": "02-the-high-priestess", "hu": "A Főpapnő" },
+    { "id": "03-the-empress", "hu": "Az Uralkodónő" },
+    { "id": "04-the-emperor", "hu": "Az Uralkodó" },
+    { "id": "05-the-hierophant", "hu": "A Főpap" },
+    { "id": "06-the-lovers", "hu": "A Szeretők" },
+    { "id": "07-the-chariot", "hu": "A Diadalszekér" },
+    { "id": "08-strength", "hu": "Az Erő" },
+    { "id": "09-the-hermit", "hu": "A Remete" },
+    { "id": "10-wheel-of-fortune", "hu": "A Szerencsekerék" },
+    { "id": "11-justice", "hu": "Az Igazság" },
+    { "id": "12-the-hanged-man", "hu": "Az Akasztott ember" },
+    { "id": "13-death", "hu": "A Halál" },
+    { "id": "14-temperance", "hu": "A Mértékletesség" },
+    { "id": "15-the-devil", "hu": "Az Ördög" },
+    { "id": "16-the-tower", "hu": "A Torony" },
+    { "id": "17-the-star", "hu": "A Csillag" },
+    { "id": "18-the-moon", "hu": "A Hold" },
+    { "id": "19-the-sun", "hu": "A Nap" },
+    { "id": "20-judgement", "hu": "Az Ítélet" },
+    { "id": "21-the-world", "hu": "A Világ" }
+  ],
+  "minorArcana": {
+    "suits": [
+      { "id": "wands", "hu": "Botok", "element": "fire" },
+      { "id": "cups", "hu": "Kelyhek", "element": "water" },
+      { "id": "swords", "hu": "Kardok", "element": "air" },
+      { "id": "pentacles", "hu": "Érmék", "element": "earth" }
+    ],
+    "ranks": [
+      { "id": "ace", "hu": "Ász" },
+      { "id": "02", "hu": "Kettes" },
+      { "id": "03", "hu": "Hármas" },
+      { "id": "04", "hu": "Négyes" },
+      { "id": "05", "hu": "Ötös" },
+      { "id": "06", "hu": "Hatos" },
+      { "id": "07", "hu": "Hetes" },
+      { "id": "08", "hu": "Nyolcas" },
+      { "id": "09", "hu": "Kilences" },
+      { "id": "10", "hu": "Tízes" },
+      { "id": "page", "hu": "Apród" },
+      { "id": "knight", "hu": "Lovag" },
+      { "id": "queen", "hu": "Királynő" },
+      { "id": "king", "hu": "Király" }
+    ]
+  },
+  "backgrounds": {
+    "zodiac": [
+      { "id": "aries", "hu": "Kos" },
+      { "id": "taurus", "hu": "Bika" },
+      { "id": "gemini", "hu": "Ikrek" },
+      { "id": "cancer", "hu": "Rák" },
+      { "id": "leo", "hu": "Oroszlán" },
+      { "id": "virgo", "hu": "Szűz" },
+      { "id": "libra", "hu": "Mérleg" },
+      { "id": "scorpio", "hu": "Skorpió" },
+      { "id": "sagittarius", "hu": "Nyilas" },
+      { "id": "capricorn", "hu": "Bak" },
+      { "id": "aquarius", "hu": "Vízöntő" },
+      { "id": "pisces", "hu": "Halak" }
+    ],
+    "elements": [
+      { "id": "fire", "hu": "Tűz" },
+      { "id": "water", "hu": "Víz" },
+      { "id": "earth", "hu": "Föld" },
+      { "id": "air", "hu": "Levegő" }
+    ],
+    "modalities": [
+      { "id": "cardinal", "hu": "Fő / kardinális" },
+      { "id": "fixed", "hu": "Szilárd / fix" },
+      { "id": "mutable", "hu": "Változó" }
+    ]
+  },
+  "cardBack": {
+    "png": "assets/card-back/png/card-back.png",
+    "webp": "assets/card-back/webp/card-back.webp"
+  }
+}
