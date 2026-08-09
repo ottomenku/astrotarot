@@ -43,3 +43,7 @@ yarn-error.log
 /Astro-Tarot-Art-Deco-Master-v1/
 /AstroTarot-webapp-source/
 
+
+__pycache__/
+*.pyc
+
