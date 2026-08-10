@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AstroTarot</title>
-    <link rel="stylesheet" href="{{ $assetBase }}/app.css">
+    <link rel="stylesheet" href="{{ $assetBase }}/app.css?v={{ filemtime(public_path('templates/art-deco/app.css')) }}">
 </head>
 <body>
 <main
@@ -101,6 +101,6 @@
     <footer><span>✦</span> AstroTarot <i>·</i> Égi Art Deco <span>✦</span></footer>
 </main>
 
-<script src="{{ $assetBase }}/app.js" defer></script>
+<script src="{{ $assetBase }}/app.js?v={{ filemtime(public_path('templates/art-deco/app.js')) }}" defer></script>
 </body>
 </html>

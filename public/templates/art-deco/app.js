@@ -31,7 +31,7 @@
       sunSign: 'napjegy',
       elementDominance: 'elem dominancia',
       modalityDominance: 'minőség dominancia',
-      slotTitles: ['Ez van', 'segítség-Akadály', 'Tedd-ne tedd'],
+      slotTitles: ['Ez van', 'Segítség / Akadály', 'Tedd / Ne tedd'],
     },
     en: {
       navLabel: 'Open navigation',
@@ -50,7 +50,7 @@
       sunSign: 'sun sign',
       elementDominance: 'element dominance',
       modalityDominance: 'modality dominance',
-      slotTitles: ['What is', 'Help–Obstacle', 'Do–Don’t'],
+      slotTitles: ['What is', 'Help / Obstacle', 'Do / Don’t'],
     },
   };
 
@@ -157,26 +157,26 @@
 
   function applyCopy() {
     const text = t();
-    els.menuButton.setAttribute('aria-label', text.navLabel);
-    els.title.textContent = text.title;
-    els.question.placeholder = text.placeholder;
-    els.hint.innerHTML = `<span>☾</span>${text.hint}`;
-    if (els.reading) {
-      els.reading.textContent = text.reading;
-    }
-    els.reset.textContent = `↺ ${text.reset}`;
-    els.messageTitle.textContent = text.messageTitle;
-    els.messageBody.textContent = text.message;
-    els.counter.innerHTML = `<b>${selected.length}</b>/3 ${text.selected}`;
+    if (els.menuButton) els.menuButton.setAttribute('aria-label', text.navLabel);
+    if (els.title) els.title.textContent = text.title;
+    if (els.question) els.question.placeholder = text.placeholder;
+    if (els.hint) els.hint.innerHTML = `<span>☾</span>${text.hint}`;
+    if (els.reading) els.reading.textContent = text.reading;
+    if (els.reset) els.reset.textContent = `↺ ${text.reset}`;
+    if (els.messageTitle) els.messageTitle.textContent = text.messageTitle;
+    if (els.messageBody) els.messageBody.textContent = text.message;
+    if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/3 ${text.selected}`;
     updateRevealButton();
     renderChosen();
   }
 
   function updateRevealButton() {
+    if (!els.reveal) return;
     const text = t();
-    const ready = selected.length === 3 && els.question.value.trim().length > 2;
+    const ready = selected.length === 3 && !!els.question && els.question.value.trim().length > 2;
     els.reveal.disabled = !ready;
-    els.reveal.querySelector('span').textContent = ready ? text.button : text.incomplete;
+    const label = els.reveal.querySelector('span');
+    if (label) label.textContent = ready ? text.button : text.incomplete;
   }
 
   function figureMeta(figureId) {
@@ -205,26 +205,56 @@
     return `${assetBase}/assets/card-back/card-back.webp`;
   }
 
-  function renderDeck() {
-    const backSrc = cardBackSrc();
-    els.slider.innerHTML = '';
-
-    for (let index = 0; index < deckData.backs; index += 1) {
+  function syncDeckSelection() {
+    [...els.slider.children].forEach((button, index) => {
       const chosenIndex = selected.findIndex((item) => item.backIndex === index);
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `deck-card${chosenIndex >= 0 ? ' is-selected' : ''}`;
-      button.setAttribute('role', 'listitem');
-      button.setAttribute('aria-pressed', chosenIndex >= 0 ? 'true' : 'false');
-      button.setAttribute('aria-label', `${String(index + 1).padStart(2, '0')}. kártya`);
-      button.innerHTML = `
-        <img src="${backSrc}" alt="" draggable="false">
-        <span class="card-number">${String(index + 1).padStart(2, '0')}</span>
-        ${chosenIndex >= 0 ? `<span class="selected-badge">${chosenIndex + 1}</span>` : ''}
-      `;
-      button.addEventListener('click', () => toggleBack(index));
-      els.slider.appendChild(button);
+      const isSelected = chosenIndex >= 0;
+      button.classList.toggle('is-selected', isSelected);
+      button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+
+      let badge = button.querySelector('.selected-badge');
+      if (isSelected) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'selected-badge';
+          button.appendChild(badge);
+        }
+        badge.textContent = String(chosenIndex + 1);
+      } else if (badge) {
+        badge.remove();
+      }
+    });
+  }
+
+  function renderDeck() {
+    if (!els.slider || !deckData) return;
+
+    // Build once so mobile browsers do not reload 22 card images on every tap.
+    if (els.slider.children.length !== deckData.backs) {
+      const backSrc = cardBackSrc();
+      const scrollLeft = els.slider.scrollLeft;
+      els.slider.innerHTML = '';
+
+      for (let index = 0; index < deckData.backs; index += 1) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'deck-card';
+        button.setAttribute('role', 'listitem');
+        button.setAttribute('aria-pressed', 'false');
+        button.setAttribute('aria-label', `${String(index + 1).padStart(2, '0')}. kártya`);
+        button.dataset.backIndex = String(index);
+        button.innerHTML = `
+          <img src="${backSrc}" alt="" draggable="false" decoding="async">
+          <span class="card-number">${String(index + 1).padStart(2, '0')}</span>
+        `;
+        button.addEventListener('click', () => toggleBack(index));
+        els.slider.appendChild(button);
+      }
+
+      els.slider.scrollLeft = scrollLeft;
     }
+
+    syncDeckSelection();
   }
 
   function renderChosen() {
