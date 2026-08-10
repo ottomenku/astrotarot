@@ -1,0 +1,109 @@
+<?php
+
+namespace Tests\Unit;
+
+use App\Services\AstroScoringEngine;
+use App\Services\CardDrawProfileService;
+use App\Services\TarotPositionPolarity;
+use Tests\TestCase;
+
+class CardDrawProfileServiceTest extends TestCase
+{
+    public function test_profile_uses_sun_sign_element_modality_and_tone(): void
+    {
+        $service = app(CardDrawProfileService::class);
+
+        $profile = $service->fromEphemerisResult([
+            'objects' => [
+                ['name' => 'Sun', 'sign' => 'Scorpio', 'degree' => 10, 'kind' => 'planet'],
+            ],
+            'scoring' => [
+                'summary_clean' => [
+                    'elem_dominancia' => ['nev' => 'víz', 'ertek' => 8],
+                    'minoseg_dominancia' => ['nev' => 'szilárd', 'ertek' => 7],
+                    'pozitiv_negativ' => ['nev' => 'negatív', 'netto_ertek' => -2],
+                ],
+                'tarot_helyek' => [
+                    'positions' => [
+                        ['besorolas' => 'pozitív'],
+                        ['besorolas' => 'negatív'],
+                        ['besorolas' => 'pozitív'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertSame('scorpio', $profile['sun_sign']);
+        $this->assertSame('víz', $profile['element']);
+        $this->assertSame('szilárd', $profile['modality']);
+        $this->assertSame('negatív', $profile['tone']);
+        $this->assertSame(['pozitív', 'negatív', 'pozitív'], $profile['tones']);
+        $this->assertSame(['positive', 'shadow', 'positive'], $profile['variants']);
+        $this->assertSame(['scorpio', 'water', 'fixed'], $profile['slots']);
+    }
+
+    public function test_positive_tone_uses_positive_variant(): void
+    {
+        $profile = app(CardDrawProfileService::class)->fromEphemerisResult([
+            'objects' => [
+                ['name' => 'Sun', 'sign' => 'Leo', 'degree' => 1, 'kind' => 'planet'],
+            ],
+            'scoring' => [
+                'summary_clean' => [
+                    'elem_dominancia' => ['nev' => 'tűz', 'ertek' => 5],
+                    'minoseg_dominancia' => ['nev' => 'változó', 'ertek' => 4],
+                    'pozitiv_negativ' => ['nev' => 'pozitív', 'netto_ertek' => 3],
+                ],
+            ],
+        ]);
+
+        $this->assertSame('positive', $profile['variant']);
+        $this->assertSame(['positive', 'positive', 'positive'], $profile['variants']);
+        $this->assertSame(['leo', 'fire', 'mutable'], $profile['slots']);
+    }
+
+    public function test_air_and_cardinal_mapping(): void
+    {
+        $profile = app(CardDrawProfileService::class)->fromEphemerisResult([
+            'objects' => [
+                ['name' => 'Sun', 'sign' => 'Libra', 'degree' => 4, 'kind' => 'planet'],
+            ],
+            'scoring' => [
+                'summary_clean' => [
+                    'elem_dominancia' => ['nev' => 'levegő', 'ertek' => 6],
+                    'minoseg_dominancia' => ['nev' => 'fő', 'ertek' => 5],
+                    'pozitiv_negativ' => ['nev' => 'pozitív', 'netto_ertek' => 1],
+                ],
+            ],
+        ]);
+
+        $this->assertSame(['libra', 'air', 'cardinal'], $profile['slots']);
+        $this->assertSame('positive', $profile['variant']);
+    }
+
+    public function test_tarot_position_polarity_assigns_independent_slot_tones(): void
+    {
+        $analysis = app(AstroScoringEngine::class)->analyze([
+            ['object' => 'Sun', 'sign' => 'Cancer', 'degree' => 27.0],
+            ['object' => 'Moon', 'sign' => 'Aries', 'degree' => 12.3],
+            ['object' => 'Mercury', 'sign' => 'Leo', 'degree' => 5.2, 'retrograde' => true],
+            ['object' => 'Venus', 'sign' => 'Gemini', 'degree' => 28.0],
+            ['object' => 'Mars', 'sign' => 'Sagittarius', 'degree' => 11.4],
+            ['object' => 'Jupiter', 'sign' => 'Cancer', 'degree' => 9.8],
+            ['object' => 'Saturn', 'sign' => 'Aries', 'degree' => 1.5],
+            ['object' => 'ASC', 'sign' => 'Libra', 'degree' => 18.0],
+            ['object' => 'MC', 'sign' => 'Cancer', 'degree' => 20.1],
+        ]);
+
+        $positions = app(TarotPositionPolarity::class)->assign($analysis);
+
+        $this->assertCount(3, $positions['positions']);
+        foreach ($positions['positions'] as $position) {
+            $this->assertContains($position['besorolas'], ['pozitív', 'negatív']);
+            $this->assertNotSame(0, $position['ertek']);
+        }
+
+        $again = app(TarotPositionPolarity::class)->assign($analysis);
+        $this->assertSame($positions, $again);
+    }
+}

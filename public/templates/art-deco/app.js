@@ -5,6 +5,13 @@
   const assetBase = root.dataset.assetBase.replace(/\/$/, '');
   const localeSwitchUrl = root.dataset.localeSwitchUrl;
   const initialLocale = root.dataset.locale === 'en' ? 'en' : 'hu';
+  const drawProfile = (() => {
+    try {
+      return JSON.parse(root.dataset.drawProfile || '{}');
+    } catch (error) {
+      return {};
+    }
+  })();
 
   const copy = {
     hu: {
@@ -20,6 +27,11 @@
       incomplete: 'Válassz 3 lapot és írd be a kérdésed',
       messageTitle: 'A lapok üzenete',
       message: 'A jelenlegi helyzetedben a tudatos teremtés, a belső hang és a nyitott szív együtt mutatja az irányt. Ne siettesd a választ: figyeld meg, melyik lap részlete szólít meg először.',
+      astroBackground: 'Astro háttér',
+      sunSign: 'napjegy',
+      elementDominance: 'elem dominancia',
+      modalityDominance: 'minőség dominancia',
+      slotTitles: ['Ez van', 'segítség-Akadály', 'Tedd-ne tedd'],
     },
     en: {
       navLabel: 'Open navigation',
@@ -34,6 +46,39 @@
       incomplete: 'Choose 3 cards and enter your question',
       messageTitle: 'The message of your cards',
       message: 'In your present situation, conscious creation, inner knowing and an open heart point in the same direction. Do not rush the answer: notice which detail calls to you first.',
+      astroBackground: 'Astro background',
+      sunSign: 'sun sign',
+      elementDominance: 'element dominance',
+      modalityDominance: 'modality dominance',
+      slotTitles: ['What is', 'Help–Obstacle', 'Do–Don’t'],
+    },
+  };
+
+  const labels = {
+    signs: {
+      aries: { hu: 'Kos', en: 'Aries' },
+      taurus: { hu: 'Bika', en: 'Taurus' },
+      gemini: { hu: 'Ikrek', en: 'Gemini' },
+      cancer: { hu: 'Rák', en: 'Cancer' },
+      leo: { hu: 'Oroszlán', en: 'Leo' },
+      virgo: { hu: 'Szűz', en: 'Virgo' },
+      libra: { hu: 'Mérleg', en: 'Libra' },
+      scorpio: { hu: 'Skorpió', en: 'Scorpio' },
+      sagittarius: { hu: 'Nyilas', en: 'Sagittarius' },
+      capricorn: { hu: 'Bak', en: 'Capricorn' },
+      aquarius: { hu: 'Vízöntő', en: 'Aquarius' },
+      pisces: { hu: 'Halak', en: 'Pisces' },
+    },
+    elements: {
+      'tűz': { hu: 'tűz', en: 'fire' },
+      'víz': { hu: 'víz', en: 'water' },
+      'föld': { hu: 'föld', en: 'earth' },
+      'levegő': { hu: 'levegő', en: 'air' },
+    },
+    modalities: {
+      'fő': { hu: 'fő', en: 'cardinal' },
+      'szilárd': { hu: 'szilárd', en: 'fixed' },
+      'változó': { hu: 'változó', en: 'mutable' },
     },
   };
 
@@ -67,16 +112,35 @@
 
   const pick = (items) => items[Math.floor(Math.random() * items.length)];
 
-  function randomDraw(usedFigureIds = []) {
+  function toneVariant(slotIndex) {
+    const variants = Array.isArray(drawProfile.variants) ? drawProfile.variants : [];
+    if (variants[slotIndex] === 'shadow' || variants[slotIndex] === 'positive') {
+      return variants[slotIndex];
+    }
+    return drawProfile.variant === 'shadow' ? 'shadow' : 'positive';
+  }
+
+  function slotBackground(slotIndex) {
+    const slots = Array.isArray(drawProfile.slots) ? drawProfile.slots : [];
+    const preferred = slots[slotIndex];
+    if (typeof preferred === 'string' && preferred.length > 0) {
+      return preferred;
+    }
+    const backgrounds = deckData?.backgrounds || [];
+    return backgrounds[slotIndex] || backgrounds[0] || 'leo';
+  }
+
+  function randomFigure(usedFigureIds = []) {
     const available = deckData.figures.filter((figure) => !usedFigureIds.includes(figure.id));
     const pool = available.length ? available : deckData.figures;
-    const figure = pick(pool);
-    const background = pick(deckData.backgrounds);
-    const variant = Math.random() < 0.5 ? 'positive' : 'shadow';
+    return pick(pool).id;
+  }
+
+  function drawForSlot(slotIndex, usedFigureIds = []) {
     return {
-      figureId: figure.id,
-      backgroundId: background,
-      variant,
+      figureId: randomFigure(usedFigureIds),
+      backgroundId: slotBackground(slotIndex),
+      variant: toneVariant(slotIndex),
     };
   }
 
@@ -97,7 +161,9 @@
     els.title.textContent = text.title;
     els.question.placeholder = text.placeholder;
     els.hint.innerHTML = `<span>☾</span>${text.hint}`;
-    els.reading.textContent = text.reading;
+    if (els.reading) {
+      els.reading.textContent = text.reading;
+    }
     els.reset.textContent = `↺ ${text.reset}`;
     els.messageTitle.textContent = text.messageTitle;
     els.messageBody.textContent = text.message;
@@ -117,8 +183,30 @@
     return deckData.figures.find((figure) => figure.id === figureId);
   }
 
+  function localize(map, key, fallback = key) {
+    return map[key]?.[language] || fallback;
+  }
+
+  function astroBackgroundCaption(slotIndex) {
+    const text = t();
+    if (slotIndex === 0) {
+      const value = localize(labels.signs, drawProfile.sun_sign, drawProfile.sun_sign || '—');
+      return `${text.sunSign}: ${value}`;
+    }
+    if (slotIndex === 1) {
+      const value = localize(labels.elements, drawProfile.element, drawProfile.element || '—');
+      return `${text.elementDominance}: ${value}`;
+    }
+    const value = localize(labels.modalities, drawProfile.modality, drawProfile.modality || '—');
+    return `${text.modalityDominance}: ${value}`;
+  }
+
+  function cardBackSrc() {
+    return `${assetBase}/assets/card-back/card-back.webp`;
+  }
+
   function renderDeck() {
-    const backSrc = `${assetBase}/assets/card-back/card-back.webp`;
+    const backSrc = cardBackSrc();
     els.slider.innerHTML = '';
 
     for (let index = 0; index < deckData.backs; index += 1) {
@@ -147,24 +235,38 @@
     for (let slot = 0; slot < 3; slot += 1) {
       const draw = selected[slot];
       const article = document.createElement('article');
-      article.className = `chosen-card${draw ? ' has-card' : ''}`;
+      article.className = `chosen-card${draw ? ' has-card' : ' is-placeholder'}`;
+      const astroLine = astroBackgroundCaption(slot);
 
       if (!draw) {
-        article.innerHTML = `<div class="empty-card"><span>${romans[slot]}</span><i>✦</i><p>${text.waiting}</p></div>`;
+        article.innerHTML = `
+          <h3 class="slot-title">${text.slotTitles[slot]}</h3>
+          <div class="card-art placeholder-art">
+            <img class="card-back" src="${cardBackSrc()}" alt="">
+            <span class="roman">${romans[slot]}</span>
+          </div>
+          <div class="card-caption">
+            <h3>${text.waiting}</h3>
+            <p class="astro-heading">${text.astroBackground}</p>
+            <p class="astro-detail">${astroLine}</p>
+          </div>
+        `;
       } else {
         const meta = figureMeta(draw.figureId);
         const background = `${assetBase}/assets/backgrounds/${draw.backgroundId}-${draw.variant}.webp`;
         const figure = `${assetBase}/assets/figures/${draw.figureId}-${draw.variant}.webp`;
         article.innerHTML = `
+          <h3 class="slot-title">${text.slotTitles[slot]}</h3>
           <div class="card-art">
             <img class="card-background" src="${background}" alt="">
             <img class="card-figure" src="${figure}" alt="">
-            <span class="card-frame"></span>
             <span class="roman">${romans[slot]}</span>
           </div>
           <div class="card-caption">
             <h3>${meta ? meta[language] : draw.figureId}</h3>
-            <p>${meta ? meta.keyword[language] : ''}</p>
+            <p class="card-keyword">${meta ? meta.keyword[language] : ''}</p>
+            <p class="astro-heading">${text.astroBackground}</p>
+            <p class="astro-detail">${astroLine}</p>
           </div>
         `;
       }
@@ -180,9 +282,15 @@
     const existing = selected.findIndex((item) => item.backIndex === backIndex);
     if (existing >= 0) {
       selected.splice(existing, 1);
+      selected = selected.map((item, slot) => ({
+        ...item,
+        backgroundId: slotBackground(slot),
+        variant: toneVariant(slot),
+      }));
     } else if (selected.length < 3) {
       const used = selected.map((item) => item.figureId);
-      selected.push({ backIndex, ...randomDraw(used) });
+      const slot = selected.length;
+      selected.push({ backIndex, ...drawForSlot(slot, used) });
     }
 
     els.counter.innerHTML = `<b>${selected.length}</b>/3 ${t().selected}`;

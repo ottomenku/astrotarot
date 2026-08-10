@@ -13,6 +13,7 @@
     data-asset-base="{{ $assetBase }}"
     data-locale="{{ app()->getLocale() }}"
     data-locale-switch-url="{{ url('/locale/__LOCALE__') }}"
+    data-draw-profile='@json($drawProfile)'
 >
     <header class="topbar">
         <a class="brand" href="{{ route('home') }}" aria-label="AstroTarot kezdőlap">
@@ -76,13 +77,8 @@
         <div class="swipe-hint" aria-hidden="true"><span>←</span><i></i><span>→</span></div>
     </section>
 
-    <div class="section-divider" aria-hidden="true">
-        <img src="{{ $assetBase }}/assets/ui/section-divider.png" alt="">
-    </div>
-
     <section class="reading-panel">
         <div class="reveal-heading">
-            <h2 data-reading></h2>
             <button class="reset-button" type="button" data-reset hidden></button>
         </div>
 

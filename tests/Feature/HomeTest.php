@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Template;
+use App\Services\CardDrawProfileService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -30,10 +31,26 @@ class HomeTest extends TestCase
             'is_active' => true,
         ]);
 
+        $this->mock(CardDrawProfileService::class, function ($mock) {
+            $mock->shouldReceive('forNow')->once()->andReturn([
+                'sun_sign' => 'leo',
+                'element' => 'tűz',
+                'modality' => 'fő',
+                'tone' => 'pozitív',
+                'variant' => 'positive',
+                'tones' => ['pozitív', 'negatív', 'pozitív'],
+                'variants' => ['positive', 'shadow', 'positive'],
+                'slots' => ['leo', 'fire', 'cardinal'],
+                'chart_mode' => 'now',
+                'datetime_utc' => '2026-08-10T12:00:00Z',
+            ]);
+        });
+
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('AstroTarot', false)
             ->assertSee('data-deck-slider', false)
+            ->assertSee('data-draw-profile', false)
             ->assertSee(asset('templates/art-deco/app.js'), false);
     }
 

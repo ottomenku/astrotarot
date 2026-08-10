@@ -1,0 +1,381 @@
+{
+    "records": [
+        {
+            "objektum": "Nap",
+            "jegy": "Rák",
+            "fok": 27,
+            "retrograd": false,
+            "normalizalt_objektum": "Nap",
+            "normalizalt_jegy": "Rák",
+            "ekliptikai_hosszusag": 117,
+            "elem": "víz",
+            "elem_ertek": 2.14,
+            "minoseg": "fő",
+            "minoseg_ertek": 2.14,
+            "jegy_polaritas": "negatív (befogadó)",
+            "pozitiv_pont": 0.88,
+            "negativ_pont": 0,
+            "pozitiv_negativ_besorolas": "pozitív",
+            "pozitiv_negativ_ertek": 0.88,
+            "magyarazat": "Nap a(z) Rák jegy 27.00°-án: alap 1 pont a(z) víz elemnek és a(z) fő minőségnek. Kiemelt objektum súlya: +1 pont. együttállás Merkúr-szal: pozitív jelleg, 8.20° orb, 15% erősség. trigon Szaturnusz-szal: pozitív jelleg, 4.50° orb, 37% erősség. együttállás MC-szal: pozitív jelleg, 6.90° orb, 5% erősség."
+        },
+        {
+            "objektum": "Hold",
+            "jegy": "Kos",
+            "fok": 12.3,
+            "retrograd": false,
+            "normalizalt_objektum": "Hold",
+            "normalizalt_jegy": "Kos",
+            "ekliptikai_hosszusag": 12.3,
+            "elem": "tűz",
+            "elem_ertek": 2.43,
+            "minoseg": "fő",
+            "minoseg_ertek": 2.43,
+            "jegy_polaritas": "pozitív (aktív)",
+            "pozitiv_pont": 1.08,
+            "negativ_pont": 0.88,
+            "pozitiv_negativ_besorolas": "pozitív",
+            "pozitiv_negativ_ertek": 0.19,
+            "magyarazat": "Hold a(z) Kos jegy 12.30°-án: alap 1 pont a(z) tűz elemnek és a(z) fő minőségnek. Kiemelt objektum súlya: +1 pont. trigon Merkúr-szal: pozitív jelleg, 7.10° orb, 5% erősség. trigon Mars-szal: pozitív jelleg, 0.90° orb, 87% erősség. kvadrát Jupiter-szal: negatív jelleg, 2.50° orb, 65% erősség. oppozíció ASC-szal: negatív jelleg, 5.70° orb, 21% erősség."
+        },
+        {
+            "objektum": "Merkúr",
+            "jegy": "Oroszlán",
+            "fok": 5.2,
+            "retrograd": true,
+            "normalizalt_objektum": "Merkúr",
+            "normalizalt_jegy": "Oroszlán",
+            "ekliptikai_hosszusag": 125.2,
+            "elem": "tűz",
+            "elem_ertek": 0.57,
+            "minoseg": "szilárd",
+            "minoseg_ertek": 0.57,
+            "jegy_polaritas": "pozitív (aktív)",
+            "pozitiv_pont": 0.28,
+            "negativ_pont": 0,
+            "pozitiv_negativ_besorolas": "pozitív",
+            "pozitiv_negativ_ertek": 0.28,
+            "magyarazat": "Merkúr a(z) Oroszlán jegy 5.20°-án: alap 1 pont a(z) tűz elemnek és a(z) szilárd minőségnek. Retrográd: minden saját hozzájárulás 50%-kal számít. együttállás Nap-szal: pozitív jelleg, 8.20° orb, 15% erősség. trigon Hold-szal: pozitív jelleg, 7.10° orb, 5% erősség. trigon Szaturnusz-szal: pozitív jelleg, 3.70° orb, 38% erősség."
+        },
+        {
+            "objektum": "Vénusz",
+            "jegy": "Ikrek",
+            "fok": 28,
+            "retrograd": false,
+            "normalizalt_objektum": "Vénusz",
+            "normalizalt_jegy": "Ikrek",
+            "ekliptikai_hosszusag": 88,
+            "elem": "levegő",
+            "elem_ertek": 1.1,
+            "minoseg": "változó",
+            "minoseg_ertek": 1.1,
+            "jegy_polaritas": "pozitív (aktív)",
+            "pozitiv_pont": 0.65,
+            "negativ_pont": 0.42,
+            "pozitiv_negativ_besorolas": "pozitív",
+            "pozitiv_negativ_ertek": 0.23,
+            "magyarazat": "Vénusz a(z) Ikrek jegy 28.00°-án: alap 1 pont a(z) levegő elemnek és a(z) változó minőségnek. kvadrát Szaturnusz-szal: negatív jelleg, 3.50° orb, 42% erősség."
+        },
+        {
+            "objektum": "Mars",
+            "jegy": "Nyilas",
+            "fok": 11.4,
+            "retrograd": false,
+            "normalizalt_objektum": "Mars",
+            "normalizalt_jegy": "Nyilas",
+            "ekliptikai_hosszusag": 251.4,
+            "elem": "tűz",
+            "elem_ertek": 2.26,
+            "minoseg": "változó",
+            "minoseg_ertek": 2.26,
+            "jegy_polaritas": "pozitív (aktív)",
+            "pozitiv_pont": 0.87,
+            "negativ_pont": 0.63,
+            "pozitiv_negativ_besorolas": "pozitív",
+            "pozitiv_negativ_ertek": 0.24,
+            "magyarazat": "Mars a(z) Nyilas jegy 11.40°-án: alap 1 pont a(z) tűz elemnek és a(z) változó minőségnek. A bolygó természetes eleme egyezik a jegy elemével: +1 pont. trigon Hold-szal: pozitív jelleg, 0.90° orb, 87% erősség. kvinkunx Jupiter-szal: negatív jelleg, 1.60° orb, 47% erősség."
+        },
+        {
+            "objektum": "Jupiter",
+            "jegy": "Rák",
+            "fok": 9.8,
+            "retrograd": false,
+            "normalizalt_objektum": "Jupiter",
+            "normalizalt_jegy": "Rák",
+            "ekliptikai_hosszusag": 99.8,
+            "elem": "víz",
+            "elem_ertek": 1.63,
+            "minoseg": "fő",
+            "minoseg_ertek": 1.63,
+            "jegy_polaritas": "negatív (befogadó)",
+            "pozitiv_pont": 1.35,
+            "negativ_pont": 0.89,
+            "pozitiv_negativ_besorolas": "pozitív",
+            "pozitiv_negativ_ertek": 0.46,
+            "magyarazat": "Jupiter a(z) Rák jegy 9.80°-án: alap 1 pont a(z) víz elemnek és a(z) fő minőségnek. emelt helyzet: +0.4 hangsúlypont. kvadrát Hold-szal: negatív jelleg, 2.50° orb, 65% erősség. kvinkunx Mars-szal: negatív jelleg, 1.60° orb, 47% erősség."
+        },
+        {
+            "objektum": "Szaturnusz",
+            "jegy": "Kos",
+            "fok": 1.5,
+            "retrograd": false,
+            "normalizalt_objektum": "Szaturnusz",
+            "normalizalt_jegy": "Kos",
+            "ekliptikai_hosszusag": 1.5,
+            "elem": "tűz",
+            "elem_ertek": 1.27,
+            "minoseg": "fő",
+            "minoseg_ertek": 1.27,
+            "jegy_polaritas": "pozitív (aktív)",
+            "pozitiv_pont": 0.76,
+            "negativ_pont": 1.77,
+            "pozitiv_negativ_besorolas": "negatív",
+            "pozitiv_negativ_ertek": 1.01,
+            "magyarazat": "Szaturnusz a(z) Kos jegy 1.50°-án: alap 1 pont a(z) tűz elemnek és a(z) fő minőségnek. esés a pozitív/negatív mérlegben figyelembe véve. trigon Nap-szal: pozitív jelleg, 4.50° orb, 37% erősség. trigon Merkúr-szal: pozitív jelleg, 3.70° orb, 38% erősség. kvadrát Vénusz-szal: negatív jelleg, 3.50° orb, 42% erősség."
+        },
+        {
+            "objektum": "ASC",
+            "jegy": "Mérleg",
+            "fok": 18,
+            "retrograd": false,
+            "normalizalt_objektum": "ASC",
+            "normalizalt_jegy": "Mérleg",
+            "ekliptikai_hosszusag": 198,
+            "elem": "levegő",
+            "elem_ertek": 3.19,
+            "minoseg": "fő",
+            "minoseg_ertek": 3.19,
+            "jegy_polaritas": "pozitív (aktív)",
+            "pozitiv_pont": 0,
+            "negativ_pont": 0.76,
+            "pozitiv_negativ_besorolas": "negatív",
+            "pozitiv_negativ_ertek": 0.76,
+            "magyarazat": "ASC a(z) Mérleg jegy 18.00°-án: alap 1 pont a(z) levegő elemnek és a(z) fő minőségnek. Kiemelt objektum súlya: +2 pont. oppozíció Hold-szal: negatív jelleg, 5.70° orb, 21% erősség. kvadrát MC-szal: negatív jelleg, 2.10° orb, 53% erősség."
+        },
+        {
+            "objektum": "MC",
+            "jegy": "Rák",
+            "fok": 20.1,
+            "retrograd": false,
+            "normalizalt_objektum": "MC",
+            "normalizalt_jegy": "Rák",
+            "ekliptikai_hosszusag": 110.1,
+            "elem": "víz",
+            "elem_ertek": 2.65,
+            "minoseg": "fő",
+            "minoseg_ertek": 2.65,
+            "jegy_polaritas": "negatív (befogadó)",
+            "pozitiv_pont": 0.04,
+            "negativ_pont": 0.53,
+            "pozitiv_negativ_besorolas": "negatív",
+            "pozitiv_negativ_ertek": 0.49,
+            "magyarazat": "MC a(z) Rák jegy 20.10°-án: alap 1 pont a(z) víz elemnek és a(z) fő minőségnek. Kiemelt objektum súlya: +1.5 pont. együttállás Nap-szal: pozitív jelleg, 6.90° orb, 5% erősség. kvadrát ASC-szal: negatív jelleg, 2.10° orb, 53% erősség."
+        }
+    ],
+    "aspects": [
+        {
+            "objektum_1": "Nap",
+            "objektum_2": "Merkúr",
+            "fenyszog": "együttállás",
+            "szog": 0,
+            "orb": 8.2,
+            "erosseg": 0.146,
+            "jelleg": "pozitív"
+        },
+        {
+            "objektum_1": "Nap",
+            "objektum_2": "Szaturnusz",
+            "fenyszog": "trigon",
+            "szog": 120,
+            "orb": 4.5,
+            "erosseg": 0.375,
+            "jelleg": "pozitív"
+        },
+        {
+            "objektum_1": "Nap",
+            "objektum_2": "MC",
+            "fenyszog": "együttállás",
+            "szog": 0,
+            "orb": 6.9,
+            "erosseg": 0.05,
+            "jelleg": "pozitív"
+        },
+        {
+            "objektum_1": "Hold",
+            "objektum_2": "Merkúr",
+            "fenyszog": "trigon",
+            "szog": 120,
+            "orb": 7.1,
+            "erosseg": 0.05,
+            "jelleg": "pozitív"
+        },
+        {
+            "objektum_1": "Hold",
+            "objektum_2": "Mars",
+            "fenyszog": "trigon",
+            "szog": 120,
+            "orb": 0.9,
+            "erosseg": 0.875,
+            "jelleg": "pozitív"
+        },
+        {
+            "objektum_1": "Hold",
+            "objektum_2": "Jupiter",
+            "fenyszog": "kvadrát",
+            "szog": 90,
+            "orb": 2.5,
+            "erosseg": 0.653,
+            "jelleg": "negatív"
+        },
+        {
+            "objektum_1": "Hold",
+            "objektum_2": "ASC",
+            "fenyszog": "oppozíció",
+            "szog": 180,
+            "orb": 5.7,
+            "erosseg": 0.208,
+            "jelleg": "negatív"
+        },
+        {
+            "objektum_1": "Merkúr",
+            "objektum_2": "Szaturnusz",
+            "fenyszog": "trigon",
+            "szog": 120,
+            "orb": 3.7,
+            "erosseg": 0.383,
+            "jelleg": "pozitív"
+        },
+        {
+            "objektum_1": "Vénusz",
+            "objektum_2": "Szaturnusz",
+            "fenyszog": "kvadrát",
+            "szog": 90,
+            "orb": 3.5,
+            "erosseg": 0.417,
+            "jelleg": "negatív"
+        },
+        {
+            "objektum_1": "Mars",
+            "objektum_2": "Jupiter",
+            "fenyszog": "kvinkunx",
+            "szog": 150,
+            "orb": 1.6,
+            "erosseg": 0.467,
+            "jelleg": "negatív"
+        },
+        {
+            "objektum_1": "ASC",
+            "objektum_2": "MC",
+            "fenyszog": "kvadrát",
+            "szog": 90,
+            "orb": 2.1,
+            "erosseg": 0.533,
+            "jelleg": "negatív"
+        }
+    ],
+    "summary": {
+        "elemek": {
+            "tűz": 7,
+            "víz": 6,
+            "föld": 0,
+            "levegő": 4
+        },
+        "elem_dominancia": {
+            "nev": "kiegyensúlyozott (tűz/víz)",
+            "ertek": 7,
+            "nyers_ertek": 6.52
+        },
+        "minosegek": {
+            "fő": 13,
+            "szilárd": 1,
+            "változó": 3
+        },
+        "minoseg_dominancia": {
+            "nev": "fő",
+            "ertek": 13,
+            "nyers_ertek": 13.31
+        },
+        "pozitiv_negativ": {
+            "nev": "semleges",
+            "ertek": 6,
+            "netto_ertek": 0,
+            "pozitiv": 6,
+            "negativ": 6,
+            "nyers_pozitiv": 5.91,
+            "nyers_negativ": 5.88
+        }
+    },
+    "model": {
+        "retrograd_szorzo": 0.5,
+        "alap_jegy_pont": 1,
+        "termeszetes_elem_egyezes_bonusz": 1,
+        "nap_hold_kiemeles": 1,
+        "asc_kiemeles": 2,
+        "megjegyzes": "A pozitív/negatív érték támogató–feszült jelleg, nem azonos a jegy aktív–befogadó polaritásával."
+    },
+    "tarot_helyek": {
+        "positions": [
+            {
+                "hely": 1,
+                "kulcs": "helyzet",
+                "nev": "A jelenlegi helyzet lényege",
+                "besorolas": "pozitív",
+                "ertek": 18,
+                "erosseg": 18,
+                "nyers_asztrologiai_ertek": 18,
+                "reszertekek": {
+                    "teljes_keplet": 0,
+                    "kiemelt_objektumok": 6,
+                    "fenyszogek": 6,
+                    "ekliptikai_fazis": 89,
+                    "pozitiv_eltolas": 2
+                },
+                "magyarazat": "A(z) 1. hely fókuszobjektumai: Nap, Hold, ASC. Teljes képlet: +0, fókusz: +6, fényszögek: +6, ekliptikai fázis: +89, pozitív eltolás: +2. A hely önálló nyers értéke eléri vagy meghaladja nulla, ezért a besorolása pozitív; más helyek eredménye ezt nem írja felül."
+            },
+            {
+                "hely": 2,
+                "kulcs": "hato_ero",
+                "nev": "A ható erő vagy akadály",
+                "besorolas": "negatív",
+                "ertek": -8,
+                "erosseg": 8,
+                "nyers_asztrologiai_ertek": -8,
+                "reszertekek": {
+                    "teljes_keplet": 0,
+                    "kiemelt_objektumok": -11,
+                    "fenyszogek": 30,
+                    "ekliptikai_fazis": -84,
+                    "pozitiv_eltolas": 2
+                },
+                "magyarazat": "A(z) 2. hely fókuszobjektumai: Szaturnusz, Mars, Plútó, Uránusz. Teljes képlet: +0, fókusz: -11, fényszögek: +30, ekliptikai fázis: -84, pozitív eltolás: +2. A hely önálló nyers értéke nem éri el nulla, ezért a besorolása negatív; más helyek eredménye ezt nem írja felül."
+            },
+            {
+                "hely": 3,
+                "kulcs": "tanacs",
+                "nev": "Tanács és várható irány",
+                "besorolas": "negatív",
+                "ertek": -8,
+                "erosseg": 8,
+                "nyers_asztrologiai_ertek": -8,
+                "reszertekek": {
+                    "teljes_keplet": 0,
+                    "kiemelt_objektumok": 13,
+                    "fenyszogek": -68,
+                    "ekliptikai_fazis": -5,
+                    "pozitiv_eltolas": 2
+                },
+                "magyarazat": "A(z) 3. hely fókuszobjektumai: Jupiter, Vénusz, Nap, MC. Teljes képlet: +0, fókusz: +13, fényszögek: -68, ekliptikai fázis: -5, pozitív eltolás: +2. A hely önálló nyers értéke nem éri el nulla, ezért a besorolása negatív; más helyek eredménye ezt nem írja felül."
+            }
+        ],
+        "summary": {
+            "pozitiv_helyek": 1,
+            "negativ_helyek": 2,
+            "arany": "1:2",
+            "teljes_keplet_jelzese": 0,
+            "pozitiv_eltolas": 2,
+            "celzott_hosszu_tavu_arany": "kb. 52–55% pozitív",
+            "keplet_azonosito": "f3141586f5896d8e",
+            "szabaly": "Minden helyet önállóan, nulla küszöbnél osztályozunk. Nincs kikényszerített darabszám: három helyből 0, 1, 2 vagy 3 is lehet pozitív. A +2 százalékpontos eltolás csak a sok képleten mért eloszlást billenti enyhén pozitív irányba."
+        }
+    }
+}

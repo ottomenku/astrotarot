@@ -5,9 +5,15 @@ namespace App\Services;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Symfony\Component\Process\Process;
+use Throwable;
 
 class EphemerisService
 {
+    public function __construct(
+        private readonly AstroScoringEngine $scoring,
+        private readonly TarotPositionPolarity $positionPolarity,
+    ) {}
+
     /**
      * @param  array{
      *     datetime_utc: string,
@@ -59,6 +65,112 @@ class EphemerisService
             throw new RuntimeException('Invalid ephemeris response.');
         }
 
+        return $this->enrichWithScoring($data);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function enrichWithScoring(array $data): array
+    {
+        $objects = $data['objects'] ?? [];
+        if (! is_array($objects) || $objects === []) {
+            $data['scoring'] = null;
+
+            return $data;
+        }
+
+        $scoreableIndexes = [];
+        $records = [];
+
+        foreach ($objects as $index => $object) {
+            if (! is_array($object)) {
+                continue;
+            }
+
+            if (($object['kind'] ?? '') === 'fixed_star') {
+                continue;
+            }
+
+            $name = $object['name'] ?? null;
+            $sign = $object['sign'] ?? null;
+            $degree = $object['degree'] ?? null;
+
+            if (! is_string($name) || ! is_string($sign) || ! is_numeric($degree)) {
+                continue;
+            }
+
+            $scoreableIndexes[] = $index;
+            $records[] = [
+                'object' => $name,
+                'sign' => $sign,
+                'degree' => $this->clampDegree((float) $degree),
+                'retrograde' => (bool) ($object['retrograde'] ?? false),
+            ];
+        }
+
+        if ($records === []) {
+            $data['scoring'] = null;
+
+            return $data;
+        }
+
+        try {
+            $analysis = $this->scoring->analyze($records);
+        } catch (Throwable $e) {
+            Log::warning('Astro scoring failed', ['error' => $e->getMessage()]);
+            $data['scoring'] = null;
+
+            return $data;
+        }
+
+        foreach ($analysis['records'] as $offset => $scored) {
+            $index = $scoreableIndexes[$offset];
+            $objects[$index] = array_merge($objects[$index], [
+                'elem' => $scored['elem'],
+                'elem_ertek' => $scored['elem_ertek'],
+                'minoseg' => $scored['minoseg'],
+                'minoseg_ertek' => $scored['minoseg_ertek'],
+                'jegy_polaritas' => $scored['jegy_polaritas'],
+                'pozitiv_pont' => $scored['pozitiv_pont'],
+                'negativ_pont' => $scored['negativ_pont'],
+                'pozitiv_negativ_besorolas' => $scored['pozitiv_negativ_besorolas'],
+                'pozitiv_negativ_ertek' => $scored['pozitiv_negativ_ertek'],
+                'magyarazat' => $scored['magyarazat'],
+            ]);
+        }
+
+        $data['objects'] = $objects;
+
+        $tarotPositions = null;
+        try {
+            $tarotPositions = $this->positionPolarity->assign($analysis);
+        } catch (Throwable $e) {
+            Log::warning('Tarot position polarity failed', ['error' => $e->getMessage()]);
+        }
+
+        $data['scoring'] = [
+            'summary' => $analysis['summary'],
+            'summary_clean' => $analysis['summary_clean'],
+            'tarot_helyek' => $tarotPositions,
+            'aspects' => $analysis['aspects'],
+            'model' => $analysis['model'],
+        ];
+
         return $data;
+    }
+
+    private function clampDegree(float $degree): float
+    {
+        if ($degree < 0.0) {
+            return 0.0;
+        }
+
+        if ($degree >= 30.0) {
+            return 29.9999;
+        }
+
+        return $degree;
     }
 }
