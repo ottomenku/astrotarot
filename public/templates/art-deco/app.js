@@ -258,9 +258,10 @@
   }
 
   function renderChosen() {
+    if (!els.chosen) return;
     const text = t();
     els.chosen.innerHTML = '';
-    els.reset.hidden = selected.length === 0;
+    if (els.reset) els.reset.hidden = selected.length === 0;
 
     for (let slot = 0; slot < 3; slot += 1) {
       const draw = selected[slot];
@@ -272,7 +273,7 @@
         article.innerHTML = `
           <h3 class="slot-title">${text.slotTitles[slot]}</h3>
           <div class="card-art placeholder-art">
-            <img class="card-back" src="${cardBackSrc()}" alt="">
+            <img class="card-back" src="${cardBackSrc()}" alt="" decoding="async">
             <span class="roman">${romans[slot]}</span>
           </div>
           <div class="card-caption">
@@ -288,8 +289,8 @@
         article.innerHTML = `
           <h3 class="slot-title">${text.slotTitles[slot]}</h3>
           <div class="card-art">
-            <img class="card-background" src="${background}" alt="">
-            <img class="card-figure" src="${figure}" alt="">
+            <img class="card-background" src="${background}" alt="" decoding="async">
+            <img class="card-figure" src="${figure}" alt="" decoding="async">
             <span class="roman">${romans[slot]}</span>
           </div>
           <div class="card-caption">
@@ -307,7 +308,7 @@
 
   function toggleBack(backIndex) {
     showMessage = false;
-    els.message.classList.remove('is-visible');
+    els.message?.classList.remove('is-visible');
 
     const existing = selected.findIndex((item) => item.backIndex === backIndex);
     if (existing >= 0) {
@@ -323,7 +324,7 @@
       selected.push({ backIndex, ...drawForSlot(slot, used) });
     }
 
-    els.counter.innerHTML = `<b>${selected.length}</b>/3 ${t().selected}`;
+    if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/3 ${t().selected}`;
     renderDeck();
     renderChosen();
     updateRevealButton();

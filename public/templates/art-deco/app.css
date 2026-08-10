@@ -6,7 +6,7 @@ button,textarea,select { font:inherit; }
 button { -webkit-tap-highlight-color:transparent; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
-.app-shell { position:relative; min-height:100dvh; overflow-x:hidden; overflow-y:visible; background:radial-gradient(circle at 18% 7%,rgba(90,55,130,.28),transparent 24rem),radial-gradient(circle at 82% 22%,rgba(29,71,105,.2),transparent 26rem),linear-gradient(180deg,#0a0b16 0%,#121225 42%,#080912 100%); }
+.app-shell { position:relative; min-height:100dvh; overflow:visible; background:radial-gradient(circle at 18% 7%,rgba(90,55,130,.28),transparent 24rem),radial-gradient(circle at 82% 22%,rgba(29,71,105,.2),transparent 26rem),linear-gradient(180deg,#0a0b16 0%,#121225 42%,#080912 100%); }
 .app-shell::before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.32; background-image:radial-gradient(circle,rgba(255,255,255,.75) 0 1px,transparent 1.2px),radial-gradient(circle,rgba(217,184,110,.65) 0 1px,transparent 1.1px); background-size:89px 89px,137px 137px; background-position:13px 17px,54px 38px; -webkit-mask-image:linear-gradient(to bottom,black,transparent 70%); mask-image:linear-gradient(to bottom,black,transparent 70%); }
 
 .topbar { position:relative; z-index:20; height:54px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; background:rgba(8,9,19,.76); backdrop-filter:blur(18px); overflow:visible; }
@@ -82,7 +82,7 @@ button { -webkit-tap-highlight-color:transparent; }
 .has-card .card-art { animation:reveal .75s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes reveal { from { opacity:0; transform:rotateY(75deg) translateY(12px); } to { opacity:1; transform:rotateY(0) translateY(0); } }
 .card-art img { position:absolute; inset:0; display:block; width:100%; height:100%; object-fit:cover; }
-.card-figure { z-index:2; object-fit:contain; }
+.card-art img.card-figure { z-index:2; object-fit:contain; }
 .placeholder-art .card-back { z-index:1; opacity:.92; }
 .roman { position:absolute; z-index:4; left:50%; top:7px; transform:translateX(-50%); padding:2px 6px; color:var(--gold-pale); background:rgba(7,7,14,.72); font:9px Georgia,serif; letter-spacing:1px; }
 .card-caption { padding:10px 2px 0; text-align:center; }
@@ -105,6 +105,18 @@ footer span { color:var(--gold); margin:0 8px; } footer i { font-style:normal; m
   .reading-panel { padding:14px 14px 36px; }
   .card-caption h3 { font-size:11px; }
   .card-caption .astro-heading { font-size:8px; }
+  .deck-card:hover,.deck-card:focus-visible { transform:none; }
+  .deck-card:nth-child(3n+1).is-selected,
+  .deck-card:nth-child(3n+2).is-selected,
+  .deck-card:nth-child(3n).is-selected,
+  .deck-card.is-selected { transform:translateY(-6px); }
+}
+
+@media (hover:none) {
+  .deck-card:hover { transform:none; }
+  .deck-card:nth-child(3n+1):hover { transform:rotate(-1.6deg); }
+  .deck-card:nth-child(3n+2):hover { transform:translateY(-3px); }
+  .deck-card:nth-child(3n):hover { transform:rotate(1.4deg); }
 }
 
 @media (min-width:640px) {
