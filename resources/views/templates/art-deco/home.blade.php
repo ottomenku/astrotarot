@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>AstroTarot</title>
     <link rel="stylesheet" href="{{ $assetBase }}/app.css?v={{ filemtime(public_path('templates/art-deco/app.css')) }}">
 </head>
@@ -13,6 +14,9 @@
     data-asset-base="{{ $assetBase }}"
     data-locale="{{ app()->getLocale() }}"
     data-locale-switch-url="{{ url('/locale/__LOCALE__') }}"
+    data-reading-url="{{ route('reading') }}"
+    data-min-question-chars="{{ $minQuestionChars }}"
+    data-llm-enabled="{{ !empty($llmEnabled) ? '1' : '0' }}"
     data-draw-profile='@json($drawProfile)'
 >
     <header class="topbar">
@@ -74,7 +78,6 @@
             <div class="deck-slider" data-deck-slider role="list"></div>
             <button class="deck-arrow right" type="button" data-scroll-right aria-label="Jobbra görgetés">›</button>
         </div>
-        <div class="swipe-hint" aria-hidden="true"><span>←</span><i></i><span>→</span></div>
     </section>
 
     <section class="reading-panel">
@@ -83,20 +86,18 @@
         </div>
 
         <div class="chosen-grid" data-chosen-grid aria-live="polite"></div>
-
-        <button class="reveal-button" type="button" data-reveal disabled>
-            <span></span><b>✦</b>
-        </button>
-
-        <div class="message-card" data-message role="status">
-            <span class="message-symbol">☼</span>
-            <div>
-                <p data-message-title></p>
-                <h2 data-message-question></h2>
-                <blockquote data-message-body></blockquote>
-            </div>
-        </div>
     </section>
+
+    <div class="reading-modal" data-reading-modal hidden>
+        <div class="reading-modal-backdrop" data-reading-close></div>
+        <div class="reading-modal-panel" role="dialog" aria-modal="true" aria-labelledby="reading-modal-title">
+            <button class="reading-modal-close" type="button" data-reading-close aria-label="Bezárás">×</button>
+            <p class="reading-modal-kicker" data-reading-kicker></p>
+            <h2 id="reading-modal-title" data-reading-title></h2>
+            <p class="reading-modal-question" data-reading-question></p>
+            <div class="reading-modal-body" data-reading-body></div>
+        </div>
+    </div>
 
     <footer><span>✦</span> AstroTarot <i>·</i> Égi Art Deco <span>✦</span></footer>
 </main>

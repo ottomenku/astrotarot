@@ -4,6 +4,10 @@
 
   const assetBase = root.dataset.assetBase.replace(/\/$/, '');
   const localeSwitchUrl = root.dataset.localeSwitchUrl;
+  const readingUrl = root.dataset.readingUrl;
+  const minQuestionChars = Math.max(1, Number.parseInt(root.dataset.minQuestionChars || '10', 10) || 10);
+  const llmEnabled = root.dataset.llmEnabled !== '0';
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
   const initialLocale = root.dataset.locale === 'en' ? 'en' : 'hu';
   const drawProfile = (() => {
     try {
@@ -26,12 +30,19 @@
       button: 'Mutasd az üzenetet',
       incomplete: 'Válassz 3 lapot és írd be a kérdésed',
       messageTitle: 'A lapok üzenete',
-      message: 'A jelenlegi helyzetedben a tudatos teremtés, a belső hang és a nyitott szív együtt mutatja az irányt. Ne siettesd a választ: figyeld meg, melyik lap részlete szólít meg először.',
+      messageKicker: 'AstroTarot értelmezés',
+      messageLoading: 'A lapok üzenete készül…',
+      messageNeedQuestion: 'Írj legalább {n} karakteres kérdést, mielőtt lapot választasz.',
+      messageError: 'Az értelmezés most nem sikerült. Próbáld újra egy pillanat múlva.',
+      messageLlmDisabled: 'Az LLM értelmezés jelenleg ki van kapcsolva.',
+      message: '',
       astroBackground: 'Astro háttér',
       sunSign: 'napjegy',
       elementDominance: 'elem dominancia',
       modalityDominance: 'minőség dominancia',
       slotTitles: ['Ez van', 'Segítség / Akadály', 'Tedd / Ne tedd'],
+      polarityLight: 'Light',
+      polarityShadow: 'Shadow',
     },
     en: {
       navLabel: 'Open navigation',
@@ -45,12 +56,19 @@
       button: 'Reveal the message',
       incomplete: 'Choose 3 cards and enter your question',
       messageTitle: 'The message of your cards',
-      message: 'In your present situation, conscious creation, inner knowing and an open heart point in the same direction. Do not rush the answer: notice which detail calls to you first.',
+      messageKicker: 'AstroTarot reading',
+      messageLoading: 'Your reading is being written…',
+      messageNeedQuestion: 'Write a question of at least {n} characters before choosing a card.',
+      messageError: 'The reading could not be created. Please try again in a moment.',
+      messageLlmDisabled: 'LLM readings are currently turned off.',
+      message: '',
       astroBackground: 'Astro background',
       sunSign: 'sun sign',
       elementDominance: 'element dominance',
       modalityDominance: 'modality dominance',
       slotTitles: ['What is', 'Help / Obstacle', 'Do / Don’t'],
+      polarityLight: 'Light',
+      polarityShadow: 'Shadow',
     },
   };
 
@@ -97,18 +115,20 @@
     reset: root.querySelector('[data-reset]'),
     slider: root.querySelector('[data-deck-slider]'),
     chosen: root.querySelector('[data-chosen-grid]'),
-    reveal: root.querySelector('[data-reveal]'),
-    message: root.querySelector('[data-message]'),
-    messageTitle: root.querySelector('[data-message-title]'),
-    messageQuestion: root.querySelector('[data-message-question]'),
-    messageBody: root.querySelector('[data-message-body]'),
+    readingModal: root.querySelector('[data-reading-modal]'),
+    readingKicker: root.querySelector('[data-reading-kicker]'),
+    readingTitle: root.querySelector('[data-reading-title]'),
+    readingQuestion: root.querySelector('[data-reading-question]'),
+    readingBody: root.querySelector('[data-reading-body]'),
   };
 
   let language = initialLocale;
   let deckData = null;
   /** @type {{backIndex:number, figureId:string, backgroundId:string, variant:string}[]} */
   let selected = [];
-  let showMessage = false;
+  let readingRequest = null;
+  let lastReadingKey = '';
+  let questionTimer = null;
 
   const pick = (items) => items[Math.floor(Math.random() * items.length)];
 
@@ -148,6 +168,10 @@
     return copy[language];
   }
 
+  function needQuestionMessage() {
+    return t().messageNeedQuestion.replace('{n}', String(minQuestionChars));
+  }
+
   function setMenuOpen(open) {
     els.menuBackdrop.classList.toggle('is-open', open);
     els.sideMenu.classList.toggle('is-open', open);
@@ -163,20 +187,21 @@
     if (els.hint) els.hint.innerHTML = `<span>☾</span>${text.hint}`;
     if (els.reading) els.reading.textContent = text.reading;
     if (els.reset) els.reset.textContent = `↺ ${text.reset}`;
-    if (els.messageTitle) els.messageTitle.textContent = text.messageTitle;
-    if (els.messageBody) els.messageBody.textContent = text.message;
+    if (els.readingKicker) els.readingKicker.textContent = text.messageKicker;
+    if (els.readingTitle) els.readingTitle.textContent = text.messageTitle;
     if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/3 ${text.selected}`;
-    updateRevealButton();
     renderChosen();
   }
 
-  function updateRevealButton() {
-    if (!els.reveal) return;
+  function polarityLabel(slotIndex, variant = null) {
     const text = t();
-    const ready = selected.length === 3 && !!els.question && els.question.value.trim().length > 2;
-    els.reveal.disabled = !ready;
-    const label = els.reveal.querySelector('span');
-    if (label) label.textContent = ready ? text.button : text.incomplete;
+    const resolved = variant || toneVariant(slotIndex);
+    return resolved === 'shadow' ? text.polarityShadow : text.polarityLight;
+  }
+
+  function polarityClass(slotIndex, variant = null) {
+    const resolved = variant || toneVariant(slotIndex);
+    return resolved === 'shadow' ? 'is-shadow' : 'is-light';
   }
 
   function figureMeta(figureId) {
@@ -189,16 +214,24 @@
 
   function astroBackgroundCaption(slotIndex) {
     const text = t();
-    if (slotIndex === 0) {
-      const value = localize(labels.signs, drawProfile.sun_sign, drawProfile.sun_sign || '—');
-      return `${text.sunSign}: ${value}`;
+    const kinds = Array.isArray(drawProfile.slot_kinds) ? drawProfile.slot_kinds : null;
+    const values = Array.isArray(drawProfile.slot_values) ? drawProfile.slot_values : null;
+    const kind = kinds?.[slotIndex]
+      || (slotIndex === 0 ? 'sun_sign' : slotIndex === 1 ? 'element' : 'modality');
+    const rawValue = values?.[slotIndex]
+      || (kind === 'sun_sign'
+        ? drawProfile.sun_sign
+        : kind === 'element'
+          ? drawProfile.element
+          : drawProfile.modality);
+
+    if (kind === 'sun_sign') {
+      return `${text.sunSign}: ${localize(labels.signs, rawValue, rawValue || '—')}`;
     }
-    if (slotIndex === 1) {
-      const value = localize(labels.elements, drawProfile.element, drawProfile.element || '—');
-      return `${text.elementDominance}: ${value}`;
+    if (kind === 'element') {
+      return `${text.elementDominance}: ${localize(labels.elements, rawValue, rawValue || '—')}`;
     }
-    const value = localize(labels.modalities, drawProfile.modality, drawProfile.modality || '—');
-    return `${text.modalityDominance}: ${value}`;
+    return `${text.modalityDominance}: ${localize(labels.modalities, rawValue, rawValue || '—')}`;
   }
 
   function cardBackSrc() {
@@ -272,6 +305,7 @@
       if (!draw) {
         article.innerHTML = `
           <h3 class="slot-title">${text.slotTitles[slot]}</h3>
+          <p class="polarity-label ${polarityClass(slot)}">${polarityLabel(slot)}</p>
           <div class="card-art placeholder-art">
             <img class="card-back" src="${cardBackSrc()}" alt="" decoding="async">
             <span class="roman">${romans[slot]}</span>
@@ -288,6 +322,7 @@
         const figure = `${assetBase}/assets/figures/${draw.figureId}-${draw.variant}.webp`;
         article.innerHTML = `
           <h3 class="slot-title">${text.slotTitles[slot]}</h3>
+          <p class="polarity-label ${polarityClass(slot, draw.variant)}">${polarityLabel(slot, draw.variant)}</p>
           <div class="card-art">
             <img class="card-background" src="${background}" alt="" decoding="async">
             <img class="card-figure" src="${figure}" alt="" decoding="async">
@@ -307,54 +342,208 @@
   }
 
   function toggleBack(backIndex) {
-    showMessage = false;
-    els.message?.classList.remove('is-visible');
-
-    const existing = selected.findIndex((item) => item.backIndex === backIndex);
-    if (existing >= 0) {
-      selected.splice(existing, 1);
-      selected = selected.map((item, slot) => ({
-        ...item,
-        backgroundId: slotBackground(slot),
-        variant: toneVariant(slot),
-      }));
-    } else if (selected.length < 3) {
-      const used = selected.map((item) => item.figureId);
-      const slot = selected.length;
-      selected.push({ backIndex, ...drawForSlot(slot, used) });
+    // Selection is one-way: already chosen cards cannot be deselected by tap.
+    if (selected.some((item) => item.backIndex === backIndex) || selected.length >= 3) {
+      return;
     }
+
+    if (selected.length === 0 && questionText().length < minQuestionChars) {
+      els.question?.focus();
+      openReadingModal({
+        body: needQuestionMessage(),
+        loading: false,
+        error: false,
+        question: '',
+      });
+      return;
+    }
+
+    const used = selected.map((item) => item.figureId);
+    const slot = selected.length;
+    selected.push({ backIndex, ...drawForSlot(slot, used) });
 
     if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/3 ${t().selected}`;
     renderDeck();
     renderChosen();
-    updateRevealButton();
+    maybeRequestReading();
   }
 
   function reset() {
     selected = [];
-    showMessage = false;
-    els.question.value = '';
-    els.message.classList.remove('is-visible');
-    els.question.nextElementSibling.textContent = '0/280';
+    lastReadingKey = '';
+    readingRequest = null;
+    closeReadingModal();
+    if (els.question) {
+      els.question.value = '';
+      if (els.question.nextElementSibling) {
+        els.question.nextElementSibling.textContent = '0/280';
+      }
+    }
     applyCopy();
     renderDeck();
-    els.slider.scrollTo({ left: 0, behavior: 'smooth' });
+    els.slider?.scrollTo({ left: 0, behavior: 'smooth' });
+  }
+
+  function questionText() {
+    return (els.question?.value || '').trim();
+  }
+
+  function readingPayloadKey() {
+    return JSON.stringify({
+      q: questionText(),
+      cards: selected.map((item) => [item.backIndex, item.figureId, item.backgroundId, item.variant]),
+      lang: language,
+    });
+  }
+
+  function openReadingModal({ body, loading = false, error = false, question = '' }) {
+    if (!els.readingModal || !els.readingBody) return;
+    const text = t();
+    if (els.readingKicker) els.readingKicker.textContent = text.messageKicker;
+    if (els.readingTitle) els.readingTitle.textContent = text.messageTitle;
+    if (els.readingQuestion) {
+      els.readingQuestion.textContent = question || questionText();
+      els.readingQuestion.hidden = !(question || questionText());
+    }
+    els.readingBody.classList.toggle('is-loading', loading);
+    els.readingBody.classList.toggle('is-error', error);
+    els.readingBody.textContent = body;
+    els.readingModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeReadingModal() {
+    if (!els.readingModal) return;
+    els.readingModal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  function buildCardsPayload() {
+    return selected.map((draw, slot) => {
+      const meta = figureMeta(draw.figureId);
+      const polarity = draw.variant === 'shadow' ? 'shadow' : 'positive';
+      return {
+        figure_id: draw.figureId,
+        figure_name: meta ? meta[language] : draw.figureId,
+        keyword: meta ? meta.keyword[language] : '',
+        background_id: `${draw.backgroundId}-${draw.variant}`,
+        background: draw.backgroundId,
+        variant: draw.variant,
+        polarity,
+        astro_caption: astroBackgroundCaption(slot),
+      };
+    });
+  }
+
+  async function maybeRequestReading() {
+    if (!readingUrl || selected.length !== 3) return;
+
+    const question = questionText();
+    if (question.length < minQuestionChars) {
+      openReadingModal({
+        body: needQuestionMessage(),
+        loading: false,
+        error: false,
+        question: '',
+      });
+      els.question?.focus();
+      return;
+    }
+
+    if (!llmEnabled) {
+      openReadingModal({
+        body: t().messageLlmDisabled,
+        loading: false,
+        error: true,
+        question,
+      });
+      return;
+    }
+
+    const key = readingPayloadKey();
+    if (key === lastReadingKey || readingRequest) return;
+
+    lastReadingKey = key;
+    openReadingModal({
+      body: t().messageLoading,
+      loading: true,
+      error: false,
+      question,
+    });
+
+    const controller = new AbortController();
+    readingRequest = controller;
+
+    try {
+      const response = await fetch(readingUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          question,
+          locale: language,
+          cards: buildCardsPayload(),
+          astro: {
+            sun_sign: drawProfile.sun_sign || null,
+            element: drawProfile.element || null,
+            modality: drawProfile.modality || null,
+            tones: drawProfile.tones || [],
+            variants: drawProfile.variants || [],
+          },
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || t().messageError);
+      }
+
+      openReadingModal({
+        body: data.reading || t().messageError,
+        loading: false,
+        error: !data.reading,
+        question,
+      });
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      lastReadingKey = '';
+      openReadingModal({
+        body: error?.message || t().messageError,
+        loading: false,
+        error: true,
+        question,
+      });
+    } finally {
+      if (readingRequest === controller) readingRequest = null;
+    }
   }
 
   async function boot() {
     const response = await fetch(`${assetBase}/deck.json`);
     deckData = await response.json();
 
-    els.language.value = language;
+    if (els.language) els.language.value = language;
     applyCopy();
     renderDeck();
     renderChosen();
 
-    els.menuButton.addEventListener('click', () => setMenuOpen(true));
-    els.menuClose.addEventListener('click', () => setMenuOpen(false));
-    els.menuBackdrop.addEventListener('click', () => setMenuOpen(false));
+    els.menuButton?.addEventListener('click', () => setMenuOpen(true));
+    els.menuClose?.addEventListener('click', () => setMenuOpen(false));
+    els.menuBackdrop?.addEventListener('click', () => setMenuOpen(false));
     window.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+        closeReadingModal();
+      }
+    });
+
+    root.querySelectorAll('[data-reading-close]').forEach((node) => {
+      node.addEventListener('click', closeReadingModal);
     });
 
     root.querySelector('[data-scroll-left]')?.addEventListener('click', () => {
@@ -364,7 +553,7 @@
       els.slider.scrollBy({ left: 270, behavior: 'smooth' });
     });
 
-    els.language.addEventListener('change', () => {
+    els.language?.addEventListener('change', () => {
       language = els.language.value === 'en' ? 'en' : 'hu';
       applyCopy();
       if (localeSwitchUrl) {
@@ -373,22 +562,18 @@
       }
     });
 
-    els.question.addEventListener('input', () => {
+    els.question?.addEventListener('input', () => {
       els.question.value = els.question.value.slice(0, 280);
-      els.question.nextElementSibling.textContent = `${els.question.value.length}/280`;
-      showMessage = false;
-      els.message.classList.remove('is-visible');
-      updateRevealButton();
+      if (els.question.nextElementSibling) {
+        els.question.nextElementSibling.textContent = `${els.question.value.length}/280`;
+      }
+      clearTimeout(questionTimer);
+      questionTimer = setTimeout(() => {
+        if (selected.length === 3) maybeRequestReading();
+      }, 600);
     });
 
-    els.reset.addEventListener('click', reset);
-
-    els.reveal.addEventListener('click', () => {
-      if (els.reveal.disabled) return;
-      showMessage = true;
-      els.messageQuestion.textContent = els.question.value.trim();
-      els.message.classList.add('is-visible');
-    });
+    els.reset?.addEventListener('click', reset);
   }
 
   boot();

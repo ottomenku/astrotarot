@@ -1,16 +1,26 @@
 <?php
 
 use App\Http\Controllers\Admin\EphemerisController;
+use App\Http\Controllers\Admin\PromptController;
+use App\Http\Controllers\Admin\ReadingLogController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SlotAllocationController;
 use App\Http\Controllers\Admin\TemplateController;
+use App\Http\Controllers\Admin\TestModeController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\ReadingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 
 Route::get('/locale/{locale}', LocaleController::class)->name('locale.switch');
+
+Route::post('/reading', ReadingController::class)
+    ->middleware('throttle:8,1')
+    ->name('reading');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
@@ -25,7 +35,25 @@ Route::prefix('admin')
     ->name('admin.')
     ->middleware(['auth', 'admin'])
     ->group(function () {
+        Route::redirect('/', '/admin/ephemeris')->name('home');
+
         Route::get('/ephemeris', [EphemerisController::class, 'index'])->name('ephemeris.index');
+
+        Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
+        Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
+
+        Route::get('/test-mode', [TestModeController::class, 'edit'])->name('test-mode.edit');
+        Route::put('/test-mode', [TestModeController::class, 'update'])->name('test-mode.update');
+
+        Route::get('/slots', [SlotAllocationController::class, 'edit'])->name('slots.edit');
+        Route::put('/slots', [SlotAllocationController::class, 'update'])->name('slots.update');
+
+        Route::get('/prompts', [PromptController::class, 'edit'])->name('prompts.edit');
+        Route::put('/prompts', [PromptController::class, 'update'])->name('prompts.update');
+        Route::post('/prompts/reset', [PromptController::class, 'reset'])->name('prompts.reset');
+
+        Route::get('/readings', [ReadingLogController::class, 'index'])->name('readings.index');
+        Route::get('/readings/{reading}', [ReadingLogController::class, 'show'])->name('readings.show');
 
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
