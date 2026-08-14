@@ -54,7 +54,7 @@ class DatabaseSeeder extends Seeder
         try {
             $admins = DB::select(
                 'SELECT name, email, password, email_verified_at, remember_token
-                 FROM vs_cline.users
+                 FROM horoscope.users
                  WHERE is_admin = 1
                  ORDER BY id'
             );

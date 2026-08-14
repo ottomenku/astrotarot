@@ -23,7 +23,7 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-Default admin is imported from Astro (`vs_cline`) when available — same email/password as there (`admin@example.com`).
+Default admin is imported from Astro (`horoscope.users` where `is_admin=1`) when available — same email/password as AstroMotto.
 
 ## Admin
 
