@@ -45,6 +45,7 @@ class EnsureSiteOpen
         return $request->is([
             'login',
             'logout',
+            'auth/*',
             'admin',
             'admin/*',
             'locale/*',
