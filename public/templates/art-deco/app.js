@@ -21,86 +21,110 @@
     hu: {
       navLabel: 'Navigáció megnyitása',
       selected: 'kiválasztva',
-      title: 'Tedd fel a kérdésed és válassz 3 kártyát!',
+      title: 'Tedd fel a kérdésed, válassz Égi mestert, majd tarot figurát!',
       placeholder: 'Mi az, amire most igazán szeretnél választ kapni?',
-      hint: 'Fogalmazz úgy, mintha a bölcsebb énedhez beszélnél.',
-      reading: 'Felfedett lapjaid',
+      hint: 'Először az Égi Orákulumból, aztán a Tarot pakliból választasz.',
+      reading: 'Választott lapjaid',
       waiting: 'Rád vár',
       reset: 'Új húzás',
-      button: 'Mutasd az üzenetet',
-      incomplete: 'Válassz 3 lapot és írd be a kérdésed',
+      incomplete: 'Válassz 2 lapot és írd be a kérdésed',
       messageTitle: 'A lapok üzenete',
       messageKicker: 'AstroTarot értelmezés',
-      messageLoading: 'A lapok üzenete készül…',
+      messageLoading: 'Az LLM gondolkodik…',
       messageNeedQuestion: 'Írj legalább {n} karakteres kérdést, mielőtt lapot választasz.',
       messageError: 'Az értelmezés most nem sikerült. Próbáld újra egy pillanat múlva.',
       messageLlmDisabled: 'Az LLM értelmezés jelenleg ki van kapcsolva.',
-      message: '',
-      astroBackground: 'Astro háttér',
-      sunSign: 'napjegy',
-      elementDominance: 'elem dominancia',
-      modalityDominance: 'minőség dominancia',
-      slotTitles: ['Ez van', 'Segítség / Akadály', 'Tedd / Ne tedd'],
+      deckOracle: 'Égi Orákulum',
+      deckTarot: 'Tarot pakli',
+      slotTitles: ['Választott Égi mestered', 'Választott Figurád'],
       polarityLight: 'Light',
       polarityShadow: 'Shadow',
+      chartAtQuestion: 'A kérdezés idején',
+      house: 'ház',
+      retrograde: 'retrográd',
+      direct: 'direkt',
+      aspects: 'Fényszögek',
+      noAspects: 'Nincs jelentős fényszög.',
+      planetsInSign: 'Ebben a jegyben most',
+      ruler: 'Uralkodó',
+      noChartData: 'A részletes égi adatok most nem elérhetők.',
+      followupLabel: 'Pontosítást kérek…',
+      followupPlaceholder: 'Pontosítást kérek…',
+      followupSend: 'Elküld',
+      followupExpand: 'Bővebb kifejtést kérek',
+      followupNeedText: 'Írd be a pontosítást, mielőtt elküldöd.',
     },
     en: {
       navLabel: 'Open navigation',
       selected: 'selected',
-      title: 'Ask your question and choose 3 cards!',
+      title: 'Ask your question, choose a Celestial Master, then a tarot figure!',
       placeholder: 'What would you truly like clarity about right now?',
-      hint: 'Write as if you were speaking to your wiser self.',
-      reading: 'Your revealed cards',
+      hint: 'First pick from the Celestial Oracle, then from the Tarot deck.',
+      reading: 'Your chosen cards',
       waiting: 'Waiting for you',
       reset: 'New reading',
-      button: 'Reveal the message',
-      incomplete: 'Choose 3 cards and enter your question',
+      incomplete: 'Choose 2 cards and enter your question',
       messageTitle: 'The message of your cards',
       messageKicker: 'AstroTarot reading',
-      messageLoading: 'Your reading is being written…',
+      messageLoading: 'The LLM is thinking…',
       messageNeedQuestion: 'Write a question of at least {n} characters before choosing a card.',
       messageError: 'The reading could not be created. Please try again in a moment.',
       messageLlmDisabled: 'LLM readings are currently turned off.',
-      message: '',
-      astroBackground: 'Astro background',
-      sunSign: 'sun sign',
-      elementDominance: 'element dominance',
-      modalityDominance: 'modality dominance',
-      slotTitles: ['What is', 'Help / Obstacle', 'Do / Don’t'],
+      deckOracle: 'Celestial Oracle',
+      deckTarot: 'Tarot deck',
+      slotTitles: ['Your Celestial Master', 'Your Chosen Figure'],
       polarityLight: 'Light',
       polarityShadow: 'Shadow',
+      chartAtQuestion: 'At the time of the question',
+      house: 'house',
+      retrograde: 'retrograde',
+      direct: 'direct',
+      aspects: 'Aspects',
+      noAspects: 'No major aspects.',
+      planetsInSign: 'Currently in this sign',
+      ruler: 'Ruler',
+      noChartData: 'Detailed sky data is unavailable right now.',
+      followupLabel: 'I need a clarification…',
+      followupPlaceholder: 'I need a clarification…',
+      followupSend: 'Send',
+      followupExpand: 'Ask for a deeper reading',
+      followupNeedText: 'Write a clarification before sending.',
     },
   };
 
-  const labels = {
-    signs: {
-      aries: { hu: 'Kos', en: 'Aries' },
-      taurus: { hu: 'Bika', en: 'Taurus' },
-      gemini: { hu: 'Ikrek', en: 'Gemini' },
-      cancer: { hu: 'Rák', en: 'Cancer' },
-      leo: { hu: 'Oroszlán', en: 'Leo' },
-      virgo: { hu: 'Szűz', en: 'Virgo' },
-      libra: { hu: 'Mérleg', en: 'Libra' },
-      scorpio: { hu: 'Skorpió', en: 'Scorpio' },
-      sagittarius: { hu: 'Nyilas', en: 'Sagittarius' },
-      capricorn: { hu: 'Bak', en: 'Capricorn' },
-      aquarius: { hu: 'Vízöntő', en: 'Aquarius' },
-      pisces: { hu: 'Halak', en: 'Pisces' },
+  const SIGN_LABELS = {
+    hu: {
+      aries: 'Kos', taurus: 'Bika', gemini: 'Ikrek', cancer: 'Rák',
+      leo: 'Oroszlán', virgo: 'Szűz', libra: 'Mérleg', scorpio: 'Skorpió',
+      sagittarius: 'Nyilas', capricorn: 'Bak', aquarius: 'Vízöntő', pisces: 'Halak',
     },
-    elements: {
-      'tűz': { hu: 'tűz', en: 'fire' },
-      'víz': { hu: 'víz', en: 'water' },
-      'föld': { hu: 'föld', en: 'earth' },
-      'levegő': { hu: 'levegő', en: 'air' },
-    },
-    modalities: {
-      'fő': { hu: 'fő', en: 'cardinal' },
-      'szilárd': { hu: 'szilárd', en: 'fixed' },
-      'változó': { hu: 'változó', en: 'mutable' },
+    en: {
+      aries: 'Aries', taurus: 'Taurus', gemini: 'Gemini', cancer: 'Cancer',
+      leo: 'Leo', virgo: 'Virgo', libra: 'Libra', scorpio: 'Scorpio',
+      sagittarius: 'Sagittarius', capricorn: 'Capricorn', aquarius: 'Aquarius', pisces: 'Pisces',
     },
   };
 
-  const romans = ['I', 'II', 'III'];
+  const SIGN_RULERS = {
+    aries: 'mars', taurus: 'venus', gemini: 'mercury', cancer: 'moon',
+    leo: 'sun', virgo: 'mercury', libra: 'venus', scorpio: 'pluto',
+    sagittarius: 'jupiter', capricorn: 'saturn', aquarius: 'uranus', pisces: 'neptune',
+  };
+
+  const ASPECT_LABELS = {
+    hu: {
+      együttállás: 'együttállás', szextil: 'szextil', kvadrát: 'kvadrát',
+      trigon: 'trigon', kvinkunx: 'kvinkunx', oppozíció: 'oppozíció',
+    },
+    en: {
+      együttállás: 'conjunction', szextil: 'sextile', kvadrát: 'square',
+      trigon: 'trine', kvinkunx: 'quincunx', oppozíció: 'opposition',
+    },
+  };
+
+  const romans = ['I', 'II'];
+  const SLOT_COUNT = 2;
+
   const els = {
     menuButton: root.querySelector('[data-menu-open]'),
     menuClose: root.querySelector('[data-menu-close]'),
@@ -111,7 +135,7 @@
     question: root.querySelector('[data-question]'),
     counter: root.querySelector('[data-counter]'),
     hint: root.querySelector('[data-hint]'),
-    reading: root.querySelector('[data-reading]'),
+    deckLabel: root.querySelector('[data-deck-label]'),
     reset: root.querySelector('[data-reset]'),
     slider: root.querySelector('[data-deck-slider]'),
     chosen: root.querySelector('[data-chosen-grid]'),
@@ -120,49 +144,31 @@
     readingTitle: root.querySelector('[data-reading-title]'),
     readingQuestion: root.querySelector('[data-reading-question]'),
     readingBody: root.querySelector('[data-reading-body]'),
+    readingToast: root.querySelector('[data-reading-toast]'),
+    readingFollowup: root.querySelector('[data-reading-followup]'),
+    readingFollowupLabel: root.querySelector('[data-reading-followup-label]'),
+    readingFollowupInput: root.querySelector('[data-reading-followup-input]'),
+    readingFollowupSend: root.querySelector('[data-reading-followup-send]'),
+    readingFollowupExpand: root.querySelector('[data-reading-followup-expand]'),
   };
 
   let language = initialLocale;
-  let deckData = null;
-  /** @type {{backIndex:number, figureId:string, backgroundId:string, variant:string}[]} */
+  /** @type {{id:string, figures:any[], cardBack:string, backgrounds?: any}|null} */
+  let oracleDeck = null;
+  /** @type {{id:string, figures:any[], cardBack:string}|null} */
+  let tarotDeck = null;
+  /** @type {'oracle'|'tarot'} */
+  let activeDeck = 'oracle';
+  /** @type {{deck:string, backIndex:number, figureId:string, backgroundId:string, variant:string}[]} */
   let selected = [];
   let readingRequest = null;
   let lastReadingKey = '';
   let questionTimer = null;
+  let renderedDeckKey = '';
+  /** @type {{question:string, cards:any[], reading:string}|null} */
+  let activeReading = null;
 
   const pick = (items) => items[Math.floor(Math.random() * items.length)];
-
-  function toneVariant(slotIndex) {
-    const variants = Array.isArray(drawProfile.variants) ? drawProfile.variants : [];
-    if (variants[slotIndex] === 'shadow' || variants[slotIndex] === 'positive') {
-      return variants[slotIndex];
-    }
-    return drawProfile.variant === 'shadow' ? 'shadow' : 'positive';
-  }
-
-  function slotBackground(slotIndex) {
-    const slots = Array.isArray(drawProfile.slots) ? drawProfile.slots : [];
-    const preferred = slots[slotIndex];
-    if (typeof preferred === 'string' && preferred.length > 0) {
-      return preferred;
-    }
-    const backgrounds = deckData?.backgrounds || [];
-    return backgrounds[slotIndex] || backgrounds[0] || 'leo';
-  }
-
-  function randomFigure(usedFigureIds = []) {
-    const available = deckData.figures.filter((figure) => !usedFigureIds.includes(figure.id));
-    const pool = available.length ? available : deckData.figures;
-    return pick(pool).id;
-  }
-
-  function drawForSlot(slotIndex, usedFigureIds = []) {
-    return {
-      figureId: randomFigure(usedFigureIds),
-      backgroundId: slotBackground(slotIndex),
-      variant: toneVariant(slotIndex),
-    };
-  }
 
   function t() {
     return copy[language];
@@ -170,6 +176,189 @@
 
   function needQuestionMessage() {
     return t().messageNeedQuestion.replace('{n}', String(minQuestionChars));
+  }
+
+  function randomVariant() {
+    return Math.random() < 0.5 ? 'shadow' : 'positive';
+  }
+
+  function currentDeck() {
+    return activeDeck === 'tarot' ? tarotDeck : oracleDeck;
+  }
+
+  function figureMeta(deckKey, figureId) {
+    const deck = deckKey === 'tarot' ? tarotDeck : oracleDeck;
+    return deck?.figures?.find((figure) => figure.id === figureId) || null;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function chartObjects() {
+    return Array.isArray(drawProfile?.chart?.objects) ? drawProfile.chart.objects : [];
+  }
+
+  function chartAspects() {
+    return Array.isArray(drawProfile?.chart?.aspects) ? drawProfile.chart.aspects : [];
+  }
+
+  function findChartObject(id) {
+    return chartObjects().find((object) => object.id === id) || null;
+  }
+
+  function localizeSign(signKey, fallback = '') {
+    if (!signKey) return fallback;
+    return SIGN_LABELS[language]?.[signKey] || SIGN_LABELS.en[signKey] || fallback || signKey;
+  }
+
+  function localizeObjectName(object, fallback = '') {
+    if (!object) return fallback;
+    const oracle = oracleDeck?.figures?.find((figure) => figure.id === object.id);
+    if (oracle) return oracle[language] || oracle.en || object.name || fallback;
+    return object.name || fallback;
+  }
+
+  function localizeAspectType(type) {
+    return ASPECT_LABELS[language]?.[type] || ASPECT_LABELS.en[type] || type;
+  }
+
+  function motionLabel(retrograde) {
+    return retrograde ? t().retrograde : t().direct;
+  }
+
+  function objectPositionLine(object) {
+    const text = t();
+    const sign = localizeSign(object.sign, object.sign_label || '');
+    const degree = Number.isFinite(object.degree) ? `${object.degree}°` : '';
+    const house = object.house ? `${object.house}. ${text.house}` : '';
+    const motion = motionLabel(Boolean(object.retrograde));
+    return [sign && degree ? `${sign} ${degree}` : sign, house, motion].filter(Boolean).join(' · ');
+  }
+
+  function aspectsForObject(objectId, limit = 5) {
+    return chartAspects()
+      .filter((aspect) => aspect.a_id === objectId || aspect.b_id === objectId)
+      .sort((a, b) => (a.orb ?? 99) - (b.orb ?? 99))
+      .slice(0, limit)
+      .map((aspect) => {
+        const otherId = aspect.a_id === objectId ? aspect.b_id : aspect.a_id;
+        const other = findChartObject(otherId);
+        const otherName = localizeObjectName(other, aspect.a_id === objectId ? aspect.b : aspect.a);
+        const orb = Number.isFinite(aspect.orb) ? `${aspect.orb.toFixed(1)}°` : '';
+        return `${otherName} ${localizeAspectType(aspect.type)}${orb ? ` (${orb})` : ''}`;
+      });
+  }
+
+  function oracleCaptionHtml(figureId) {
+    const text = t();
+    const meta = figureMeta('oracle', figureId);
+    const title = meta ? (meta[language] || meta.en || figureId) : figureId;
+    const objects = chartObjects();
+    const isZodiac = Boolean(meta?.kind === 'zodiac' || SIGN_RULERS[figureId]);
+
+    if (!objects.length) {
+      return `
+        <h3>${escapeHtml(title)}</h3>
+        <p class="astro-detail">${escapeHtml(text.noChartData)}</p>
+      `;
+    }
+
+    if (!isZodiac) {
+      const object = findChartObject(figureId);
+      if (!object) {
+        return `
+          <h3>${escapeHtml(title)}</h3>
+          <p class="astro-detail">${escapeHtml(text.noChartData)}</p>
+        `;
+      }
+      const aspects = aspectsForObject(object.id);
+      return `
+        <h3>${escapeHtml(title)}</h3>
+        <p class="astro-heading">${escapeHtml(text.chartAtQuestion)}</p>
+        <p class="astro-detail">${escapeHtml(objectPositionLine(object))}</p>
+        <p class="astro-heading">${escapeHtml(text.aspects)}</p>
+        <p class="astro-detail">${escapeHtml(aspects.length ? aspects.join(' · ') : text.noAspects)}</p>
+      `;
+    }
+
+    const inSign = objects.filter((object) => object.sign === figureId && object.kind === 'planet');
+    const rulerId = SIGN_RULERS[figureId];
+    const ruler = rulerId ? findChartObject(rulerId) : null;
+    const inSignLine = inSign.length
+      ? inSign.map((object) => {
+        const name = localizeObjectName(object);
+        const house = object.house ? `${object.house}. ${text.house}` : '';
+        const motion = motionLabel(Boolean(object.retrograde));
+        return [name, house, motion].filter(Boolean).join(' · ');
+      }).join('; ')
+      : (language === 'hu' ? 'Nincs bolygó ebben a jegyben.' : 'No planets currently in this sign.');
+
+    const rulerBlock = ruler
+      ? `<p class="astro-heading">${escapeHtml(text.ruler)}: ${escapeHtml(localizeObjectName(ruler))}</p>
+         <p class="astro-detail">${escapeHtml(objectPositionLine(ruler))}</p>
+         <p class="astro-heading">${escapeHtml(text.aspects)}</p>
+         <p class="astro-detail">${escapeHtml((aspectsForObject(ruler.id).join(' · ')) || text.noAspects)}</p>`
+      : '';
+
+    return `
+      <h3>${escapeHtml(title)}</h3>
+      <p class="astro-heading">${escapeHtml(text.chartAtQuestion)}</p>
+      <p class="astro-heading">${escapeHtml(text.planetsInSign)}</p>
+      <p class="astro-detail">${escapeHtml(inSignLine)}</p>
+      ${rulerBlock}
+    `;
+  }
+
+  function tarotCaptionHtml(figureId) {
+    const meta = figureMeta('tarot', figureId);
+    const title = meta ? (meta[language] || meta.en || figureId) : figureId;
+    const blurb = meta?.blurb?.[language] || meta?.blurb?.en || meta?.keyword?.[language] || '';
+    return `
+      <h3>${escapeHtml(title)}</h3>
+      ${blurb ? `<p class="figure-blurb">${escapeHtml(blurb)}</p>` : ''}
+    `;
+  }
+
+  function slotCaptionText(slot, figureId) {
+    if (slot === 0) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = oracleCaptionHtml(figureId);
+      return tmp.textContent.replace(/\s+/g, ' ').trim();
+    }
+    const meta = figureMeta('tarot', figureId);
+    const title = meta ? (meta[language] || meta.en || figureId) : figureId;
+    const blurb = meta?.blurb?.[language] || meta?.blurb?.en || '';
+    return [title, blurb].filter(Boolean).join(' — ');
+  }
+
+  function cardBackSrc(deckKey) {
+    const deck = deckKey === 'tarot' ? tarotDeck : oracleDeck;
+    const relative = deck?.cardBack || 'card-back/card-back.png';
+    const folder = deckKey === 'tarot' ? 'tarot-major' : 'egi-orakulum';
+    return `${assetBase}/assets/${folder}/${relative}`;
+  }
+
+  function backgroundSrc(variant) {
+    const tone = variant === 'shadow' ? 'shadow' : 'light';
+    return `${assetBase}/assets/egi-orakulum/backgrounds/shared-${tone}.png`;
+  }
+
+  function figureSrc(deckKey, figureId) {
+    const folder = deckKey === 'tarot' ? 'tarot-major' : 'egi-orakulum';
+    if (deckKey === 'tarot') {
+      if (figureId === 'significator') {
+        return `${assetBase}/assets/${folder}/figures/significator.png`;
+      }
+      if (/^(wands|cups|swords|pentacles)-/.test(figureId)) {
+        return `${assetBase}/assets/${folder}/figures/minors/${figureId}.png`;
+      }
+    }
+    return `${assetBase}/assets/${folder}/figures/${figureId}.png`;
   }
 
   function setMenuOpen(open) {
@@ -185,62 +374,35 @@
     if (els.title) els.title.textContent = text.title;
     if (els.question) els.question.placeholder = text.placeholder;
     if (els.hint) els.hint.innerHTML = `<span>☾</span>${text.hint}`;
-    if (els.reading) els.reading.textContent = text.reading;
     if (els.reset) els.reset.textContent = `↺ ${text.reset}`;
     if (els.readingKicker) els.readingKicker.textContent = text.messageKicker;
     if (els.readingTitle) els.readingTitle.textContent = text.messageTitle;
-    if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/3 ${text.selected}`;
+    if (els.readingFollowupLabel) els.readingFollowupLabel.textContent = text.followupLabel;
+    if (els.readingFollowupInput) els.readingFollowupInput.placeholder = text.followupPlaceholder;
+    if (els.readingFollowupSend) els.readingFollowupSend.textContent = text.followupSend;
+    if (els.readingFollowupExpand) els.readingFollowupExpand.textContent = text.followupExpand;
+    if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/${SLOT_COUNT} ${text.selected}`;
+    if (els.deckLabel) {
+      els.deckLabel.textContent = activeDeck === 'tarot' ? text.deckTarot : text.deckOracle;
+    }
     renderChosen();
   }
 
-  function polarityLabel(slotIndex, variant = null) {
+  function polarityLabel(variant) {
     const text = t();
-    const resolved = variant || toneVariant(slotIndex);
-    return resolved === 'shadow' ? text.polarityShadow : text.polarityLight;
+    return variant === 'shadow' ? text.polarityShadow : text.polarityLight;
   }
 
-  function polarityClass(slotIndex, variant = null) {
-    const resolved = variant || toneVariant(slotIndex);
-    return resolved === 'shadow' ? 'is-shadow' : 'is-light';
-  }
-
-  function figureMeta(figureId) {
-    return deckData.figures.find((figure) => figure.id === figureId);
-  }
-
-  function localize(map, key, fallback = key) {
-    return map[key]?.[language] || fallback;
-  }
-
-  function astroBackgroundCaption(slotIndex) {
-    const text = t();
-    const kinds = Array.isArray(drawProfile.slot_kinds) ? drawProfile.slot_kinds : null;
-    const values = Array.isArray(drawProfile.slot_values) ? drawProfile.slot_values : null;
-    const kind = kinds?.[slotIndex]
-      || (slotIndex === 0 ? 'sun_sign' : slotIndex === 1 ? 'element' : 'modality');
-    const rawValue = values?.[slotIndex]
-      || (kind === 'sun_sign'
-        ? drawProfile.sun_sign
-        : kind === 'element'
-          ? drawProfile.element
-          : drawProfile.modality);
-
-    if (kind === 'sun_sign') {
-      return `${text.sunSign}: ${localize(labels.signs, rawValue, rawValue || '—')}`;
-    }
-    if (kind === 'element') {
-      return `${text.elementDominance}: ${localize(labels.elements, rawValue, rawValue || '—')}`;
-    }
-    return `${text.modalityDominance}: ${localize(labels.modalities, rawValue, rawValue || '—')}`;
-  }
-
-  function cardBackSrc() {
-    return `${assetBase}/assets/card-back/card-back.webp`;
+  function polarityClass(variant) {
+    return variant === 'shadow' ? 'is-shadow' : 'is-light';
   }
 
   function syncDeckSelection() {
-    [...els.slider.children].forEach((button, index) => {
-      const chosenIndex = selected.findIndex((item) => item.backIndex === index);
+    [...els.slider.children].forEach((button) => {
+      const index = Number.parseInt(button.dataset.backIndex || '-1', 10);
+      const chosenIndex = selected.findIndex(
+        (item) => item.deck === activeDeck && item.backIndex === index
+      );
       const isSelected = chosenIndex >= 0;
       button.classList.toggle('is-selected', isSelected);
       button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
@@ -259,34 +421,38 @@
     });
   }
 
-  function renderDeck() {
-    if (!els.slider || !deckData) return;
+  function renderDeck(force = false) {
+    if (!els.slider) return;
+    const deck = currentDeck();
+    if (!deck) return;
 
-    // Build once so mobile browsers do not reload 22 card images on every tap.
-    if (els.slider.children.length !== deckData.backs) {
-      const backSrc = cardBackSrc();
-      const scrollLeft = els.slider.scrollLeft;
-      els.slider.innerHTML = '';
-
-      for (let index = 0; index < deckData.backs; index += 1) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'deck-card';
-        button.setAttribute('role', 'listitem');
-        button.setAttribute('aria-pressed', 'false');
-        button.setAttribute('aria-label', `${String(index + 1).padStart(2, '0')}. kártya`);
-        button.dataset.backIndex = String(index);
-        button.innerHTML = `
-          <img src="${backSrc}" alt="" draggable="false" decoding="async">
-          <span class="card-number">${String(index + 1).padStart(2, '0')}</span>
-        `;
-        button.addEventListener('click', () => toggleBack(index));
-        els.slider.appendChild(button);
-      }
-
-      els.slider.scrollLeft = scrollLeft;
+    const deckKey = `${activeDeck}:${deck.figures.length}`;
+    if (!force && renderedDeckKey === deckKey && els.slider.children.length === deck.figures.length) {
+      syncDeckSelection();
+      return;
     }
 
+    const backSrc = cardBackSrc(activeDeck);
+    els.slider.innerHTML = '';
+    renderedDeckKey = deckKey;
+
+    for (let index = 0; index < deck.figures.length; index += 1) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'deck-card';
+      button.setAttribute('role', 'listitem');
+      button.setAttribute('aria-pressed', 'false');
+      button.setAttribute('aria-label', `${String(index + 1).padStart(2, '0')}. kártya`);
+      button.dataset.backIndex = String(index);
+      button.innerHTML = `
+        <img src="${backSrc}" alt="" draggable="false" decoding="async">
+        <span class="card-number">${String(index + 1).padStart(2, '0')}</span>
+      `;
+      button.addEventListener('click', () => toggleBack(index));
+      els.slider.appendChild(button);
+    }
+
+    els.slider.scrollLeft = 0;
     syncDeckSelection();
   }
 
@@ -296,43 +462,38 @@
     els.chosen.innerHTML = '';
     if (els.reset) els.reset.hidden = selected.length === 0;
 
-    for (let slot = 0; slot < 3; slot += 1) {
+    for (let slot = 0; slot < SLOT_COUNT; slot += 1) {
       const draw = selected[slot];
       const article = document.createElement('article');
       article.className = `chosen-card${draw ? ' has-card' : ' is-placeholder'}`;
-      const astroLine = astroBackgroundCaption(slot);
+      const deckKey = slot === 0 ? 'oracle' : 'tarot';
 
       if (!draw) {
         article.innerHTML = `
           <h3 class="slot-title">${text.slotTitles[slot]}</h3>
-          <p class="polarity-label ${polarityClass(slot)}">${polarityLabel(slot)}</p>
+          <p class="polarity-label is-light">—</p>
           <div class="card-art placeholder-art">
-            <img class="card-back" src="${cardBackSrc()}" alt="" decoding="async">
+            <img class="card-back" src="${cardBackSrc(deckKey)}" alt="" decoding="async">
             <span class="roman">${romans[slot]}</span>
           </div>
           <div class="card-caption">
             <h3>${text.waiting}</h3>
-            <p class="astro-heading">${text.astroBackground}</p>
-            <p class="astro-detail">${astroLine}</p>
           </div>
         `;
       } else {
-        const meta = figureMeta(draw.figureId);
-        const background = `${assetBase}/assets/backgrounds/${draw.backgroundId}-${draw.variant}.webp`;
-        const figure = `${assetBase}/assets/figures/${draw.figureId}-${draw.variant}.webp`;
+        const caption = slot === 0
+          ? oracleCaptionHtml(draw.figureId)
+          : tarotCaptionHtml(draw.figureId);
         article.innerHTML = `
           <h3 class="slot-title">${text.slotTitles[slot]}</h3>
-          <p class="polarity-label ${polarityClass(slot, draw.variant)}">${polarityLabel(slot, draw.variant)}</p>
+          <p class="polarity-label ${polarityClass(draw.variant)}">${polarityLabel(draw.variant)}</p>
           <div class="card-art">
-            <img class="card-background" src="${background}" alt="" decoding="async">
-            <img class="card-figure" src="${figure}" alt="" decoding="async">
+            <img class="card-background" src="${backgroundSrc(draw.variant)}" alt="" decoding="async">
+            <img class="card-figure" src="${figureSrc(draw.deck, draw.figureId)}" alt="" decoding="async">
             <span class="roman">${romans[slot]}</span>
           </div>
           <div class="card-caption">
-            <h3>${meta ? meta[language] : draw.figureId}</h3>
-            <p class="card-keyword">${meta ? meta.keyword[language] : ''}</p>
-            <p class="astro-heading">${text.astroBackground}</p>
-            <p class="astro-detail">${astroLine}</p>
+            ${caption}
           </div>
         `;
       }
@@ -342,37 +503,59 @@
   }
 
   function toggleBack(backIndex) {
-    // Selection is one-way: already chosen cards cannot be deselected by tap.
-    if (selected.some((item) => item.backIndex === backIndex) || selected.length >= 3) {
+    if (selected.length >= SLOT_COUNT) return;
+    if (selected.some((item) => item.deck === activeDeck && item.backIndex === backIndex)) {
       return;
     }
 
     if (selected.length === 0 && questionText().length < minQuestionChars) {
       els.question?.focus();
-      openReadingModal({
-        body: needQuestionMessage(),
-        loading: false,
-        error: false,
-        question: '',
-      });
+      showToast(needQuestionMessage(), false);
       return;
     }
 
-    const used = selected.map((item) => item.figureId);
-    const slot = selected.length;
-    selected.push({ backIndex, ...drawForSlot(slot, used) });
+    const deckKey = activeDeck;
+    const deck = currentDeck();
+    if (!deck) return;
 
-    if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/3 ${t().selected}`;
-    renderDeck();
+    const used = selected.filter((item) => item.deck === deckKey).map((item) => item.figureId);
+    const available = deck.figures.filter((figure) => !used.includes(figure.id));
+    const pool = available.length ? available : deck.figures;
+    const figure = pick(pool);
+
+    selected.push({
+      deck: deckKey,
+      backIndex,
+      figureId: figure.id,
+      backgroundId: 'shared',
+      variant: randomVariant(),
+    });
+
+    if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/${SLOT_COUNT} ${t().selected}`;
+
+    if (selected.length === 1) {
+      activeDeck = 'tarot';
+      applyCopy();
+      renderDeck(true);
+    } else {
+      renderDeck();
+    }
+
     renderChosen();
     maybeRequestReading();
   }
 
   function reset() {
     selected = [];
+    activeDeck = 'oracle';
     lastReadingKey = '';
-    readingRequest = null;
+    activeReading = null;
+    if (readingRequest) {
+      readingRequest.abort();
+      readingRequest = null;
+    }
     closeReadingModal();
+    hideToast();
     if (els.question) {
       els.question.value = '';
       if (els.question.nextElementSibling) {
@@ -380,7 +563,7 @@
       }
     }
     applyCopy();
-    renderDeck();
+    renderDeck(true);
     els.slider?.scrollTo({ left: 0, behavior: 'smooth' });
   }
 
@@ -391,23 +574,46 @@
   function readingPayloadKey() {
     return JSON.stringify({
       q: questionText(),
-      cards: selected.map((item) => [item.backIndex, item.figureId, item.backgroundId, item.variant]),
+      cards: selected.map((item) => [item.deck, item.backIndex, item.figureId, item.variant]),
       lang: language,
     });
   }
 
-  function openReadingModal({ body, loading = false, error = false, question = '' }) {
+  function showToast(message, loading = true) {
+    if (!els.readingToast) return;
+    els.readingToast.hidden = false;
+    els.readingToast.classList.toggle('is-loading', loading);
+    els.readingToast.classList.toggle('is-error', !loading && Boolean(message));
+    const textNode = els.readingToast.querySelector('[data-reading-toast-text]');
+    if (textNode) textNode.textContent = message;
+  }
+
+  function hideToast() {
+    if (!els.readingToast) return;
+    els.readingToast.hidden = true;
+    els.readingToast.classList.remove('is-loading', 'is-error');
+  }
+
+  function openReadingModal({ body, error = false, question = '', showFollowup = false }) {
     if (!els.readingModal || !els.readingBody) return;
     const text = t();
+    hideToast();
     if (els.readingKicker) els.readingKicker.textContent = text.messageKicker;
     if (els.readingTitle) els.readingTitle.textContent = text.messageTitle;
     if (els.readingQuestion) {
       els.readingQuestion.textContent = question || questionText();
       els.readingQuestion.hidden = !(question || questionText());
     }
-    els.readingBody.classList.toggle('is-loading', loading);
+    els.readingBody.classList.remove('is-loading');
     els.readingBody.classList.toggle('is-error', error);
     els.readingBody.textContent = body;
+    if (els.readingFollowup) {
+      els.readingFollowup.hidden = !showFollowup || error;
+      if (els.readingFollowupInput && showFollowup) {
+        els.readingFollowupInput.value = '';
+      }
+      setFollowupBusy(false);
+    }
     els.readingModal.hidden = false;
     document.body.style.overflow = 'hidden';
   }
@@ -416,63 +622,98 @@
     if (!els.readingModal) return;
     els.readingModal.hidden = true;
     document.body.style.overflow = '';
+    if (els.readingFollowup) els.readingFollowup.hidden = true;
+  }
+
+  function setFollowupBusy(busy) {
+    if (els.readingFollowupSend) els.readingFollowupSend.disabled = busy;
+    if (els.readingFollowupExpand) els.readingFollowupExpand.disabled = busy;
+    if (els.readingFollowupInput) els.readingFollowupInput.disabled = busy;
+  }
+
+  function appendReadingText(extra) {
+    if (!els.readingBody || !extra) return;
+    const current = els.readingBody.textContent || '';
+    els.readingBody.textContent = current
+      ? `${current}\n\n———\n\n${extra}`
+      : extra;
+    if (activeReading) {
+      activeReading.reading = els.readingBody.textContent;
+    }
   }
 
   function buildCardsPayload() {
     return selected.map((draw, slot) => {
-      const meta = figureMeta(draw.figureId);
+      const meta = figureMeta(draw.deck, draw.figureId);
       const polarity = draw.variant === 'shadow' ? 'shadow' : 'positive';
       return {
         figure_id: draw.figureId,
         figure_name: meta ? meta[language] : draw.figureId,
-        keyword: meta ? meta.keyword[language] : '',
-        background_id: `${draw.backgroundId}-${draw.variant}`,
+        keyword: meta?.keyword ? meta.keyword[language] : '',
+        blurb: meta?.blurb ? (meta.blurb[language] || meta.blurb.en || '') : '',
+        background_id: `${draw.backgroundId}-${draw.variant === 'shadow' ? 'shadow' : 'light'}`,
         background: draw.backgroundId,
         variant: draw.variant,
         polarity,
-        astro_caption: astroBackgroundCaption(slot),
+        deck: draw.deck,
+        slot_title: t().slotTitles[slot],
+        astro_caption: slotCaptionText(slot, draw.figureId),
       };
     });
   }
 
-  async function maybeRequestReading() {
-    if (!readingUrl || selected.length !== 3) return;
+  function readingAstroPayload() {
+    return {
+      sun_sign: drawProfile.sun_sign || null,
+      element: drawProfile.element || null,
+      modality: drawProfile.modality || null,
+      tones: drawProfile.tones || [],
+      variants: drawProfile.variants || [],
+      datetime_utc: drawProfile.datetime_utc || null,
+      chart_mode: drawProfile.chart_mode || null,
+    };
+  }
+
+  async function requestReading({ mode = 'initial', followUp = '' } = {}) {
+    if (!readingUrl || selected.length !== SLOT_COUNT) return;
 
     const question = questionText();
     if (question.length < minQuestionChars) {
-      openReadingModal({
-        body: needQuestionMessage(),
-        loading: false,
-        error: false,
-        question: '',
-      });
+      showToast(needQuestionMessage(), false);
       els.question?.focus();
       return;
     }
 
     if (!llmEnabled) {
-      openReadingModal({
-        body: t().messageLlmDisabled,
-        loading: false,
-        error: true,
-        question,
-      });
+      showToast(t().messageLlmDisabled, false);
       return;
     }
 
-    const key = readingPayloadKey();
-    if (key === lastReadingKey || readingRequest) return;
+    if (mode === 'clarify' && !followUp.trim()) {
+      showToast(t().followupNeedText, false);
+      els.readingFollowupInput?.focus();
+      return;
+    }
 
-    lastReadingKey = key;
-    openReadingModal({
-      body: t().messageLoading,
-      loading: true,
-      error: false,
-      question,
-    });
+    if ((mode === 'clarify' || mode === 'expand') && !activeReading?.reading) {
+      showToast(t().messageError, false);
+      return;
+    }
+
+    if (mode === 'initial') {
+      const key = readingPayloadKey();
+      if (key === lastReadingKey || readingRequest) return;
+      lastReadingKey = key;
+      showToast(t().messageLoading, true);
+    } else {
+      if (readingRequest) return;
+      setFollowupBusy(true);
+      showToast(t().messageLoading, true);
+    }
 
     const controller = new AbortController();
     readingRequest = controller;
+    const cards = mode === 'initial' ? buildCardsPayload() : (activeReading?.cards || buildCardsPayload());
 
     try {
       const response = await fetch(readingUrl, {
@@ -487,14 +728,11 @@
         body: JSON.stringify({
           question,
           locale: language,
-          cards: buildCardsPayload(),
-          astro: {
-            sun_sign: drawProfile.sun_sign || null,
-            element: drawProfile.element || null,
-            modality: drawProfile.modality || null,
-            tones: drawProfile.tones || [],
-            variants: drawProfile.variants || [],
-          },
+          mode,
+          follow_up: followUp || undefined,
+          previous_reading: mode === 'initial' ? undefined : activeReading?.reading,
+          cards,
+          astro: readingAstroPayload(),
         }),
       });
 
@@ -503,33 +741,52 @@
         throw new Error(data.error || t().messageError);
       }
 
-      openReadingModal({
-        body: data.reading || t().messageError,
-        loading: false,
-        error: !data.reading,
-        question,
-      });
+      if (!data.reading) {
+        throw new Error(t().messageError);
+      }
+
+      if (mode === 'initial') {
+        activeReading = {
+          question,
+          cards,
+          reading: data.reading,
+        };
+        openReadingModal({
+          body: data.reading,
+          error: false,
+          question,
+          showFollowup: true,
+        });
+      } else {
+        appendReadingText(data.reading);
+        if (els.readingFollowupInput) els.readingFollowupInput.value = '';
+        hideToast();
+      }
     } catch (error) {
       if (error?.name === 'AbortError') return;
-      lastReadingKey = '';
-      openReadingModal({
-        body: error?.message || t().messageError,
-        loading: false,
-        error: true,
-        question,
-      });
+      if (mode === 'initial') lastReadingKey = '';
+      showToast(error?.message || t().messageError, false);
     } finally {
       if (readingRequest === controller) readingRequest = null;
+      setFollowupBusy(false);
     }
   }
 
+  async function maybeRequestReading() {
+    return requestReading({ mode: 'initial' });
+  }
+
   async function boot() {
-    const response = await fetch(`${assetBase}/deck.json`);
-    deckData = await response.json();
+    const [oracleRes, tarotRes] = await Promise.all([
+      fetch(`${assetBase}/assets/egi-orakulum/deck.json`),
+      fetch(`${assetBase}/assets/tarot-major/deck.json`),
+    ]);
+    oracleDeck = await oracleRes.json();
+    tarotDeck = await tarotRes.json();
 
     if (els.language) els.language.value = language;
     applyCopy();
-    renderDeck();
+    renderDeck(true);
     renderChosen();
 
     els.menuButton?.addEventListener('click', () => setMenuOpen(true));
@@ -539,11 +796,26 @@
       if (event.key === 'Escape') {
         setMenuOpen(false);
         closeReadingModal();
+        hideToast();
       }
     });
 
     root.querySelectorAll('[data-reading-close]').forEach((node) => {
       node.addEventListener('click', closeReadingModal);
+    });
+    els.readingToast?.querySelector('[data-reading-toast-close]')?.addEventListener('click', hideToast);
+
+    els.readingFollowupSend?.addEventListener('click', () => {
+      requestReading({
+        mode: 'clarify',
+        followUp: (els.readingFollowupInput?.value || '').trim(),
+      });
+    });
+    els.readingFollowupExpand?.addEventListener('click', () => {
+      requestReading({
+        mode: 'expand',
+        followUp: (els.readingFollowupInput?.value || '').trim(),
+      });
     });
 
     root.querySelector('[data-scroll-left]')?.addEventListener('click', () => {
@@ -569,7 +841,7 @@
       }
       clearTimeout(questionTimer);
       questionTimer = setTimeout(() => {
-        if (selected.length === 3) maybeRequestReading();
+        if (selected.length === SLOT_COUNT) maybeRequestReading();
       }, 600);
     });
 

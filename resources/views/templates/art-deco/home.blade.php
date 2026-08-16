@@ -57,7 +57,7 @@
                 <a href="{{ route('login') }}"><span>01</span>{{ __('messages.login') }}<b>↗</b></a>
             @endauth
         </nav>
-        <p>Égi Art Deco · 22 lapos nagy arkánum</p>
+        <p>Égi Orákulum + Tarot</p>
     </aside>
 
     <section class="deck-section" aria-labelledby="deck-heading">
@@ -73,6 +73,7 @@
             </div>
         </div>
 
+        <p class="deck-phase-label" data-deck-label></p>
         <div class="deck-wrap">
             <button class="deck-arrow left" type="button" data-scroll-left aria-label="Balra görgetés">‹</button>
             <div class="deck-slider" data-deck-slider role="list"></div>
@@ -85,8 +86,14 @@
             <button class="reset-button" type="button" data-reset hidden></button>
         </div>
 
-        <div class="chosen-grid" data-chosen-grid aria-live="polite"></div>
+        <div class="chosen-grid chosen-grid-two" data-chosen-grid aria-live="polite"></div>
     </section>
+
+    <div class="reading-toast" data-reading-toast hidden>
+        <span class="reading-toast-dot" aria-hidden="true"></span>
+        <span data-reading-toast-text></span>
+        <button type="button" class="reading-toast-close" data-reading-toast-close aria-label="Bezárás">×</button>
+    </div>
 
     <div class="reading-modal" data-reading-modal hidden>
         <div class="reading-modal-backdrop" data-reading-close></div>
@@ -96,10 +103,18 @@
             <h2 id="reading-modal-title" data-reading-title></h2>
             <p class="reading-modal-question" data-reading-question></p>
             <div class="reading-modal-body" data-reading-body></div>
+            <div class="reading-followup" data-reading-followup hidden>
+                <label class="reading-followup-label" for="reading-followup-input" data-reading-followup-label>Pontosítást kérek…</label>
+                <textarea id="reading-followup-input" class="reading-followup-input" data-reading-followup-input rows="3" maxlength="500" placeholder="Pontosítást kérek…"></textarea>
+                <div class="reading-followup-actions">
+                    <button type="button" class="reading-followup-send" data-reading-followup-send>Elküld</button>
+                    <button type="button" class="reading-followup-expand" data-reading-followup-expand>Bővebb kifejtést kérek</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <footer><span>✦</span> AstroTarot <i>·</i> Égi Art Deco <span>✦</span></footer>
+    <footer><span>✦</span> AstroTarot <i>·</i> Égi Orákulum + Tarot <span>✦</span></footer>
 </main>
 
 <script src="{{ $assetBase }}/app.js?v={{ filemtime(public_path('templates/art-deco/app.js')) }}" defer></script>

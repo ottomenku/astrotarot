@@ -15,6 +15,10 @@ class PromptController extends Controller
         return view('admin.prompts.edit', [
             'systemPromptHu' => $settings->get(AppSettings::SYSTEM_PROMPT_HU) ?: $settings->defaultSystemPromptHu(),
             'systemPromptEn' => $settings->get(AppSettings::SYSTEM_PROMPT_EN) ?: $settings->defaultSystemPromptEn(),
+            'clarifyPromptHu' => $settings->get(AppSettings::CLARIFY_PROMPT_HU) ?: $settings->defaultClarifyPromptHu(),
+            'clarifyPromptEn' => $settings->get(AppSettings::CLARIFY_PROMPT_EN) ?: $settings->defaultClarifyPromptEn(),
+            'expandPromptHu' => $settings->get(AppSettings::EXPAND_PROMPT_HU) ?: $settings->defaultExpandPromptHu(),
+            'expandPromptEn' => $settings->get(AppSettings::EXPAND_PROMPT_EN) ?: $settings->defaultExpandPromptEn(),
         ]);
     }
 
@@ -23,11 +27,19 @@ class PromptController extends Controller
         $data = $request->validate([
             'system_prompt_hu' => ['required', 'string', 'min:20', 'max:20000'],
             'system_prompt_en' => ['required', 'string', 'min:20', 'max:20000'],
+            'clarify_prompt_hu' => ['required', 'string', 'min:20', 'max:20000'],
+            'clarify_prompt_en' => ['required', 'string', 'min:20', 'max:20000'],
+            'expand_prompt_hu' => ['required', 'string', 'min:20', 'max:20000'],
+            'expand_prompt_en' => ['required', 'string', 'min:20', 'max:20000'],
         ]);
 
         $settings->putMany([
             AppSettings::SYSTEM_PROMPT_HU => $data['system_prompt_hu'],
             AppSettings::SYSTEM_PROMPT_EN => $data['system_prompt_en'],
+            AppSettings::CLARIFY_PROMPT_HU => $data['clarify_prompt_hu'],
+            AppSettings::CLARIFY_PROMPT_EN => $data['clarify_prompt_en'],
+            AppSettings::EXPAND_PROMPT_HU => $data['expand_prompt_hu'],
+            AppSettings::EXPAND_PROMPT_EN => $data['expand_prompt_en'],
         ]);
 
         return redirect()
@@ -40,6 +52,10 @@ class PromptController extends Controller
         $settings->putMany([
             AppSettings::SYSTEM_PROMPT_HU => $settings->defaultSystemPromptHu(),
             AppSettings::SYSTEM_PROMPT_EN => $settings->defaultSystemPromptEn(),
+            AppSettings::CLARIFY_PROMPT_HU => $settings->defaultClarifyPromptHu(),
+            AppSettings::CLARIFY_PROMPT_EN => $settings->defaultClarifyPromptEn(),
+            AppSettings::EXPAND_PROMPT_HU => $settings->defaultExpandPromptHu(),
+            AppSettings::EXPAND_PROMPT_EN => $settings->defaultExpandPromptEn(),
         ]);
 
         return redirect()

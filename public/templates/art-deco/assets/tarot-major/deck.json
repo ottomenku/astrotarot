@@ -1,0 +1,907 @@
+{
+    "id": "tarot-major-v2",
+    "name": {
+        "hu": "AstroTarot",
+        "en": "AstroTarot"
+    },
+    "style": "dark-fantasy-chiaroscuro-v2",
+    "cardBack": "card-back/card-back.png",
+    "totalCards": 55,
+    "composition": {
+        "majors": 22,
+        "minors": 32,
+        "significator": 1
+    },
+    "suits": {
+        "wands": {
+            "hu": "Pálcák",
+            "en": "Wands",
+            "element": "fire"
+        },
+        "cups": {
+            "hu": "Kelyhek",
+            "en": "Cups",
+            "element": "water"
+        },
+        "swords": {
+            "hu": "Kardok",
+            "en": "Swords",
+            "element": "air"
+        },
+        "pentacles": {
+            "hu": "Pentákulumok",
+            "en": "Pentacles",
+            "element": "earth"
+        }
+    },
+    "ranks": [
+        "ace",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "07",
+        "08"
+    ],
+    "note": "Figures only; light/shadow comes from swapped backgrounds later.",
+    "figures": [
+        {
+            "id": "00-the-fool",
+            "kind": "major",
+            "roman": "0",
+            "hu": "A Bolond",
+            "en": "The Fool",
+            "keyword": {
+                "hu": "új kezdet",
+                "en": "new beginning"
+            },
+            "blurb": {
+                "hu": "Új kezdet, nyitottság és bátor első lépés. A Bolond a friss út előtt áll, ahol a kíváncsiság fontosabb, mint a bizonyosság. Bízz a lendületben, de nézz a lábad elé is.",
+                "en": "A fresh start, openness, and a brave first step. The Fool stands before a new path where curiosity matters more than certainty. Trust the momentum, yet watch your footing."
+            }
+        },
+        {
+            "id": "01-the-magician",
+            "kind": "major",
+            "roman": "I",
+            "hu": "A Mágus",
+            "en": "The Magician",
+            "keyword": {
+                "hu": "teremtő erő",
+                "en": "creative power"
+            },
+            "blurb": {
+                "hu": "A Mágus tudatos alkotóerőt hoz. Eszközök és szándék egy kézben vannak: most van lehetőség formát adni annak, amit elképzeltél. Cselekvés és fókusz együtt dolgozik.",
+                "en": "The Magician brings conscious creative power. Tools and intention meet in one hand: you can shape what you imagined. Action and focus work together now."
+            }
+        },
+        {
+            "id": "02-the-high-priestess",
+            "kind": "major",
+            "roman": "II",
+            "hu": "A Főpapnő",
+            "en": "The High Priestess",
+            "keyword": {
+                "hu": "intuíció",
+                "en": "intuition"
+            },
+            "blurb": {
+                "hu": "A Főpapnő a csendes tudásra hív. Nem mindent kell kimondani; a válasz belül, az intuícióban érlelődik. Figyelj a jelek és az álmok halkabb hangjára.",
+                "en": "The High Priestess invites quiet knowing. Not everything needs to be spoken; the answer ripens within intuition. Listen to the softer voice of signs and dreams."
+            }
+        },
+        {
+            "id": "03-the-empress",
+            "kind": "major",
+            "roman": "III",
+            "hu": "A Császárnő",
+            "en": "The Empress",
+            "keyword": {
+                "hu": "bőség",
+                "en": "abundance"
+            },
+            "blurb": {
+                "hu": "A Császárnő a növekedés, gondoskodás és érzéki bőség kártyája. Ami érik, azt etetni és védeni kell. Engedd, hogy a teremtés természetes ritmusban kibontakozzon.",
+                "en": "The Empress speaks of growth, care, and sensual abundance. What is ripening needs feeding and protection. Let creation unfold in its natural rhythm."
+            }
+        },
+        {
+            "id": "04-the-emperor",
+            "kind": "major",
+            "roman": "IV",
+            "hu": "A Császár",
+            "en": "The Emperor",
+            "keyword": {
+                "hu": "rend",
+                "en": "order"
+            },
+            "blurb": {
+                "hu": "A Császár struktúrát, határokat és felelősséget hoz. Most a stabil keretek és a világos döntések segítenek. Vezess határozottan, de ne válj merevvé.",
+                "en": "The Emperor brings structure, boundaries, and responsibility. Clear frames and firm decisions help now. Lead with resolve without becoming rigid."
+            }
+        },
+        {
+            "id": "05-the-hierophant",
+            "kind": "major",
+            "roman": "V",
+            "hu": "A Főpap",
+            "en": "The Hierophant",
+            "keyword": {
+                "hu": "hagyomány",
+                "en": "tradition"
+            },
+            "blurb": {
+                "hu": "A Főpap a tanítás, hagyomány és közös értékek felé mutat. Keress megbízható útmutatást, vagy magad legyél a támasz másoknak. A rituálé és a szabály most támasz lehet.",
+                "en": "The Hierophant points to teaching, tradition, and shared values. Seek trustworthy guidance, or become that support for others. Ritual and rule can steady you now."
+            }
+        },
+        {
+            "id": "06-the-lovers",
+            "kind": "major",
+            "roman": "VI",
+            "hu": "A Szeretők",
+            "en": "The Lovers",
+            "keyword": {
+                "hu": "választás",
+                "en": "choice"
+            },
+            "blurb": {
+                "hu": "A Szeretők választásról és igazodásról beszélnek. Kapcsolat, értékek vagy irány közül kell dönteni úgy, hogy a szív és az elme egy irányba nézzen. Az őszinte igen számít.",
+                "en": "The Lovers speak of choice and alignment. Decide among people, values, or paths so heart and mind face the same way. An honest yes matters."
+            }
+        },
+        {
+            "id": "07-the-chariot",
+            "kind": "major",
+            "roman": "VII",
+            "hu": "A Diadalszekér",
+            "en": "The Chariot",
+            "keyword": {
+                "hu": "haladás",
+                "en": "momentum"
+            },
+            "blurb": {
+                "hu": "A Diadalszekér akaraterőt és iránytartást kér. A cél elérhető, ha a belső ellentéteket egy irányba fogod. Haladj határozottan, ne engedd szétszóródni a fókuszt.",
+                "en": "The Chariot asks for willpower and direction. The goal is reachable if you harness inner opposites. Move decisively and keep your focus gathered."
+            }
+        },
+        {
+            "id": "08-strength",
+            "kind": "major",
+            "roman": "VIII",
+            "hu": "Az Erő",
+            "en": "Strength",
+            "keyword": {
+                "hu": "belső erő",
+                "en": "inner strength"
+            },
+            "blurb": {
+                "hu": "Az Erő a szelíd bátorság kártyája. Nem erőszakkal, hanem türelemmel és önuralommal oldódik a feszültség. A magabiztos nyugalom most erősebb, mint a zaj.",
+                "en": "Strength is gentle courage. Tension eases through patience and self-command, not force. Quiet confidence is stronger than noise right now."
+            }
+        },
+        {
+            "id": "09-the-hermit",
+            "kind": "major",
+            "roman": "IX",
+            "hu": "A Remete",
+            "en": "The Hermit",
+            "keyword": {
+                "hu": "bölcsesség",
+                "en": "wisdom"
+            },
+            "blurb": {
+                "hu": "A Remete visszavonulást és belső fényt hoz. Ideje magadba nézni, kérdéseket tisztázni, és nem siettetni a választ. A magány most nem üresség, hanem iránytű.",
+                "en": "The Hermit brings withdrawal and inner light. Look within, clarify questions, and do not rush the answer. Solitude is a compass now, not emptiness."
+            }
+        },
+        {
+            "id": "10-wheel-of-fortune",
+            "kind": "major",
+            "roman": "X",
+            "hu": "A Szerencsekerék",
+            "en": "Wheel of Fortune",
+            "keyword": {
+                "hu": "fordulat",
+                "en": "turning point"
+            },
+            "blurb": {
+                "hu": "A Szerencsekerék fordulatot jelez. Ami beragadt, az mozogni kezd; a ciklusok forognak. Fogadd el a változást, és igazodj a következő szakasz ritmusához.",
+                "en": "Wheel of Fortune signals a turn. What was stuck begins to move; cycles shift. Accept change and attune to the next phase."
+            }
+        },
+        {
+            "id": "11-justice",
+            "kind": "major",
+            "roman": "XI",
+            "hu": "Az Igazság",
+            "en": "Justice",
+            "keyword": {
+                "hu": "egyensúly",
+                "en": "balance"
+            },
+            "blurb": {
+                "hu": "Az Igazság egyensúlyt, tisztázást és felelősséget kér. Ami igazságtalan, az most mérlegre kerül. Légy őszinte a következményekkel és a saját részeddel.",
+                "en": "Justice asks for balance, clarity, and accountability. What is unfair comes onto the scales. Be honest about consequences and your part in them."
+            }
+        },
+        {
+            "id": "12-the-hanged-man",
+            "kind": "major",
+            "roman": "XII",
+            "hu": "Az Akasztott ember",
+            "en": "The Hanged Man",
+            "keyword": {
+                "hu": "elengedés",
+                "en": "surrender"
+            },
+            "blurb": {
+                "hu": "Az Akasztott ember más nézőpontot kínál. Állj meg, engedd el a régi fogást, és nézd meg a helyzetet fejjel lefelé. A szünet most nem veszteség, hanem betekintés.",
+                "en": "The Hanged Man offers another viewpoint. Pause, release the old grip, and see the situation upside down. The pause is insight, not loss."
+            }
+        },
+        {
+            "id": "13-death",
+            "kind": "major",
+            "roman": "XIII",
+            "hu": "A Halál",
+            "en": "Death",
+            "keyword": {
+                "hu": "átalakulás",
+                "en": "transformation"
+            },
+            "blurb": {
+                "hu": "A Halál lezárást és átalakulást hoz. Ami már nem szolgál, azt el kell engedni, hogy új forma születhessen. A változás mély, de nem a vég.",
+                "en": "Death brings ending and transformation. What no longer serves must be released so a new form can be born. The change is deep, not final."
+            }
+        },
+        {
+            "id": "14-temperance",
+            "kind": "major",
+            "roman": "XIV",
+            "hu": "A Mértékletesség",
+            "en": "Temperance",
+            "keyword": {
+                "hu": "harmónia",
+                "en": "harmony"
+            },
+            "blurb": {
+                "hu": "A Mértékletesség az elegyítés és a türelem művészete. Keverd össze az ellentéteket mértékkel. A gyógyulás és a fejlődés fokozatos lépésekben érkezik.",
+                "en": "Temperance is the art of blending and patience. Mix opposites with measure. Healing and growth arrive in gradual steps."
+            }
+        },
+        {
+            "id": "15-the-devil",
+            "kind": "major",
+            "roman": "XV",
+            "hu": "Az Ördög",
+            "en": "The Devil",
+            "keyword": {
+                "hu": "kötődések",
+                "en": "attachments"
+            },
+            "blurb": {
+                "hu": "Az Ördög a kötődéseket és a függődéseket mutatja. Ami csábít, az korlátozhat is. Látod a láncot: ettől kezdve választhatod a szabadabb utat.",
+                "en": "The Devil shows attachments and dependencies. What tempts can also confine. Once you see the chain, you can choose freer ground."
+            }
+        },
+        {
+            "id": "16-the-tower",
+            "kind": "major",
+            "roman": "XVI",
+            "hu": "A Torony",
+            "en": "The Tower",
+            "keyword": {
+                "hu": "megrázkódtatás",
+                "en": "upheaval"
+            },
+            "blurb": {
+                "hu": "A Torony hirtelen leomlást hoz a hamis szerkezetekből. A megrázkódtatás felszabadít, ha elengeded, ami már nem tartható. Az igazság most hangosan érkezik.",
+                "en": "The Tower brings sudden collapse of false structures. Shock frees you if you release what cannot hold. Truth arrives loudly now."
+            }
+        },
+        {
+            "id": "17-the-star",
+            "kind": "major",
+            "roman": "XVII",
+            "hu": "A Csillag",
+            "en": "The Star",
+            "keyword": {
+                "hu": "remény",
+                "en": "hope"
+            },
+            "blurb": {
+                "hu": "A Csillag reményt, gyógyulást és irányt ad a sötét után. Engedd, hogy a bizalom visszaáramoljon. A jövő nem távoli fény: már most vezet.",
+                "en": "The Star brings hope, healing, and guidance after darkness. Let trust return. The future is not distant light: it already leads."
+            }
+        },
+        {
+            "id": "18-the-moon",
+            "kind": "major",
+            "roman": "XVIII",
+            "hu": "A Hold",
+            "en": "The Moon",
+            "keyword": {
+                "hu": "belső világ",
+                "en": "inner world"
+            },
+            "blurb": {
+                "hu": "A Hold a bizonytalanság, álmok és belső hullámok világa. Nem minden látható tisztán. Haladj érzéssel, és ne vedd készpénznek a félelmeket.",
+                "en": "The Moon is uncertainty, dreams, and inner tides. Not everything is clear. Move by feel, and do not take every fear as fact."
+            }
+        },
+        {
+            "id": "19-the-sun",
+            "kind": "major",
+            "roman": "XIX",
+            "hu": "A Nap",
+            "en": "The Sun",
+            "keyword": {
+                "hu": "öröm",
+                "en": "joy"
+            },
+            "blurb": {
+                "hu": "A Nap világosságot, örömöt és megerősítést hoz. Ami eddig homályos volt, az kiderül. Merj láthatóvá válni és ünnepelni a saját erődet.",
+                "en": "The Sun brings clarity, joy, and affirmation. What was obscure comes into light. Dare to be seen and celebrate your strength."
+            }
+        },
+        {
+            "id": "20-judgement",
+            "kind": "major",
+            "roman": "XX",
+            "hu": "Az Ítélet",
+            "en": "Judgement",
+            "keyword": {
+                "hu": "ébredés",
+                "en": "awakening"
+            },
+            "blurb": {
+                "hu": "Az Ítélet ébredést és újrahívást jelez. Ideje válaszolni a mélyebb hívásra, és lezárni a régi fejezetet. A megújulás tudatos döntéssel indul.",
+                "en": "Judgement signals awakening and a renewed call. Answer the deeper summons and close the old chapter. Renewal begins with a conscious yes."
+            }
+        },
+        {
+            "id": "21-the-world",
+            "kind": "major",
+            "roman": "XXI",
+            "hu": "A Világ",
+            "en": "The World",
+            "keyword": {
+                "hu": "beteljesülés",
+                "en": "completion"
+            },
+            "blurb": {
+                "hu": "A Világ a kör bezárása és a beteljesülés. Ami folyamatban volt, az most összeáll. Ünnepeld az egészet, majd lépj tovább egy tágabb térbe.",
+                "en": "The World is completion and fulfillment. What was in process comes together. Celebrate the whole, then step into a wider space."
+            }
+        },
+        {
+            "id": "significator",
+            "kind": "special",
+            "file": "figures/significator.png",
+            "hu": "Kérdező",
+            "en": "Significator",
+            "keyword": {
+                "hu": "útkereső",
+                "en": "seeker"
+            },
+            "blurb": {
+                "hu": "A Kérdező te magad vagy a helyzet középpontjában. Ez a lap a szándékodat és a jelenlétedet emeli ki. A válasz rád szabott: figyeld, mi rezzen meg benned.",
+                "en": "The Significator places you at the center of the matter. It highlights your intent and presence. The answer is tailored to you: notice what stirs within."
+            }
+        },
+        {
+            "id": "wands-ace",
+            "kind": "minor",
+            "suit": "wands",
+            "rank": "ace",
+            "hu": "Pálcák ásza",
+            "en": "Ace of Wands",
+            "keyword": {
+                "hu": "szikra",
+                "en": "spark"
+            },
+            "blurb": {
+                "hu": "A Pálcák ásza új szikrát, inspirációt és induló tüzet hoz. Most születik az ötlet vagy a lendület. Fogadd el a kezdeményezést, mielőtt kihűlne.",
+                "en": "Ace of Wands brings a new spark, inspiration, and starting fire. An idea or drive is born. Claim the initiative before it cools."
+            }
+        },
+        {
+            "id": "wands-02",
+            "kind": "minor",
+            "suit": "wands",
+            "rank": "02",
+            "hu": "Pálcák kettese",
+            "en": "Two of Wands",
+            "keyword": {
+                "hu": "terv",
+                "en": "plan"
+            },
+            "blurb": {
+                "hu": "A Pálcák kettese tervezésről és távlatról szól. Már van irány, de még döntened kell a következő lépésről. Nézd a horizontot, majd válassz utat.",
+                "en": "Two of Wands is planning and outlook. Direction exists, yet the next step still needs choosing. Scan the horizon, then pick a path."
+            }
+        },
+        {
+            "id": "wands-03",
+            "kind": "minor",
+            "suit": "wands",
+            "rank": "03",
+            "hu": "Pálcák hármasa",
+            "en": "Three of Wands",
+            "keyword": {
+                "hu": "kitárulás",
+                "en": "expansion"
+            },
+            "blurb": {
+                "hu": "A Pálcák hármasa a kibontakozás és a várakozás kártyája. Ami elindult, az szélesedik. Tartsd a látómezőt nyitva, és engedd, hogy a munka meghozza a gyümölcsét.",
+                "en": "Three of Wands speaks of expansion and watchful waiting. What began is widening. Keep a broad view and let the work bear fruit."
+            }
+        },
+        {
+            "id": "wands-04",
+            "kind": "minor",
+            "suit": "wands",
+            "rank": "04",
+            "hu": "Pálcák négyese",
+            "en": "Four of Wands",
+            "keyword": {
+                "hu": "ünnep",
+                "en": "celebration"
+            },
+            "blurb": {
+                "hu": "A Pálcák négyese otthonosságot, ünnepet és biztonságos megállót hoz. Ideje elismerni, ami már áll. A közös öröm most erőt ad.",
+                "en": "Four of Wands brings belonging, celebration, and a safe pause. Acknowledge what already stands. Shared joy gives strength now."
+            }
+        },
+        {
+            "id": "wands-05",
+            "kind": "minor",
+            "suit": "wands",
+            "rank": "05",
+            "hu": "Pálcák ötöse",
+            "en": "Five of Wands",
+            "keyword": {
+                "hu": "versengés",
+                "en": "conflict"
+            },
+            "blurb": {
+                "hu": "A Pálcák ötöse versengést és szétszórt energiákat mutat. Sok hang, kevés közös irány. Keress tiszta szabályokat, vagy lépj ki a zajból.",
+                "en": "Five of Wands shows rivalry and scattered energy. Many voices, little shared aim. Seek clear rules, or step out of the noise."
+            }
+        },
+        {
+            "id": "wands-06",
+            "kind": "minor",
+            "suit": "wands",
+            "rank": "06",
+            "hu": "Pálcák hatosa",
+            "en": "Six of Wands",
+            "keyword": {
+                "hu": "győzelem",
+                "en": "triumph"
+            },
+            "blurb": {
+                "hu": "A Pálcák hatosa elismerést és előrehaladást hoz. A munkád láthatóvá válik. Fogadd el a sikert, és használd támaszként a következő szakaszhoz.",
+                "en": "Six of Wands brings recognition and forward motion. Your work becomes visible. Accept success and use it as footing for what follows."
+            }
+        },
+        {
+            "id": "wands-07",
+            "kind": "minor",
+            "suit": "wands",
+            "rank": "07",
+            "hu": "Pálcák hetese",
+            "en": "Seven of Wands",
+            "keyword": {
+                "hu": "kiállás",
+                "en": "defense"
+            },
+            "blurb": {
+                "hu": "A Pálcák hetese kiállást és védelmet kér. Ami a tiéd, azt most meg kell tartani. Ne hátrálj, ha a pozíciód igazságos.",
+                "en": "Seven of Wands asks for stance and defense. What is yours must be held. Do not retreat if your position is fair."
+            }
+        },
+        {
+            "id": "wands-08",
+            "kind": "minor",
+            "suit": "wands",
+            "rank": "08",
+            "hu": "Pálcák nyolcasa",
+            "en": "Eight of Wands",
+            "keyword": {
+                "hu": "sebesség",
+                "en": "swiftness"
+            },
+            "blurb": {
+                "hu": "A Pálcák nyolcasa gyors üzeneteket és gyorsuló eseményeket hoz. A dolgok felgyorsulnak. Maradj hajlékony, és válaszolj időben.",
+                "en": "Eight of Wands brings swift messages and accelerating events. Things speed up. Stay flexible and answer in time."
+            }
+        },
+        {
+            "id": "cups-ace",
+            "kind": "minor",
+            "suit": "cups",
+            "rank": "ace",
+            "hu": "Kelyhek ásza",
+            "en": "Ace of Cups",
+            "keyword": {
+                "hu": "érzelem",
+                "en": "feeling"
+            },
+            "blurb": {
+                "hu": "A Kelyhek ásza új érzelmi kezdetet és nyitott szívet jelez. Valami friss érzés vagy kapcsolat csírázik. Engedd átáramlani anélkül, hogy elárasztana.",
+                "en": "Ace of Cups signals a new emotional beginning and an open heart. Fresh feeling or connection is sprouting. Let it flow without flooding you."
+            }
+        },
+        {
+            "id": "cups-02",
+            "kind": "minor",
+            "suit": "cups",
+            "rank": "02",
+            "hu": "Kelyhek kettese",
+            "en": "Two of Cups",
+            "keyword": {
+                "hu": "kapcsolat",
+                "en": "union"
+            },
+            "blurb": {
+                "hu": "A Kelyhek kettese kölcsönösséget és találkozást mutat. Két világ összeér: párbeszéd, vonzalom vagy szövetség. Az egyensúly a közös jelenlétben van.",
+                "en": "Two of Cups shows reciprocity and meeting. Two worlds touch: dialogue, attraction, or alliance. Balance lives in shared presence."
+            }
+        },
+        {
+            "id": "cups-03",
+            "kind": "minor",
+            "suit": "cups",
+            "rank": "03",
+            "hu": "Kelyhek hármasa",
+            "en": "Three of Cups",
+            "keyword": {
+                "hu": "barátság",
+                "en": "friendship"
+            },
+            "blurb": {
+                "hu": "A Kelyhek hármasa barátságot, közösséget és közös örömöt hoz. Most a társaság gyógyít. Ünnepeld a kapcsolatokat, amelyek felemelnek.",
+                "en": "Three of Cups brings friendship, community, and shared joy. Company heals now. Celebrate the bonds that lift you."
+            }
+        },
+        {
+            "id": "cups-04",
+            "kind": "minor",
+            "suit": "cups",
+            "rank": "04",
+            "hu": "Kelyhek négyese",
+            "en": "Four of Cups",
+            "keyword": {
+                "hu": "elutasítás",
+                "en": "apathy"
+            },
+            "blurb": {
+                "hu": "A Kelyhek négyese unalmat vagy érzelmi visszahúzódást jelez. Lehet, hogy a kínált lehetőség nem szólít meg. Nézz újra: mi az, amit mégis megérdemelnél?",
+                "en": "Four of Cups signals boredom or emotional withdrawal. An offered chance may not speak to you. Look again: what might you still deserve?"
+            }
+        },
+        {
+            "id": "cups-05",
+            "kind": "minor",
+            "suit": "cups",
+            "rank": "05",
+            "hu": "Kelyhek ötöse",
+            "en": "Five of Cups",
+            "keyword": {
+                "hu": "veszteség",
+                "en": "loss"
+            },
+            "blurb": {
+                "hu": "A Kelyhek ötöse veszteséget és gyászt mutat. Ami kiömlött, azt látni kell. Emellett maradt még remény: fordítsd a tekinteted a megmaradt kelyhekre.",
+                "en": "Five of Cups shows loss and grief. What spilled must be seen. Hope remains: turn toward the cups still standing."
+            }
+        },
+        {
+            "id": "cups-06",
+            "kind": "minor",
+            "suit": "cups",
+            "rank": "06",
+            "hu": "Kelyhek hatosa",
+            "en": "Six of Cups",
+            "keyword": {
+                "hu": "nosztalgia",
+                "en": "nostalgia"
+            },
+            "blurb": {
+                "hu": "A Kelyhek hatosa nosztalgiát és régi kötelékeket hoz. A múlt tanít, de ne ragadj bele. Vedd át a melegséget, és engedd frissülni a jelent.",
+                "en": "Six of Cups brings nostalgia and old bonds. The past teaches, yet do not cling. Take the warmth and let the present renew."
+            }
+        },
+        {
+            "id": "cups-07",
+            "kind": "minor",
+            "suit": "cups",
+            "rank": "07",
+            "hu": "Kelyhek hetese",
+            "en": "Seven of Cups",
+            "keyword": {
+                "hu": "illúzió",
+                "en": "illusion"
+            },
+            "blurb": {
+                "hu": "A Kelyhek hetese választékot és illúziókat mutat. Sok kép lebeg előtted. Válassz valóságosat, ne csak a legcsábítóbb álmot.",
+                "en": "Seven of Cups shows options and illusions. Many images float before you. Choose what is real, not only the most tempting dream."
+            }
+        },
+        {
+            "id": "cups-08",
+            "kind": "minor",
+            "suit": "cups",
+            "rank": "08",
+            "hu": "Kelyhek nyolcasa",
+            "en": "Eight of Cups",
+            "keyword": {
+                "hu": "elhagyás",
+                "en": "departure"
+            },
+            "blurb": {
+                "hu": "A Kelyhek nyolcasa elvonulást kér attól, ami már nem táplál. Ideje továbbmenni, még ha fáj is. A mélyebb érzelmi igazság hív.",
+                "en": "Eight of Cups asks you to leave what no longer nourishes. Move on even if it hurts. A deeper emotional truth is calling."
+            }
+        },
+        {
+            "id": "swords-ace",
+            "kind": "minor",
+            "suit": "swords",
+            "rank": "ace",
+            "hu": "Kardok ásza",
+            "en": "Ace of Swords",
+            "keyword": {
+                "hu": "tisztánlátás",
+                "en": "clarity"
+            },
+            "blurb": {
+                "hu": "A Kardok ásza éles tisztánlátást és igazságot vág át a homályon. Egy gondolat vagy döntés most éles lehet. Használd a tisztaságot, ne a sebet.",
+                "en": "Ace of Swords cuts through fog with clarity and truth. A thought or decision can be sharp now. Use clarity, not the wound."
+            }
+        },
+        {
+            "id": "swords-02",
+            "kind": "minor",
+            "suit": "swords",
+            "rank": "02",
+            "hu": "Kardok kettese",
+            "en": "Two of Swords",
+            "keyword": {
+                "hu": "döntésképtelenség",
+                "en": "stalemate"
+            },
+            "blurb": {
+                "hu": "A Kardok kettese döntésképtelenséget és védelmező zártságot mutat. A szív és az elme ellentmond. Ideiglenes fegyverszünet kell, majd egy őszinte választás.",
+                "en": "Two of Swords shows indecision and guarded closure. Heart and mind conflict. A temporary truce is needed, then an honest choice."
+            }
+        },
+        {
+            "id": "swords-03",
+            "kind": "minor",
+            "suit": "swords",
+            "rank": "03",
+            "hu": "Kardok hármasa",
+            "en": "Three of Swords",
+            "keyword": {
+                "hu": "szívfájdalom",
+                "en": "heartbreak"
+            },
+            "blurb": {
+                "hu": "A Kardok hármasa szívfájdalmat és őszinte bánatot hoz. A fájdalom valóságos. Engedd átélni, hogy a gyógyulás elkezdődhessen.",
+                "en": "Three of Swords brings heartache and honest sorrow. The pain is real. Feel it so healing can begin."
+            }
+        },
+        {
+            "id": "swords-04",
+            "kind": "minor",
+            "suit": "swords",
+            "rank": "04",
+            "hu": "Kardok négyese",
+            "en": "Four of Swords",
+            "keyword": {
+                "hu": "pihenés",
+                "en": "rest"
+            },
+            "blurb": {
+                "hu": "A Kardok négyese pihenést és mentális szünetet kér. Állj meg, mielőtt továbbharcolnál. A regeneráció most stratégia.",
+                "en": "Four of Swords asks for rest and a mental pause. Stop before you fight on. Recovery is strategy now."
+            }
+        },
+        {
+            "id": "swords-05",
+            "kind": "minor",
+            "suit": "swords",
+            "rank": "05",
+            "hu": "Kardok ötöse",
+            "en": "Five of Swords",
+            "keyword": {
+                "hu": "üres győzelem",
+                "en": "hollow win"
+            },
+            "blurb": {
+                "hu": "A Kardok ötöse üres győzelmet és feszült rivalizálást mutat. Megnyerheted a vitát, és elveszítheted a kapcsolatot. Mérlegeld, mi ér meg ennyit.",
+                "en": "Five of Swords shows hollow victory and tense rivalry. You may win the argument and lose the bond. Weigh what is worth that cost."
+            }
+        },
+        {
+            "id": "swords-06",
+            "kind": "minor",
+            "suit": "swords",
+            "rank": "06",
+            "hu": "Kardok hatosa",
+            "en": "Six of Swords",
+            "keyword": {
+                "hu": "átkelés",
+                "en": "passage"
+            },
+            "blurb": {
+                "hu": "A Kardok hatosa átkelést hoz a nehezebb part felől. A változás csendes, de határozott. Vidd magaddal, ami segít, és hagyd hátra a zajt.",
+                "en": "Six of Swords brings passage from harder shores. Change is quiet but firm. Take what helps and leave the noise behind."
+            }
+        },
+        {
+            "id": "swords-07",
+            "kind": "minor",
+            "suit": "swords",
+            "rank": "07",
+            "hu": "Kardok hetese",
+            "en": "Seven of Swords",
+            "keyword": {
+                "hu": "stratégia",
+                "en": "strategy"
+            },
+            "blurb": {
+                "hu": "A Kardok hetese stratégiát, ügyességet és titkolózást jelez. Nem minden út egyenes. Légy okos, de ne veszítsd el a magad becsületét.",
+                "en": "Seven of Swords signals strategy, craft, and concealment. Not every path is straight. Be clever without losing your integrity."
+            }
+        },
+        {
+            "id": "swords-08",
+            "kind": "minor",
+            "suit": "swords",
+            "rank": "08",
+            "hu": "Kardok nyolcasa",
+            "en": "Eight of Swords",
+            "keyword": {
+                "hu": "korlátozás",
+                "en": "restriction"
+            },
+            "blurb": {
+                "hu": "A Kardok nyolcasa korlátozottságot és önmagadra kötött gondolatokat mutat. A ketrec egy része mentális. Egy új nézőpont máris enyhíthet.",
+                "en": "Eight of Swords shows restriction and self-bound thoughts. Part of the cage is mental. A new viewpoint can already ease it."
+            }
+        },
+        {
+            "id": "pentacles-ace",
+            "kind": "minor",
+            "suit": "pentacles",
+            "rank": "ace",
+            "hu": "Pentákulumok ásza",
+            "en": "Ace of Pentacles",
+            "keyword": {
+                "hu": "lehetőség",
+                "en": "opportunity"
+            },
+            "blurb": {
+                "hu": "A Pentákulumok ásza kézzelfogható lehetőséget és új anyagi vagy gyakorlati kezdetet hoz. Ültess el valamit a földbe. A mag most értékes.",
+                "en": "Ace of Pentacles brings a tangible opportunity and a practical or material start. Plant something in the ground. The seed is precious now."
+            }
+        },
+        {
+            "id": "pentacles-02",
+            "kind": "minor",
+            "suit": "pentacles",
+            "rank": "02",
+            "hu": "Pentákulumok kettese",
+            "en": "Two of Pentacles",
+            "keyword": {
+                "hu": "egyensúlyozás",
+                "en": "juggling"
+            },
+            "blurb": {
+                "hu": "A Pentákulumok kettese egyensúlyozást és váltakozó ritmust mutat. Sok labda van a levegőben. Maradj rugalmas, és ne engedd el a lényeget.",
+                "en": "Two of Pentacles shows juggling and shifting rhythm. Many balls are in the air. Stay flexible and do not drop what matters."
+            }
+        },
+        {
+            "id": "pentacles-03",
+            "kind": "minor",
+            "suit": "pentacles",
+            "rank": "03",
+            "hu": "Pentákulumok hármasa",
+            "en": "Three of Pentacles",
+            "keyword": {
+                "hu": "mesterség",
+                "en": "craft"
+            },
+            "blurb": {
+                "hu": "A Pentákulumok hármasa mesterséget, együttműködést és minőségi munkát hoz. A részletek számítanak. Építsd a hírneved a jól végzett feladattal.",
+                "en": "Three of Pentacles brings craft, collaboration, and quality work. Details matter. Build reputation through work well done."
+            }
+        },
+        {
+            "id": "pentacles-04",
+            "kind": "minor",
+            "suit": "pentacles",
+            "rank": "04",
+            "hu": "Pentákulumok négyese",
+            "en": "Four of Pentacles",
+            "keyword": {
+                "hu": "megtartás",
+                "en": "control"
+            },
+            "blurb": {
+                "hu": "A Pentákulumok négyese megtartást és kontrollt mutat. A biztonság fontos, de a túl szoros fogás elzárhatja az áramlást. Engedd, ami megosztható.",
+                "en": "Four of Pentacles shows holding and control. Safety matters, yet too tight a grip can block flow. Release what can be shared."
+            }
+        },
+        {
+            "id": "pentacles-05",
+            "kind": "minor",
+            "suit": "pentacles",
+            "rank": "05",
+            "hu": "Pentákulumok ötöse",
+            "en": "Five of Pentacles",
+            "keyword": {
+                "hu": "szűkösség",
+                "en": "hardship"
+            },
+            "blurb": {
+                "hu": "A Pentákulumok ötöse szűkösséget és kirekesztettséget jelez. A nehézség valóságos. Keress támaszt, és ne hidd, hogy egyedül kell kibírnod.",
+                "en": "Five of Pentacles signals hardship and feeling left out. The difficulty is real. Seek support and do not believe you must endure alone."
+            }
+        },
+        {
+            "id": "pentacles-06",
+            "kind": "minor",
+            "suit": "pentacles",
+            "rank": "06",
+            "hu": "Pentákulumok hatosa",
+            "en": "Six of Pentacles",
+            "keyword": {
+                "hu": "adás",
+                "en": "generosity"
+            },
+            "blurb": {
+                "hu": "A Pentákulumok hatosa adásról és fogadásról szól. Az egyensúly a méltányos cserében van. Segíts, ahol tudsz, és fogadd el a segítséget is.",
+                "en": "Six of Pentacles is about giving and receiving. Balance lives in fair exchange. Help where you can, and accept help too."
+            }
+        },
+        {
+            "id": "pentacles-07",
+            "kind": "minor",
+            "suit": "pentacles",
+            "rank": "07",
+            "hu": "Pentákulumok hetese",
+            "en": "Seven of Pentacles",
+            "keyword": {
+                "hu": "értékelés",
+                "en": "assessment"
+            },
+            "blurb": {
+                "hu": "A Pentákulumok hetese értékelést és türelmes várakozást kér. A munka megvan; most nézd meg, mi érlelődött. Ne kapkodd el idő előtt a termést.",
+                "en": "Seven of Pentacles asks for assessment and patient waiting. The work is done; now see what has ripened. Do not harvest too soon."
+            }
+        },
+        {
+            "id": "pentacles-08",
+            "kind": "minor",
+            "suit": "pentacles",
+            "rank": "08",
+            "hu": "Pentákulumok nyolcasa",
+            "en": "Eight of Pentacles",
+            "keyword": {
+                "hu": "szorgalom",
+                "en": "diligence"
+            },
+            "blurb": {
+                "hu": "A Pentákulumok nyolcasa szorgalmat, gyakorlást és mesterségbeli fejlődést hoz. A részletekbe merülés most előrevisz. Csiszold a készséget naponta.",
+                "en": "Eight of Pentacles brings diligence, practice, and craft growth. Immersion in detail moves you forward. Polish the skill daily."
+            }
+        }
+    ]
+}

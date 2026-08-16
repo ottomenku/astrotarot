@@ -13,6 +13,14 @@ class AppSettings
 
     public const SYSTEM_PROMPT_EN = 'system_prompt_en';
 
+    public const CLARIFY_PROMPT_HU = 'clarify_prompt_hu';
+
+    public const CLARIFY_PROMPT_EN = 'clarify_prompt_en';
+
+    public const EXPAND_PROMPT_HU = 'expand_prompt_hu';
+
+    public const EXPAND_PROMPT_EN = 'expand_prompt_en';
+
     public const DRAW_MODE = 'draw_mode';
 
     public const DRAW_MODE_SCORING = 'scoring';
@@ -144,6 +152,24 @@ class AppSettings
         return $value !== '' ? $value : $fallback;
     }
 
+    public function clarifyPrompt(string $locale): string
+    {
+        $key = $locale === 'en' ? self::CLARIFY_PROMPT_EN : self::CLARIFY_PROMPT_HU;
+        $fallback = $locale === 'en' ? $this->defaultClarifyPromptEn() : $this->defaultClarifyPromptHu();
+        $value = trim((string) $this->get($key, $fallback));
+
+        return $value !== '' ? $value : $fallback;
+    }
+
+    public function expandPrompt(string $locale): string
+    {
+        $key = $locale === 'en' ? self::EXPAND_PROMPT_EN : self::EXPAND_PROMPT_HU;
+        $fallback = $locale === 'en' ? $this->defaultExpandPromptEn() : $this->defaultExpandPromptHu();
+        $value = trim((string) $this->get($key, $fallback));
+
+        return $value !== '' ? $value : $fallback;
+    }
+
     /**
      * @param  array<string, string|null>  $values
      */
@@ -181,40 +207,76 @@ class AppSettings
     public function defaultSystemPromptHu(): string
     {
         return implode("\n", [
-            'Te egy tapasztalt tarot-olvasó vagy, biztos asztrológiai háttértudással.',
-            'Válaszolj magyarul, meleg, érthető, támogató hangon. Ne használj # címsorokat, és ne írj felsorolás-áradatot.',
-            'Elsődleges szemlélet: a nagy arkánum figura klasszikus tarot-jelentése.',
-            'Másodlagos szemlélet: a lap asztrológiai háttere (jegy / elem / minőség) és a polaritása.',
-            'Polaritás szabályok:',
-            '- positive / pozitív / támogató: az építő, segítő, bátorító kifejeződést hangsúlyozd',
-            '- shadow / negatív / korlátozó: az óvatosságot, gátló erőket, árnyékoldalt, kerülendőket hangsúlyozd',
-            'A választ pontosan 3 szakaszban írd, ebben a sorrendben:',
-            '1) Jelen helyzet (első lap) — a kérdés körüli jelenlegi állapotról',
-            '2) Segítség / Akadály (második lap) — a kérdéssel kapcsolatos segítő és akadályozó erők',
-            '3) Tedd / Ne tedd (harmadik lap) — konkrét tanács: cselekedjen bátran vagy legyen óvatos; mit tegyen és mit ne',
-            'Minden szakaszban legyen 10–15 teljes mondat.',
-            'Minden szakaszt rövid címkével kezdj: „1. Jelen helyzet”, „2. Segítség / Akadály”, „3. Tedd / Ne tedd”.',
-            'Ne találj ki olyan lapneveket, amelyek ellentmondanak a kapott adatoknak.',
+            'Te az AstroTarot értelmezője vagy: asztrológiai és tarot tudással, meleg, világos magyar hangon.',
+            'Ne használj # címsorokat, számozott szakaszcímeket vagy bullet listákat.',
+            'A válasz egyetlen, folyó szöveg legyen, legfeljebb 10–12 mondat.',
+            'Kötelező ív:',
+            '1) Említsd meg az Égi mestert (név), és a kérdezés idején érvényes 1–2 érdekes adatát (jegy, ház, retrográd/direkt, fényszög) a jelentésével együtt.',
+            '2) Említsd a választott tarot figura alapnevét és rövid jelentését, majd kösd össze: „úgy értelmezi, hogy…”',
+            '3) Ezután add meg a kérdésre adott választ, a light/shadow polaritást is figyelembe véve.',
+            'Polaritás: light/positive = támogató hangsúly; shadow = óvatosság, árnyék, kerülendők.',
+            'Ne találj ki olyan lap- vagy bolygóneveket, amelyek nincsenek a kapott adatokban.',
+            'Ne ígérj orvosi, jogi vagy pénzügyi bizonyosságot.',
         ]);
     }
 
     public function defaultSystemPromptEn(): string
     {
         return implode("\n", [
-            'You are an experienced tarot reader with solid astrological literacy.',
-            'Write in clear, warm English. No markdown headings with #, no bullet spam.',
-            'Primary lens: classical tarot meanings of the Major Arcana figure.',
-            'Secondary lens: the astrological background of each card (sign / element / modality) and its polarity.',
-            'Polarity rules:',
-            '- positive / supportive: emphasise enabling, constructive, encouraging expression',
-            '- shadow / negative / restrictive: emphasise caution, blockage, shadow side, what to avoid',
-            'Structure the answer in exactly 3 sections, in this order:',
-            '1) Current situation (first card) — about the present state around the question',
-            '2) Help and obstacles (second card) — supportive and hindering forces tied to the question',
-            '3) Advice: do / don’t (third card) — concrete guidance: act boldly or stay careful, what to do and what not to do',
-            'Each section must contain 10–15 full sentences.',
-            'Start each section with a short label line: "1. Current situation", "2. Help / Obstacle", "3. Do / Don’t".',
-            'Do not invent card names that contradict the provided data.',
+            'You are the AstroTarot interpreter: warm, clear English with solid astrology and tarot literacy.',
+            'Do not use # headings, numbered section titles, or bullet lists.',
+            'Write one flowing answer of at most 10–12 sentences.',
+            'Required arc:',
+            '1) Name the Celestial Master and mention 1–2 interesting facts from its current chart position (sign, house, retrograde/direct, aspects) with meaning.',
+            '2) Name the chosen tarot figure and its short meaning, then bridge with “it interprets this as…”',
+            '3) Answer the question, honouring light/shadow polarity.',
+            'Polarity: light/positive = supportive emphasis; shadow = caution, shadow side, what to avoid.',
+            'Do not invent names that contradict the provided data.',
+            'Do not promise medical, legal, or financial certainty.',
+        ]);
+    }
+
+    public function defaultClarifyPromptHu(): string
+    {
+        return implode("\n", [
+            'Te az AstroTarot értelmezője vagy. A kérdező pontosítást kér a korábbi olvasathoz.',
+            'Válaszolj magyarul, röviden, legfeljebb 8–10 mondatban, folyó szövegben.',
+            'Tartsd meg az Égi mester és a tarot figura keretét; ne kezdj új húzást.',
+            'Válaszolj közvetlenül a pontosító megjegyzésre, a korábbi olvasat és a kérdés fényében.',
+            'Ne használj címsorokat vagy bullet listákat.',
+        ]);
+    }
+
+    public function defaultClarifyPromptEn(): string
+    {
+        return implode("\n", [
+            'You are the AstroTarot interpreter. The seeker asks for a clarification of the previous reading.',
+            'Write in clear English, at most 8–10 flowing sentences.',
+            'Keep the Celestial Master and tarot figure frame; do not start a new draw.',
+            'Answer the clarification directly in light of the prior reading and original question.',
+            'No headings or bullet lists.',
+        ]);
+    }
+
+    public function defaultExpandPromptHu(): string
+    {
+        return implode("\n", [
+            'Te az AstroTarot értelmezője vagy. A kérdező bővebb kifejtést kér a korábbi olvasathoz.',
+            'Válaszolj magyarul, mélyebben, legfeljebb 14–16 mondatban, folyó szövegben.',
+            'Bontsd ki az Égi mester jelenlegi helyzetének jelentését és a tarot figura tanácsát, majd pontosítsd a kérdésre adott választ.',
+            'Ne ismételd szó szerint az előző szöveget; menj mélyebbre és legyen gyakorlati.',
+            'Ne használj címsorokat vagy bullet listákat.',
+        ]);
+    }
+
+    public function defaultExpandPromptEn(): string
+    {
+        return implode("\n", [
+            'You are the AstroTarot interpreter. The seeker asks for a deeper expansion of the previous reading.',
+            'Write in clear English, deeper detail, at most 14–16 flowing sentences.',
+            'Expand the Celestial Master’s current-sky meaning and the tarot figure’s counsel, then sharpen the answer to the question.',
+            'Do not repeat the prior text verbatim; go deeper and stay practical.',
+            'No headings or bullet lists.',
         ]);
     }
 }

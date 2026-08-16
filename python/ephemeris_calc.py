@@ -107,34 +107,75 @@ def calc_ayanamsa(jd: float, sidereal: bool) -> float:
     return swe.get_ayanamsa(jd)
 
 
-def object_row(name: str, longitude: float, kind: str, fixed_star: str | None = None) -> dict:
+def object_row(
+    name: str,
+    longitude: float,
+    kind: str,
+    *,
+    fixed_star: str | None = None,
+    retrograde: bool = False,
+    house: int | None = None,
+) -> dict:
     sign, sign_degree = zodiac_sign(longitude)
-    return {
+    row = {
         "name": name,
         "kind": kind,
         "longitude": round(longitude, 6),
         "sign": sign,
         "degree": round(sign_degree, 4),
         "fixed_star": fixed_star,
+        "retrograde": bool(retrograde),
     }
+    if house is not None:
+        row["house"] = int(house)
+    return row
 
 
-def calc_planets(jd: float, ayanamsa: float) -> list[dict]:
-    flags = swe.FLG_SWIEPH | swe.FLG_MOSEPH
+def house_number(longitude: float, cusps) -> int:
+    """Return Placidus house 1..12. pyswisseph returns 12 cusps at indices 0..11."""
+    cusp_list = list(cusps)
+    if len(cusp_list) >= 13:
+        cusp_list = [cusp_list[i] for i in range(1, 13)]
+    else:
+        cusp_list = cusp_list[:12]
+
+    lon = normalize_degree(longitude)
+    for i in range(12):
+        start = normalize_degree(cusp_list[i])
+        end = normalize_degree(cusp_list[(i + 1) % 12])
+        if start <= end:
+            if start <= lon < end:
+                return i + 1
+        elif lon >= start or lon < end:
+            return i + 1
+    return 1
+
+
+def calc_planets(jd: float, ayanamsa: float, cusps) -> list[dict]:
+    flags = swe.FLG_SWIEPH | swe.FLG_MOSEPH | swe.FLG_SPEED
     results = []
     for planet_id, name in PLANETS:
-        lon = normalize_degree(swe.calc_ut(jd, planet_id, flags)[0][0] - ayanamsa)
-        results.append(object_row(name, lon, "planet"))
+        xx = swe.calc_ut(jd, planet_id, flags)[0]
+        lon = normalize_degree(xx[0] - ayanamsa)
+        speed = xx[3]
+        results.append(
+            object_row(
+                name,
+                lon,
+                "planet",
+                retrograde=speed < 0,
+                house=house_number(lon, cusps),
+            )
+        )
     return results
 
 
-def calc_special_points(jd: float, lat: float, lon: float, ayanamsa: float) -> list[dict]:
-    _cusps, ascmc = swe.houses(jd, lat, lon, b"P")
+def calc_special_points(jd: float, lat: float, lon: float, ayanamsa: float, cusps, ascmc) -> list[dict]:
     asc = normalize_degree(ascmc[0] - ayanamsa)
     mc = normalize_degree(ascmc[1] - ayanamsa)
     return [
-        object_row("ASC", asc, "point"),
-        object_row("MC", mc, "point"),
+        object_row("ASC", asc, "point", house=house_number(asc, cusps)),
+        object_row("MC", mc, "point", house=house_number(mc, cusps)),
     ]
 
 
@@ -180,16 +221,17 @@ def build_ephemeris(payload: dict) -> dict:
 
     jd = julian_day(dt)
     ayanamsa = calc_ayanamsa(jd, sidereal)
+    cusps, ascmc = swe.houses(jd, lat, lon, b"P")
 
-    planets = calc_planets(jd, ayanamsa)
-    points = calc_special_points(jd, lat, lon, ayanamsa)
+    planets = calc_planets(jd, ayanamsa, cusps)
+    points = calc_special_points(jd, lat, lon, ayanamsa, cusps, ascmc)
     stars = calc_fixed_stars(jd, ayanamsa)
 
     # South Node derived from True Node
     true_node = next((p for p in planets if p["name"] == "True Node"), None)
     if true_node is not None:
         south = normalize_degree(true_node["longitude"] + 180.0)
-        points.append(object_row("South Node", south, "point"))
+        points.append(object_row("South Node", south, "point", house=house_number(south, cusps)))
 
     chart_objects = planets + points
     attach_conjunctions(chart_objects, stars, orb)

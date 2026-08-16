@@ -107,6 +107,8 @@ class EphemerisService
                 'sign' => $sign,
                 'degree' => $this->clampDegree((float) $degree),
                 'retrograde' => (bool) ($object['retrograde'] ?? false),
+                'longitude' => isset($object['longitude']) ? (float) $object['longitude'] : null,
+                'house' => isset($object['house']) ? (int) $object['house'] : null,
             ];
         }
 

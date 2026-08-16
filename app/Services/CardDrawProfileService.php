@@ -55,7 +55,8 @@ class CardDrawProfileService
      *     slots: list<string>,
      *     draw_mode: string,
      *     chart_mode: string,
-     *     datetime_utc: string
+     *     datetime_utc: string,
+     *     chart?: array{objects: list<array<string, mixed>>, aspects: list<array<string, mixed>>}
      * }
      */
     public function forNow(): array
@@ -74,6 +75,7 @@ class CardDrawProfileService
             $profile = $this->fromEphemerisResult($result, $mode);
             $profile['chart_mode'] = $chart['mode'];
             $profile['datetime_utc'] = $chart['datetime_utc'];
+            $profile['chart'] = $this->chartSnapshot($result);
 
             return $profile;
         } catch (Throwable $e) {
@@ -177,7 +179,117 @@ class CardDrawProfileService
             'draw_mode' => $mode,
             'chart_mode' => 'now',
             'datetime_utc' => now('UTC')->format('Y-m-d\TH:i:s\Z'),
+            'chart' => [
+                'objects' => [],
+                'aspects' => [],
+            ],
         ]);
+    }
+
+    /**
+     * Compact chart payload for the homepage captions.
+     *
+     * @param  array<string, mixed>  $result
+     * @return array{objects: list<array<string, mixed>>, aspects: list<array<string, mixed>>}
+     */
+    private function chartSnapshot(array $result): array
+    {
+        $objects = [];
+        foreach ($result['objects'] ?? [] as $object) {
+            if (! is_array($object)) {
+                continue;
+            }
+            $kind = (string) ($object['kind'] ?? '');
+            if (! in_array($kind, ['planet', 'point'], true)) {
+                continue;
+            }
+            $name = (string) ($object['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $objects[] = [
+                'id' => $this->chartObjectId($name),
+                'name' => $name,
+                'kind' => $kind,
+                'sign' => $this->normalizeSign((string) ($object['sign'] ?? '')) ?? strtolower((string) ($object['sign'] ?? '')),
+                'sign_label' => (string) ($object['sign'] ?? ''),
+                'degree' => round((float) ($object['degree'] ?? 0), 1),
+                'house' => isset($object['house']) ? (int) $object['house'] : null,
+                'retrograde' => (bool) ($object['retrograde'] ?? false),
+            ];
+        }
+
+        $nameToId = [];
+        foreach ($objects as $object) {
+            $nameToId[$object['name']] = $object['id'];
+        }
+        foreach ([
+            'Nap' => 'sun', 'Hold' => 'moon', 'Merkúr' => 'mercury', 'Vénusz' => 'venus',
+            'Mars' => 'mars', 'Jupiter' => 'jupiter', 'Szaturnusz' => 'saturn',
+            'Uránusz' => 'uranus', 'Neptunusz' => 'neptune', 'Plútó' => 'pluto',
+            'Felszálló Holdcsomó' => 'true_node', 'Leszálló Holdcsomó' => 'south_node',
+            'Lilith' => 'lilith', 'ASC' => 'asc', 'MC' => 'mc',
+            'True Node' => 'true_node', 'South Node' => 'south_node', 'Mean Lilith' => 'lilith',
+        ] as $label => $id) {
+            $nameToId[$label] = $id;
+        }
+
+        $aspects = [];
+        foreach ($result['scoring']['aspects'] ?? [] as $aspect) {
+            if (! is_array($aspect)) {
+                continue;
+            }
+            $a = (string) ($aspect['objektum_1'] ?? '');
+            $b = (string) ($aspect['objektum_2'] ?? '');
+            $aspects[] = [
+                'a' => $a,
+                'b' => $b,
+                'a_id' => $nameToId[$a] ?? $this->chartObjectId($a),
+                'b_id' => $nameToId[$b] ?? $this->chartObjectId($b),
+                'type' => (string) ($aspect['fenyszog'] ?? ''),
+                'orb' => (float) ($aspect['orb'] ?? 0),
+                'tone' => (string) ($aspect['jelleg'] ?? ''),
+            ];
+        }
+
+        return [
+            'objects' => $objects,
+            'aspects' => $aspects,
+        ];
+    }
+
+    private function chartObjectId(string $name): string
+    {
+        $map = [
+            'Sun' => 'sun',
+            'Moon' => 'moon',
+            'Mercury' => 'mercury',
+            'Venus' => 'venus',
+            'Mars' => 'mars',
+            'Jupiter' => 'jupiter',
+            'Saturn' => 'saturn',
+            'Uranus' => 'uranus',
+            'Neptune' => 'neptune',
+            'Pluto' => 'pluto',
+            'True Node' => 'true_node',
+            'Mean Lilith' => 'lilith',
+            'ASC' => 'asc',
+            'MC' => 'mc',
+            'South Node' => 'south_node',
+            'Nap' => 'sun',
+            'Hold' => 'moon',
+            'Merkúr' => 'mercury',
+            'Vénusz' => 'venus',
+            'Szaturnusz' => 'saturn',
+            'Uránusz' => 'uranus',
+            'Neptunusz' => 'neptune',
+            'Plútó' => 'pluto',
+            'Felszálló Holdcsomó' => 'true_node',
+            'Leszálló Holdcsomó' => 'south_node',
+            'Lilith' => 'lilith',
+        ];
+
+        return $map[$name] ?? strtolower(str_replace(' ', '_', $name));
     }
 
     /**

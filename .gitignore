@@ -26,6 +26,16 @@ yarn-error.log
 # Source design packs (built assets live under public/templates)
 /Astro-Tarot-Art-Deco-Master-v1/
 /AstroTarot-webapp-source/
+/assets/
+
+# Local debug dumps
+/_inspect_live_home.php
+/_live_app.js
+/_live_deck.json
+/_live_home.html
+/_mobile_debug/
+/_*.png
+/_*.py
 
 # Local/server deploy artifacts and secrets
 /deploy/stage/

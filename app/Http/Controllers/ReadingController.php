@@ -24,17 +24,42 @@ class ReadingController extends Controller
         $data = $request->validate([
             'question' => ['required', 'string', 'min:'.$minChars, 'max:280'],
             'locale' => ['nullable', 'string', 'in:hu,en'],
+            'mode' => ['nullable', 'string', 'in:initial,clarify,expand'],
+            'previous_reading' => ['nullable', 'string', 'max:12000'],
+            'follow_up' => ['nullable', 'string', 'max:500'],
             'astro' => ['nullable', 'array'],
-            'cards' => ['required', 'array', 'size:3'],
+            'cards' => ['required', 'array', 'size:2'],
             'cards.*.figure_id' => ['required', 'string', 'max:64'],
             'cards.*.figure_name' => ['nullable', 'string', 'max:120'],
             'cards.*.keyword' => ['nullable', 'string', 'max:120'],
+            'cards.*.blurb' => ['nullable', 'string', 'max:1200'],
             'cards.*.background_id' => ['required', 'string', 'max:64'],
             'cards.*.background' => ['nullable', 'string', 'max:64'],
             'cards.*.variant' => ['nullable', 'string', 'max:32'],
             'cards.*.polarity' => ['nullable', 'string', 'max:32'],
-            'cards.*.astro_caption' => ['nullable', 'string', 'max:180'],
+            'cards.*.deck' => ['nullable', 'string', 'max:32'],
+            'cards.*.slot_title' => ['nullable', 'string', 'max:120'],
+            'cards.*.astro_caption' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        $mode = $data['mode'] ?? TarotReadingService::MODE_INITIAL;
+
+        if ($mode === TarotReadingService::MODE_CLARIFY && trim((string) ($data['follow_up'] ?? '')) === '') {
+            return response()->json([
+                'error' => app()->getLocale() === 'en'
+                    ? 'Please write a clarification first.'
+                    : 'Írd be a pontosítást.',
+            ], 422);
+        }
+
+        if (in_array($mode, [TarotReadingService::MODE_CLARIFY, TarotReadingService::MODE_EXPAND], true)
+            && trim((string) ($data['previous_reading'] ?? '')) === '') {
+            return response()->json([
+                'error' => app()->getLocale() === 'en'
+                    ? 'Previous reading is missing.'
+                    : 'Hiányzik a korábbi olvasat.',
+            ], 422);
+        }
 
         try {
             $text = $readings->interpret([
@@ -42,6 +67,9 @@ class ReadingController extends Controller
                 'locale' => $data['locale'] ?? app()->getLocale(),
                 'cards' => $data['cards'],
                 'astro' => $data['astro'] ?? [],
+                'mode' => $mode,
+                'previous_reading' => $data['previous_reading'] ?? null,
+                'follow_up' => $data['follow_up'] ?? null,
                 'ip' => $request->ip(),
             ]);
         } catch (RuntimeException $e) {
@@ -56,6 +84,7 @@ class ReadingController extends Controller
 
         return response()->json([
             'reading' => $text,
+            'mode' => $mode,
         ]);
     }
 }
