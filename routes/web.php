@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\CreditPackageController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\PromoShareController;
 use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\ReadingExportController;
 use App\Http\Controllers\ReadingHistoryController;

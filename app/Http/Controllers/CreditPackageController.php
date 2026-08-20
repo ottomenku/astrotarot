@@ -30,7 +30,7 @@ class CreditPackageController extends Controller
             'locale' => $locale,
             'assetBase' => asset('templates/art-deco'),
             'astroMottoUrl' => CreditService::ASTROMOTTO_URL,
-            'shareUrl' => url('/'),
+            'shareUrl' => route('promo.share'),
             'canViewHistory' => $user ? $this->credits->canViewHistory($user) : false,
             'hasAstroMotto' => $user ? $this->credits->hasAstroMottoAccess($user) : false,
         ]);
