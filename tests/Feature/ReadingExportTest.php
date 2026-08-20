@@ -109,6 +109,9 @@ class ReadingExportTest extends TestCase
             ->assertSee('Mit tegyek most a kapcsolatommal?', false)
             ->assertSee('Az első válasz szövege.', false)
             ->assertSee('A második, bővebb válasz.', false)
-            ->assertSee('Mars', false);
+            ->assertSee('Mars', false)
+            ->assertSee('og:image', false)
+            ->assertSee('og:title', false)
+            ->assertSee(route('reading.share.og', $token), false);
     }
 }

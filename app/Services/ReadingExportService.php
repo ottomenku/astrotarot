@@ -83,6 +83,10 @@ class ReadingExportService
                         (string) ($card['figure_id'] ?? '')
                     )
                     : null,
+                'image_url' => app(OgImageService::class)->figurePublicUrl(
+                    (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot')),
+                    (string) ($card['figure_id'] ?? '')
+                ),
             ];
         }
 

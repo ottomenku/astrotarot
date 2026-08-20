@@ -68,6 +68,9 @@ Route::middleware('auth')->group(function () {
 Route::get('/share/{token}', [ReadingExportController::class, 'show'])
     ->where('token', '[A-Za-z0-9]{20,64}')
     ->name('reading.share.show');
+Route::get('/share/{token}/og.jpg', [ReadingExportController::class, 'ogImage'])
+    ->where('token', '[A-Za-z0-9]{20,64}')
+    ->name('reading.share.og');
 
 Route::prefix('admin')
     ->name('admin.')

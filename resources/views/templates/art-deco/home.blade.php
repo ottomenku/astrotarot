@@ -157,9 +157,15 @@
             <div class="reading-share" data-reading-share hidden>
                 <p class="reading-share-label" data-reading-share-label>{{ __('messages.share_label') }}</p>
                 <div class="reading-share-actions">
-                    <button type="button" class="reading-share-btn" data-share-pdf>{{ __('messages.share_pdf') }}</button>
-                    <button type="button" class="reading-share-btn" data-share-email>{{ __('messages.share_email') }}</button>
-                    <button type="button" class="reading-share-btn" data-share-facebook>{{ __('messages.share_facebook') }}</button>
+                    <button type="button" class="reading-share-btn reading-share-icon" data-share-pdf title="{{ __('messages.share_pdf') }}" aria-label="{{ __('messages.share_pdf') }}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm1 7V3.5L18.5 9H15zM8 13h2.5a1.5 1.5 0 0 1 0 3H9v2H8v-5zm1 1v1.5h1.5a.5.5 0 0 0 0-1H9zm4.5 0H14a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-.5a.5.5 0 0 1-.5-.5v-3a.5.5 0 0 1 .5-.5zm0 1v2h.5v-2h-.5zM16 13h3v1h-2v1h1.5v1H17v1h-1v-4z"/></svg>
+                    </button>
+                    <button type="button" class="reading-share-btn reading-share-icon" data-share-email title="{{ __('messages.share_email') }}" aria-label="{{ __('messages.share_email') }}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg>
+                    </button>
+                    <button type="button" class="reading-share-btn reading-share-icon reading-share-fb" data-share-facebook title="{{ __('messages.share_facebook') }}" aria-label="{{ __('messages.share_facebook') }}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M22 12.07C22 6.48 17.52 2 11.93 2S1.86 6.48 1.86 12.07c0 5.02 3.66 9.18 8.44 9.93v-7.03H7.9v-2.9h2.4V9.84c0-2.37 1.41-3.68 3.57-3.68 1.03 0 2.12.18 2.12.18v2.33h-1.2c-1.18 0-1.55.73-1.55 1.48v1.78h2.64l-.42 2.9h-2.22V22c4.78-.75 8.44-4.91 8.44-9.93z"/></svg>
+                    </button>
                 </div>
             </div>
         </article>

@@ -468,9 +468,12 @@
     if (els.readingFollowupSend) els.readingFollowupSend.textContent = text.followupSend;
     if (els.readingFollowupExpand) els.readingFollowupExpand.textContent = text.followupExpand;
     if (els.readingShareLabel) els.readingShareLabel.textContent = text.shareLabel;
-    if (els.sharePdf) els.sharePdf.textContent = text.sharePdf;
-    if (els.shareEmail) els.shareEmail.textContent = text.shareEmail;
-    if (els.shareFacebook) els.shareFacebook.textContent = text.shareFacebook;
+    if (els.sharePdf) els.sharePdf.setAttribute('aria-label', text.sharePdf);
+    if (els.sharePdf) els.sharePdf.setAttribute('title', text.sharePdf);
+    if (els.shareEmail) els.shareEmail.setAttribute('aria-label', text.shareEmail);
+    if (els.shareEmail) els.shareEmail.setAttribute('title', text.shareEmail);
+    if (els.shareFacebook) els.shareFacebook.setAttribute('aria-label', text.shareFacebook);
+    if (els.shareFacebook) els.shareFacebook.setAttribute('title', text.shareFacebook);
     if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/${SLOT_COUNT} ${text.selected}`;
     if (els.deckLabel) {
       els.deckLabel.textContent = activeDeck === 'tarot' ? text.deckTarot : text.deckOracle;
