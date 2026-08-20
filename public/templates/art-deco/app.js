@@ -7,6 +7,8 @@
   const readingUrl = root.dataset.readingUrl;
   const minQuestionChars = Math.max(1, Number.parseInt(root.dataset.minQuestionChars || '10', 10) || 10);
   const llmEnabled = root.dataset.llmEnabled !== '0';
+  const isAuthenticated = root.dataset.authenticated === '1';
+  const openAuthOnLoad = root.dataset.openAuth === '1';
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
   const initialLocale = root.dataset.locale === 'en' ? 'en' : 'hu';
   const drawProfile = (() => {
@@ -53,6 +55,8 @@
       followupSend: 'Elküld',
       followupExpand: 'Bővebb kifejtést kérek',
       followupNeedText: 'Írd be a pontosítást, mielőtt elküldöd.',
+      guestPrompt: 'Kattints ide, hogy személyre szabott válaszokat kaphass!',
+      messageNeedAuth: 'A személyre szabott válaszhoz jelentkezz be vagy regisztrálj.',
     },
     en: {
       navLabel: 'Open navigation',
@@ -89,6 +93,8 @@
       followupSend: 'Send',
       followupExpand: 'Ask for a deeper reading',
       followupNeedText: 'Write a clarification before sending.',
+      guestPrompt: 'Click here to get personalized answers!',
+      messageNeedAuth: 'Log in or sign up to receive personalized answers.',
     },
   };
 
@@ -136,13 +142,15 @@
     counter: root.querySelector('[data-counter]'),
     hint: root.querySelector('[data-hint]'),
     deckLabel: root.querySelector('[data-deck-label]'),
+    pickStage: root.querySelector('[data-pick-stage]'),
+    resultHeader: root.querySelector('[data-result-header]'),
+    askedQuestion: root.querySelector('[data-asked-question]'),
     reset: root.querySelector('[data-reset]'),
     slider: root.querySelector('[data-deck-slider]'),
     chosen: root.querySelector('[data-chosen-grid]'),
-    readingModal: root.querySelector('[data-reading-modal]'),
+    readingResult: root.querySelector('[data-reading-result]'),
     readingKicker: root.querySelector('[data-reading-kicker]'),
     readingTitle: root.querySelector('[data-reading-title]'),
-    readingQuestion: root.querySelector('[data-reading-question]'),
     readingBody: root.querySelector('[data-reading-body]'),
     readingToast: root.querySelector('[data-reading-toast]'),
     readingFollowup: root.querySelector('[data-reading-followup]'),
@@ -150,6 +158,7 @@
     readingFollowupInput: root.querySelector('[data-reading-followup-input]'),
     readingFollowupSend: root.querySelector('[data-reading-followup-send]'),
     readingFollowupExpand: root.querySelector('[data-reading-followup-expand]'),
+    authModal: root.querySelector('[data-auth-modal]'),
   };
 
   let language = initialLocale;
@@ -167,6 +176,7 @@
   let renderedDeckKey = '';
   /** @type {{question:string, cards:any[], reading:string}|null} */
   let activeReading = null;
+  let lockedQuestion = '';
 
   const pick = (items) => items[Math.floor(Math.random() * items.length)];
 
@@ -361,18 +371,46 @@
     return `${assetBase}/assets/${folder}/figures/${figureId}.png`;
   }
 
-  function setMenuOpen(open) {
-    els.menuBackdrop.classList.toggle('is-open', open);
-    els.sideMenu.classList.toggle('is-open', open);
-    els.sideMenu.setAttribute('aria-hidden', open ? 'false' : 'true');
-    els.menuButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+  function setAuthModalOpen(open) {
+    if (!els.authModal) return;
+    els.authModal.hidden = !open;
+    document.body.style.overflow = open ? 'hidden' : '';
+    if (open) {
+      setMenuOpen(false);
+    }
+  }
+
+  function switchAuthTab(tab) {
+    if (!els.authModal) return;
+    const next = tab === 'register' ? 'register' : 'login';
+    els.authModal.querySelectorAll('[data-auth-tab]').forEach((button) => {
+      const active = button.dataset.authTab === next;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    els.authModal.querySelectorAll('[data-auth-panel]').forEach((panel) => {
+      const active = panel.dataset.authPanel === next;
+      panel.classList.toggle('is-active', active);
+      panel.hidden = !active;
+    });
+  }
+
+  function requireAuth(event) {
+    if (isAuthenticated) return false;
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    els.question?.blur();
+    setAuthModalOpen(true);
+    return true;
   }
 
   function applyCopy() {
     const text = t();
     if (els.menuButton) els.menuButton.setAttribute('aria-label', text.navLabel);
     if (els.title) els.title.textContent = text.title;
-    if (els.question) els.question.placeholder = text.placeholder;
+    if (els.question) {
+      els.question.placeholder = isAuthenticated ? text.placeholder : text.guestPrompt;
+    }
     if (els.hint) els.hint.innerHTML = `<span>☾</span>${text.hint}`;
     if (els.reset) els.reset.textContent = `↺ ${text.reset}`;
     if (els.readingKicker) els.readingKicker.textContent = text.messageKicker;
@@ -385,7 +423,11 @@
     if (els.deckLabel) {
       els.deckLabel.textContent = activeDeck === 'tarot' ? text.deckTarot : text.deckOracle;
     }
+    if (els.askedQuestion && lockedQuestion) {
+      els.askedQuestion.textContent = lockedQuestion;
+    }
     renderChosen();
+    syncCompleteView();
   }
 
   function polarityLabel(variant) {
@@ -460,7 +502,6 @@
     if (!els.chosen) return;
     const text = t();
     els.chosen.innerHTML = '';
-    if (els.reset) els.reset.hidden = selected.length === 0;
 
     for (let slot = 0; slot < SLOT_COUNT; slot += 1) {
       const draw = selected[slot];
@@ -500,9 +541,36 @@
 
       els.chosen.appendChild(article);
     }
+
+    syncCompleteView();
+  }
+
+  function syncCompleteView() {
+    const complete = selected.length === SLOT_COUNT;
+    root.classList.toggle('is-complete', complete);
+
+    if (complete && !lockedQuestion) {
+      lockedQuestion = questionText();
+    }
+
+    if (els.resultHeader) {
+      els.resultHeader.hidden = !complete;
+    }
+    if (els.askedQuestion) {
+      els.askedQuestion.textContent = lockedQuestion || questionText();
+      els.askedQuestion.hidden = !(lockedQuestion || questionText());
+    }
+    if (els.reset) {
+      els.reset.hidden = !complete;
+    }
+
+    if (!complete) {
+      clearReadingResult();
+    }
   }
 
   function toggleBack(backIndex) {
+    if (requireAuth()) return;
     if (selected.length >= SLOT_COUNT) return;
     if (selected.some((item) => item.deck === activeDeck && item.backIndex === backIndex)) {
       return;
@@ -550,11 +618,12 @@
     activeDeck = 'oracle';
     lastReadingKey = '';
     activeReading = null;
+    lockedQuestion = '';
     if (readingRequest) {
       readingRequest.abort();
       readingRequest = null;
     }
-    closeReadingModal();
+    clearReadingResult();
     hideToast();
     if (els.question) {
       els.question.value = '';
@@ -565,9 +634,11 @@
     applyCopy();
     renderDeck(true);
     els.slider?.scrollTo({ left: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function questionText() {
+    if (lockedQuestion) return lockedQuestion;
     return (els.question?.value || '').trim();
   }
 
@@ -594,19 +665,16 @@
     els.readingToast.classList.remove('is-loading', 'is-error');
   }
 
-  function openReadingModal({ body, error = false, question = '', showFollowup = false }) {
-    if (!els.readingModal || !els.readingBody) return;
+  function showReadingResult({ body, error = false, showFollowup = false }) {
+    if (!els.readingResult || !els.readingBody) return;
     const text = t();
     hideToast();
     if (els.readingKicker) els.readingKicker.textContent = text.messageKicker;
     if (els.readingTitle) els.readingTitle.textContent = text.messageTitle;
-    if (els.readingQuestion) {
-      els.readingQuestion.textContent = question || questionText();
-      els.readingQuestion.hidden = !(question || questionText());
-    }
     els.readingBody.classList.remove('is-loading');
     els.readingBody.classList.toggle('is-error', error);
     els.readingBody.textContent = body;
+    els.readingResult.hidden = false;
     if (els.readingFollowup) {
       els.readingFollowup.hidden = !showFollowup || error;
       if (els.readingFollowupInput && showFollowup) {
@@ -614,14 +682,15 @@
       }
       setFollowupBusy(false);
     }
-    els.readingModal.hidden = false;
-    document.body.style.overflow = 'hidden';
+    els.readingResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function closeReadingModal() {
-    if (!els.readingModal) return;
-    els.readingModal.hidden = true;
-    document.body.style.overflow = '';
+  function clearReadingResult() {
+    if (els.readingResult) els.readingResult.hidden = true;
+    if (els.readingBody) {
+      els.readingBody.textContent = '';
+      els.readingBody.classList.remove('is-loading', 'is-error');
+    }
     if (els.readingFollowup) els.readingFollowup.hidden = true;
   }
 
@@ -675,6 +744,7 @@
   }
 
   async function requestReading({ mode = 'initial', followUp = '' } = {}) {
+    if (requireAuth()) return;
     if (!readingUrl || selected.length !== SLOT_COUNT) return;
 
     const question = questionText();
@@ -751,10 +821,10 @@
           cards,
           reading: data.reading,
         };
-        openReadingModal({
+        syncCompleteView();
+        showReadingResult({
           body: data.reading,
           error: false,
-          question,
           showFollowup: true,
         });
       } else {
@@ -795,15 +865,43 @@
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
         setMenuOpen(false);
-        closeReadingModal();
+        setAuthModalOpen(false);
         hideToast();
       }
     });
 
-    root.querySelectorAll('[data-reading-close]').forEach((node) => {
-      node.addEventListener('click', closeReadingModal);
-    });
     els.readingToast?.querySelector('[data-reading-toast-close]')?.addEventListener('click', hideToast);
+
+    if (!isAuthenticated && els.question) {
+      const openGate = (event) => {
+        requireAuth(event);
+      };
+      els.question.addEventListener('focus', openGate);
+      els.question.addEventListener('pointerdown', openGate);
+      els.question.addEventListener('click', openGate);
+      els.question.addEventListener('keydown', openGate);
+    }
+
+    root.querySelectorAll('[data-auth-open]').forEach((node) => {
+      node.addEventListener('click', () => {
+        setMenuOpen(false);
+        setAuthModalOpen(true);
+      });
+    });
+    root.querySelectorAll('[data-auth-close]').forEach((node) => {
+      node.addEventListener('click', () => setAuthModalOpen(false));
+    });
+    els.authModal?.querySelectorAll('[data-auth-tab]').forEach((button) => {
+      button.addEventListener('click', () => switchAuthTab(button.dataset.authTab));
+    });
+
+    if (openAuthOnLoad) {
+      const registerName = els.authModal?.querySelector('[data-auth-panel="register"] input[name="name"]');
+      if (registerName && registerName.value) {
+        switchAuthTab('register');
+      }
+      setAuthModalOpen(true);
+    }
 
     els.readingFollowupSend?.addEventListener('click', () => {
       requestReading({
@@ -835,6 +933,11 @@
     });
 
     els.question?.addEventListener('input', () => {
+      if (!isAuthenticated) {
+        els.question.value = '';
+        requireAuth();
+        return;
+      }
       els.question.value = els.question.value.slice(0, 280);
       if (els.question.nextElementSibling) {
         els.question.nextElementSibling.textContent = `${els.question.value.length}/280`;
