@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\ReadingExportMail;
 use App\Models\ReadingShare;
+use App\Services\CreditService;
 use App\Services\ReadingExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,12 +15,21 @@ use Throwable;
 
 class ReadingExportController extends Controller
 {
-    public function __construct(private readonly ReadingExportService $exports)
-    {
+    public function __construct(
+        private readonly ReadingExportService $exports,
+        private readonly CreditService $credits,
+    ) {
     }
 
-    public function pdf(Request $request): Response
+    public function pdf(Request $request): Response|JsonResponse
     {
+        $user = $request->user();
+        if ($user === null || ! $this->credits->canExportPdf($user)) {
+            return response()->json([
+                'error' => __('messages.plan_pdf_locked'),
+            ], 403);
+        }
+
         $payload = $this->exports->normalizePayload($request->all());
         $pdf = $this->exports->makePdf($payload);
 
@@ -31,6 +41,12 @@ class ReadingExportController extends Controller
 
     public function email(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if ($user === null || ! $this->credits->canExportPdf($user)) {
+            return response()->json([
+                'error' => __('messages.plan_pdf_locked'),
+            ], 403);
+        }
         $data = $request->validate([
             'email' => ['nullable', 'email', 'max:255'],
             'question' => ['required', 'string'],

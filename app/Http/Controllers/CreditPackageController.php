@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\CreditRequest;
 use App\Services\CreditService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use RuntimeException;
 
 class CreditPackageController extends Controller
 {
@@ -18,12 +20,19 @@ class CreditPackageController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
+        $locale = app()->getLocale();
 
         return view('credits.packages', [
-            'packages' => $this->credits->packages(),
+            'creditPacks' => $this->credits->packages(),
+            'plans' => $this->credits->plans(),
+            'currentPlan' => $user?->planKey() ?? CreditService::PLAN_FREE,
             'balance' => (int) ($user?->credits ?? 0),
-            'locale' => app()->getLocale(),
+            'locale' => $locale,
             'assetBase' => asset('templates/art-deco'),
+            'astroMottoUrl' => CreditService::ASTROMOTTO_URL,
+            'shareUrl' => url('/'),
+            'canViewHistory' => $user ? $this->credits->canViewHistory($user) : false,
+            'hasAstroMotto' => $user ? $this->credits->hasAstroMottoAccess($user) : false,
         ]);
     }
 
@@ -48,5 +57,40 @@ class CreditPackageController extends Controller
         ]);
 
         return back()->with('status', __('messages.credits_request_sent'));
+    }
+
+    public function activatePromo(Request $request): JsonResponse|RedirectResponse
+    {
+        $data = $request->validate([
+            'plan' => ['required', 'string', 'in:premium,expert'],
+        ]);
+
+        try {
+            $user = $this->credits->activatePromoPlan($request->user(), $data['plan']);
+        } catch (RuntimeException $e) {
+            if ($request->expectsJson()) {
+                return response()->json(['error' => $e->getMessage()], 422);
+            }
+
+            return back()->withErrors(['plan' => $e->getMessage()]);
+        }
+
+        $message = __('messages.plan_promo_activated', [
+            'plan' => $data['plan'] === 'expert' ? 'Expert' : 'Premium',
+            'credits' => $data['plan'] === 'expert' ? 100 : 50,
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'plan' => $user->plan,
+                'credits' => (int) $user->credits,
+                'message' => $message,
+            ]);
+        }
+
+        return redirect()
+            ->route('credits.packages')
+            ->with('status', $message);
     }
 }

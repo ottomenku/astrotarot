@@ -91,6 +91,7 @@ class ReadingController extends Controller
                 'previous_reading' => $data['previous_reading'] ?? null,
                 'follow_up' => $data['follow_up'] ?? null,
                 'ip' => $request->ip(),
+                'user_id' => $user->id,
             ]);
         } catch (RuntimeException $e) {
             return response()->json(['error' => $e->getMessage()], 422);

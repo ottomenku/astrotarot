@@ -16,6 +16,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\ReadingExportController;
+use App\Http\Controllers\ReadingHistoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -47,6 +48,9 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 Route::middleware('auth')->group(function () {
     Route::get('/credits', [CreditPackageController::class, 'index'])->name('credits.packages');
     Route::post('/credits/request', [CreditPackageController::class, 'request'])->name('credits.request');
+    Route::post('/credits/promo', [CreditPackageController::class, 'activatePromo'])->name('credits.promo');
+    Route::get('/my-readings', [ReadingHistoryController::class, 'index'])->name('readings.history');
+    Route::get('/my-readings/{reading}', [ReadingHistoryController::class, 'show'])->name('readings.history.show');
     Route::post('/reading/export/pdf', [ReadingExportController::class, 'pdf'])
         ->middleware('throttle:12,1')
         ->name('reading.export.pdf');

@@ -30,7 +30,8 @@ class TarotReadingService
      *   mode?: string,
      *   previous_reading?: string|null,
      *   follow_up?: string|null,
-     *   ip?: string|null
+     *   ip?: string|null,
+     *   user_id?: int|null
      * }  $payload
      */
     public function interpret(array $payload): string
@@ -40,6 +41,7 @@ class TarotReadingService
         $cards = array_values($payload['cards'] ?? []);
         $astro = is_array($payload['astro'] ?? null) ? $payload['astro'] : [];
         $ip = isset($payload['ip']) ? (string) $payload['ip'] : null;
+        $userId = isset($payload['user_id']) ? (int) $payload['user_id'] : null;
         $mode = $this->normalizeMode((string) ($payload['mode'] ?? self::MODE_INITIAL));
         $previousReading = trim((string) ($payload['previous_reading'] ?? ''));
         $followUp = trim((string) ($payload['follow_up'] ?? ''));
@@ -81,6 +83,7 @@ class TarotReadingService
             : ($mode === self::MODE_EXPAND ? $question."\n\n[bővebb kifejtés]" : $question);
 
         $log = ReadingLog::query()->create([
+            'user_id' => $userId,
             'locale' => $locale,
             'question' => $logQuestion,
             'cards' => $cards,

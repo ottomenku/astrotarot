@@ -9,6 +9,8 @@
   const exportEmailUrl = root.dataset.exportEmailUrl || '';
   const shareCreateUrl = root.dataset.shareUrl || '';
   const userEmail = root.dataset.userEmail || '';
+  let canExportPdf = root.dataset.canExportPdf === '1';
+  const creditsPackagesUrl = root.dataset.creditsPackagesUrl || '/credits';
   const minQuestionChars = Math.max(1, Number.parseInt(root.dataset.minQuestionChars || '10', 10) || 10);
   const llmEnabled = root.dataset.llmEnabled !== '0';
   const isAuthenticated = root.dataset.authenticated === '1';
@@ -71,6 +73,7 @@
       shareEmailSent: 'Az olvasatot elküldtük e-mailben.',
       shareBusy: 'Készül…',
       shareError: 'A megosztás most nem sikerült. Próbáld újra.',
+      sharePdfLocked: 'A PDF mentés Premium vagy Expert csomaghoz tartozik.',
       answerInitial: 'Olvasat',
       answerClarify: 'Pontosítás',
       answerExpand: 'Bővebb kifejtés',
@@ -121,6 +124,7 @@
       shareEmailSent: 'The reading was sent by email.',
       shareBusy: 'Working…',
       shareError: 'Sharing failed. Please try again.',
+      sharePdfLocked: 'PDF export requires Premium or Expert.',
       answerInitial: 'Reading',
       answerClarify: 'Clarification',
       answerExpand: 'Deeper reading',
@@ -764,6 +768,10 @@
   async function downloadPdf() {
     const payload = exportPayload();
     if (!payload || !exportPdfUrl || shareBusy) return;
+    if (!canExportPdf) {
+      showToast(t().sharePdfLocked, false);
+      return;
+    }
     setShareBusy(true);
     showToast(t().shareBusy, true);
     try {
@@ -801,6 +809,10 @@
   async function sendEmail() {
     const payload = exportPayload();
     if (!payload || !exportEmailUrl || shareBusy) return;
+    if (!canExportPdf) {
+      showToast(t().sharePdfLocked, false);
+      return;
+    }
     const email = window.prompt(t().shareEmailPrompt, userEmail || '');
     if (email === null) return;
     const trimmed = email.trim();

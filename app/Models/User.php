@@ -21,6 +21,9 @@ class User extends Authenticatable
         'provider_id',
         'role',
         'credits',
+        'plan',
+        'last_daily_credit_at',
+        'plan_started_at',
         'template_id',
     ];
 
@@ -36,6 +39,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => Role::class,
             'credits' => 'integer',
+            'last_daily_credit_at' => 'datetime',
+            'plan_started_at' => 'datetime',
         ];
     }
 
@@ -47,5 +52,20 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === Role::Admin;
+    }
+
+    public function planKey(): string
+    {
+        return $this->plan ?: 'free';
+    }
+
+    public function isPremiumOrAbove(): bool
+    {
+        return in_array($this->planKey(), ['premium', 'expert'], true);
+    }
+
+    public function isExpert(): bool
+    {
+        return $this->planKey() === 'expert';
     }
 }

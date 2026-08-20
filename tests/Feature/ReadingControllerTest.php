@@ -212,15 +212,15 @@ class ReadingControllerTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('credits.request'), [
-                'package_key' => 'pack_30',
+                'package_key' => 'pack_50',
                 'note' => 'Kérem a csomagot',
             ])
             ->assertRedirect();
 
         $this->assertDatabaseHas('credit_requests', [
             'user_id' => $user->id,
-            'package_key' => 'pack_30',
-            'credits' => 30,
+            'package_key' => 'pack_50',
+            'credits' => 50,
             'status' => 'pending',
             'note' => 'Kérem a csomagot',
         ]);

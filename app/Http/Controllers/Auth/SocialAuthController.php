@@ -78,6 +78,7 @@ class SocialAuthController extends Controller
                 'email' => $email,
                 'role' => Role::User,
                 'credits' => 0,
+                'plan' => 'free',
                 'template_id' => Template::query()->where('is_active', true)->value('id'),
             ]);
         }
@@ -96,6 +97,10 @@ class SocialAuthController extends Controller
 
         Auth::login($user, true);
         request()->session()->regenerate();
+
+        if (! $isNew) {
+            $this->credits->grantDailyLoginBonus($user);
+        }
 
         if ($user->isAdmin()) {
             return redirect()->intended(route('admin.ephemeris.index'));

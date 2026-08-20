@@ -32,6 +32,7 @@ class RegisterController extends Controller
             'password' => $data['password'],
             'role' => Role::User,
             'credits' => 0,
+            'plan' => 'free',
         ]);
 
         $this->credits->grantSignupBonus($user);

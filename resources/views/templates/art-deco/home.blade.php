@@ -19,6 +19,8 @@
     data-export-email-url="{{ auth()->check() ? route('reading.export.email') : '' }}"
     data-share-url="{{ auth()->check() ? route('reading.share.create') : '' }}"
     data-user-email="{{ auth()->check() ? (auth()->user()->email ?? '') : '' }}"
+    data-can-export-pdf="{{ (auth()->check() && auth()->user()->isPremiumOrAbove()) ? '1' : '0' }}"
+    data-credits-packages-url="{{ route('credits.packages') }}"
     data-min-question-chars="{{ $minQuestionChars }}"
     data-llm-enabled="{{ !empty($llmEnabled) ? '1' : '0' }}"
     data-authenticated="{{ auth()->check() ? '1' : '0' }}"
@@ -27,36 +29,38 @@
     data-draw-profile='@json($drawProfile)'
 >
     <header class="topbar">
-        <a class="brand" href="{{ route('home') }}" aria-label="AstroTarot kezdőlap">
-            <span class="brand-mark" aria-hidden="true"><span>✦</span></span>
-            <span class="brand-name">Astro<span>Tarot</span></span>
-        </a>
-        <div class="header-actions">
-            @auth
-                <a
-                    class="credits-chip"
-                    href="{{ route('credits.packages') }}"
-                    title="{{ __('messages.credits_label') }}"
-                    aria-label="{{ __('messages.credits_balance', ['count' => (int) auth()->user()->credits]) }}"
-                >
-                    <svg class="credits-chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                        <circle cx="12" cy="12" r="6.4" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".7"/>
-                        <text x="12" y="12.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Georgia, serif" fill="currentColor">✦</text>
-                    </svg>
-                    <span data-credits-balance>{{ (int) auth()->user()->credits }}</span>
-                </a>
-            @endauth
-            <label class="language-select">
-                <span class="sr-only">Language</span>
-                <select data-language>
-                    <option value="hu" @selected(app()->getLocale() === 'hu')>HU</option>
-                    <option value="en" @selected(app()->getLocale() === 'en')>EN</option>
-                </select>
-            </label>
-            <button class="menu-button" type="button" data-menu-open aria-expanded="false">
-                <span></span><span></span><span></span>
-            </button>
+        <div class="topbar-inner">
+            <a class="brand" href="{{ route('home') }}" aria-label="AstroTarot kezdőlap">
+                <span class="brand-mark" aria-hidden="true"><span>✦</span></span>
+                <span class="brand-name">Astro<span>Tarot</span></span>
+            </a>
+            <div class="header-actions">
+                @auth
+                    <a
+                        class="credits-chip"
+                        href="{{ route('credits.packages') }}"
+                        title="{{ __('messages.credits_label') }}"
+                        aria-label="{{ __('messages.credits_balance', ['count' => (int) auth()->user()->credits]) }}"
+                    >
+                        <svg class="credits-chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                            <circle cx="12" cy="12" r="6.4" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".7"/>
+                            <text x="12" y="12.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Georgia, serif" fill="currentColor">✦</text>
+                        </svg>
+                        <span data-credits-balance>{{ (int) auth()->user()->credits }}</span>
+                    </a>
+                @endauth
+                <label class="language-select">
+                    <span class="sr-only">Language</span>
+                    <select data-language>
+                        <option value="hu" @selected(app()->getLocale() === 'hu')>HU</option>
+                        <option value="en" @selected(app()->getLocale() === 'en')>EN</option>
+                    </select>
+                </label>
+                <button class="menu-button" type="button" data-menu-open aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -77,6 +81,9 @@
                     <a href="{{ route('admin.ephemeris.index') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>Admin<b>↗</b></a>
                 @endif
                 <a href="{{ route('credits.packages') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>{{ __('messages.credits_menu') }}<b>↗</b></a>
+                @if(auth()->user()->isPremiumOrAbove())
+                    <a href="{{ route('readings.history') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>{{ __('messages.history_menu') }}<b>↗</b></a>
+                @endif
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>{{ __('messages.logout') }}<b>↗</b></button>

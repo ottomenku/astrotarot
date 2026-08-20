@@ -62,7 +62,7 @@ class ReadingExportTest extends TestCase
 
     public function test_authenticated_user_can_download_pdf(): void
     {
-        $user = User::factory()->create(['credits' => 10]);
+        $user = User::factory()->create(['credits' => 10, 'plan' => 'premium']);
 
         $response = $this->actingAs($user)
             ->post(route('reading.export.pdf'), $this->payload());
@@ -77,6 +77,7 @@ class ReadingExportTest extends TestCase
         Mail::fake();
         $user = User::factory()->create([
             'credits' => 10,
+            'plan' => 'premium',
             'email' => 'olvaso@example.com',
         ]);
 
