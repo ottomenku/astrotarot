@@ -375,6 +375,14 @@
     return `${assetBase}/assets/${folder}/figures/${figureId}.png`;
   }
 
+  function setMenuOpen(open) {
+    els.menuBackdrop?.classList.toggle('is-open', open);
+    els.sideMenu?.classList.toggle('is-open', open);
+    els.sideMenu?.setAttribute('aria-hidden', open ? 'false' : 'true');
+    els.menuButton?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+
   function setAuthModalOpen(open) {
     if (!els.authModal) return;
     els.authModal.hidden = !open;
