@@ -15,6 +15,7 @@ use App\Http\Controllers\CreditPackageController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ReadingController;
+use App\Http\Controllers\ReadingExportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -46,7 +47,20 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 Route::middleware('auth')->group(function () {
     Route::get('/credits', [CreditPackageController::class, 'index'])->name('credits.packages');
     Route::post('/credits/request', [CreditPackageController::class, 'request'])->name('credits.request');
+    Route::post('/reading/export/pdf', [ReadingExportController::class, 'pdf'])
+        ->middleware('throttle:12,1')
+        ->name('reading.export.pdf');
+    Route::post('/reading/export/email', [ReadingExportController::class, 'email'])
+        ->middleware('throttle:6,1')
+        ->name('reading.export.email');
+    Route::post('/reading/share', [ReadingExportController::class, 'share'])
+        ->middleware('throttle:12,1')
+        ->name('reading.share.create');
 });
+
+Route::get('/share/{token}', [ReadingExportController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{20,64}')
+    ->name('reading.share.show');
 
 Route::prefix('admin')
     ->name('admin.')

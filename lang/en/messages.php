@@ -36,4 +36,12 @@ return [
     'credits_package_invalid' => 'Invalid package.',
     'credits_back_home' => 'Back to the draw',
     'credits_note_label' => 'Note (optional)',
+    'share_label' => 'Save / share',
+    'share_pdf' => 'Download PDF',
+    'share_email' => 'Email',
+    'share_facebook' => 'Facebook',
+    'share_email_prompt' => 'Which email should receive the reading?',
+    'share_email_sent' => 'The reading was sent by email.',
+    'share_busy' => 'Working…',
+    'share_error' => 'Sharing failed. Please try again.',
 ];

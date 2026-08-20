@@ -15,6 +15,10 @@
     data-locale="{{ app()->getLocale() }}"
     data-locale-switch-url="{{ url('/locale/__LOCALE__') }}"
     data-reading-url="{{ route('reading') }}"
+    data-export-pdf-url="{{ auth()->check() ? route('reading.export.pdf') : '' }}"
+    data-export-email-url="{{ auth()->check() ? route('reading.export.email') : '' }}"
+    data-share-url="{{ auth()->check() ? route('reading.share.create') : '' }}"
+    data-user-email="{{ auth()->check() ? (auth()->user()->email ?? '') : '' }}"
     data-min-question-chars="{{ $minQuestionChars }}"
     data-llm-enabled="{{ !empty($llmEnabled) ? '1' : '0' }}"
     data-authenticated="{{ auth()->check() ? '1' : '0' }}"
@@ -141,6 +145,14 @@
                 <div class="reading-followup-actions">
                     <button type="button" class="reading-followup-send" data-reading-followup-send>Elküld</button>
                     <button type="button" class="reading-followup-expand" data-reading-followup-expand>Bővebb kifejtést kérek</button>
+                </div>
+            </div>
+            <div class="reading-share" data-reading-share hidden>
+                <p class="reading-share-label" data-reading-share-label>{{ __('messages.share_label') }}</p>
+                <div class="reading-share-actions">
+                    <button type="button" class="reading-share-btn" data-share-pdf>{{ __('messages.share_pdf') }}</button>
+                    <button type="button" class="reading-share-btn" data-share-email>{{ __('messages.share_email') }}</button>
+                    <button type="button" class="reading-share-btn" data-share-facebook>{{ __('messages.share_facebook') }}</button>
                 </div>
             </div>
         </article>

@@ -188,6 +188,12 @@ button { -webkit-tap-highlight-color:transparent; }
 .reading-followup-send { background:rgba(217,184,110,.12); }
 .reading-followup-send:disabled,
 .reading-followup-expand:disabled { opacity:.45; cursor:wait; }
+.reading-share { margin-top:22px; padding-top:18px; border-top:1px solid rgba(217,184,110,.22); }
+.reading-share[hidden] { display:none !important; }
+.reading-share-label { margin:0 0 10px; color:var(--gold); font:10px Georgia,serif; letter-spacing:1.2px; text-transform:uppercase; }
+.reading-share-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.reading-share-btn { padding:10px 14px; border:1px solid rgba(217,184,110,.45); background:rgba(217,184,110,.08); color:var(--gold-pale); font:12px Georgia,serif; letter-spacing:.4px; cursor:pointer; }
+.reading-share-btn:disabled { opacity:.45; cursor:wait; }
 
 footer { position:relative; z-index:2; padding:24px; text-align:center; border-top:1px solid rgba(217,184,110,.13); color:#777380; font:9px Georgia,serif; letter-spacing:2px; text-transform:uppercase; }
 footer span { color:var(--gold); margin:0 8px; } footer i { font-style:normal; margin:0 4px; }

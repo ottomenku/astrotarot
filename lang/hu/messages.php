@@ -36,4 +36,12 @@ return [
     'credits_package_invalid' => 'Érvénytelen csomag.',
     'credits_back_home' => 'Vissza a húzáshoz',
     'credits_note_label' => 'Megjegyzés (opcionális)',
+    'share_label' => 'Mentés / megosztás',
+    'share_pdf' => 'PDF letöltés',
+    'share_email' => 'E-mail',
+    'share_facebook' => 'Facebook',
+    'share_email_prompt' => 'Milyen e-mail címre küldjük az olvasatot?',
+    'share_email_sent' => 'Az olvasatot elküldtük e-mailben.',
+    'share_busy' => 'Készül…',
+    'share_error' => 'A megosztás most nem sikerült. Próbáld újra.',
 ];

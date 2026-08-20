@@ -5,6 +5,10 @@
   const assetBase = root.dataset.assetBase.replace(/\/$/, '');
   const localeSwitchUrl = root.dataset.localeSwitchUrl;
   const readingUrl = root.dataset.readingUrl;
+  const exportPdfUrl = root.dataset.exportPdfUrl || '';
+  const exportEmailUrl = root.dataset.exportEmailUrl || '';
+  const shareCreateUrl = root.dataset.shareUrl || '';
+  const userEmail = root.dataset.userEmail || '';
   const minQuestionChars = Math.max(1, Number.parseInt(root.dataset.minQuestionChars || '10', 10) || 10);
   const llmEnabled = root.dataset.llmEnabled !== '0';
   const isAuthenticated = root.dataset.authenticated === '1';
@@ -59,6 +63,17 @@
       guestPrompt: 'Kattints ide, hogy személyre szabott válaszokat kaphass!',
       messageNeedAuth: 'A személyre szabott válaszhoz jelentkezz be vagy regisztrálj.',
       messageNeedCredits: 'Nincs elég kredited. A főmenü „Kreditek / Csomagok” pontjában kérhetsz újabbakat.',
+      shareLabel: 'Mentés / megosztás',
+      sharePdf: 'PDF letöltés',
+      shareEmail: 'E-mail',
+      shareFacebook: 'Facebook',
+      shareEmailPrompt: 'Milyen e-mail címre küldjük az olvasatot?',
+      shareEmailSent: 'Az olvasatot elküldtük e-mailben.',
+      shareBusy: 'Készül…',
+      shareError: 'A megosztás most nem sikerült. Próbáld újra.',
+      answerInitial: 'Olvasat',
+      answerClarify: 'Pontosítás',
+      answerExpand: 'Bővebb kifejtés',
     },
     en: {
       navLabel: 'Open navigation',
@@ -98,6 +113,17 @@
       guestPrompt: 'Click here to get personalized answers!',
       messageNeedAuth: 'Log in or sign up to receive personalized answers.',
       messageNeedCredits: 'You do not have enough credits. Request more under “Credits / Packages” in the main menu.',
+      shareLabel: 'Save / share',
+      sharePdf: 'Download PDF',
+      shareEmail: 'Email',
+      shareFacebook: 'Facebook',
+      shareEmailPrompt: 'Which email should receive the reading?',
+      shareEmailSent: 'The reading was sent by email.',
+      shareBusy: 'Working…',
+      shareError: 'Sharing failed. Please try again.',
+      answerInitial: 'Reading',
+      answerClarify: 'Clarification',
+      answerExpand: 'Deeper reading',
     },
   };
 
@@ -161,6 +187,11 @@
     readingFollowupInput: root.querySelector('[data-reading-followup-input]'),
     readingFollowupSend: root.querySelector('[data-reading-followup-send]'),
     readingFollowupExpand: root.querySelector('[data-reading-followup-expand]'),
+    readingShare: root.querySelector('[data-reading-share]'),
+    readingShareLabel: root.querySelector('[data-reading-share-label]'),
+    sharePdf: root.querySelector('[data-share-pdf]'),
+    shareEmail: root.querySelector('[data-share-email]'),
+    shareFacebook: root.querySelector('[data-share-facebook]'),
     authModal: root.querySelector('[data-auth-modal]'),
     creditsWelcome: root.querySelector('[data-credits-welcome]'),
   };
@@ -178,9 +209,10 @@
   let lastReadingKey = '';
   let questionTimer = null;
   let renderedDeckKey = '';
-  /** @type {{question:string, cards:any[], reading:string}|null} */
+  /** @type {{question:string, cards:any[], reading:string, answers: {mode:string, label:string, text:string}[]}|null} */
   let activeReading = null;
   let lockedQuestion = '';
+  let shareBusy = false;
 
   const pick = (items) => items[Math.floor(Math.random() * items.length)];
 
@@ -431,6 +463,10 @@
     if (els.readingFollowupInput) els.readingFollowupInput.placeholder = text.followupPlaceholder;
     if (els.readingFollowupSend) els.readingFollowupSend.textContent = text.followupSend;
     if (els.readingFollowupExpand) els.readingFollowupExpand.textContent = text.followupExpand;
+    if (els.readingShareLabel) els.readingShareLabel.textContent = text.shareLabel;
+    if (els.sharePdf) els.sharePdf.textContent = text.sharePdf;
+    if (els.shareEmail) els.shareEmail.textContent = text.shareEmail;
+    if (els.shareFacebook) els.shareFacebook.textContent = text.shareFacebook;
     if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/${SLOT_COUNT} ${text.selected}`;
     if (els.deckLabel) {
       els.deckLabel.textContent = activeDeck === 'tarot' ? text.deckTarot : text.deckOracle;
@@ -677,6 +713,133 @@
     els.readingToast.classList.remove('is-loading', 'is-error');
   }
 
+  function answerLabel(mode) {
+    const text = t();
+    if (mode === 'clarify') return text.answerClarify;
+    if (mode === 'expand') return text.answerExpand;
+    return text.answerInitial;
+  }
+
+  function showShareActions(show) {
+    if (!els.readingShare) return;
+    els.readingShare.hidden = !show;
+  }
+
+  function setShareBusy(busy) {
+    shareBusy = busy;
+    [els.sharePdf, els.shareEmail, els.shareFacebook].forEach((button) => {
+      if (!button) return;
+      button.disabled = busy;
+    });
+  }
+
+  function exportPayload() {
+    if (!activeReading?.answers?.length) return null;
+    return {
+      question: activeReading.question || questionText(),
+      locale: language,
+      cards: activeReading.cards || buildCardsPayload(),
+      answers: activeReading.answers,
+    };
+  }
+
+  async function postJson(url, body) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || t().shareError);
+    }
+    return data;
+  }
+
+  async function downloadPdf() {
+    const payload = exportPayload();
+    if (!payload || !exportPdfUrl || shareBusy) return;
+    setShareBusy(true);
+    showToast(t().shareBusy, true);
+    try {
+      const response = await fetch(exportPdfUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/pdf',
+          'X-CSRF-TOKEN': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || t().shareError);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'astrotarot-olvasat.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      hideToast();
+    } catch (error) {
+      showToast(error?.message || t().shareError, false);
+    } finally {
+      setShareBusy(false);
+    }
+  }
+
+  async function sendEmail() {
+    const payload = exportPayload();
+    if (!payload || !exportEmailUrl || shareBusy) return;
+    const email = window.prompt(t().shareEmailPrompt, userEmail || '');
+    if (email === null) return;
+    const trimmed = email.trim();
+    if (!trimmed) {
+      showToast(t().shareError, false);
+      return;
+    }
+    setShareBusy(true);
+    showToast(t().shareBusy, true);
+    try {
+      const data = await postJson(exportEmailUrl, { ...payload, email: trimmed });
+      showToast(data.message || t().shareEmailSent, false);
+    } catch (error) {
+      showToast(error?.message || t().shareError, false);
+    } finally {
+      setShareBusy(false);
+    }
+  }
+
+  async function shareFacebook() {
+    const payload = exportPayload();
+    if (!payload || !shareCreateUrl || shareBusy) return;
+    setShareBusy(true);
+    showToast(t().shareBusy, true);
+    try {
+      const data = await postJson(shareCreateUrl, payload);
+      hideToast();
+      const fbUrl = data.facebook_url || (
+        data.url ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(data.url)}` : ''
+      );
+      if (!fbUrl) throw new Error(t().shareError);
+      window.open(fbUrl, '_blank', 'noopener,noreferrer,width=640,height=720');
+    } catch (error) {
+      showToast(error?.message || t().shareError, false);
+    } finally {
+      setShareBusy(false);
+    }
+  }
+
   function showReadingResult({ body, error = false, showFollowup = false }) {
     if (!els.readingResult || !els.readingBody) return;
     const text = t();
@@ -694,6 +857,7 @@
       }
       setFollowupBusy(false);
     }
+    showShareActions(!error && Boolean(body));
     els.readingResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -704,6 +868,7 @@
       els.readingBody.classList.remove('is-loading', 'is-error');
     }
     if (els.readingFollowup) els.readingFollowup.hidden = true;
+    showShareActions(false);
   }
 
   function setFollowupBusy(busy) {
@@ -712,7 +877,7 @@
     if (els.readingFollowupInput) els.readingFollowupInput.disabled = busy;
   }
 
-  function appendReadingText(extra) {
+  function appendReadingText(extra, mode = 'expand') {
     if (!els.readingBody || !extra) return;
     const current = els.readingBody.textContent || '';
     els.readingBody.textContent = current
@@ -720,7 +885,14 @@
       : extra;
     if (activeReading) {
       activeReading.reading = els.readingBody.textContent;
+      activeReading.answers = activeReading.answers || [];
+      activeReading.answers.push({
+        mode,
+        label: answerLabel(mode),
+        text: extra,
+      });
     }
+    showShareActions(true);
   }
 
   function buildCardsPayload() {
@@ -863,6 +1035,11 @@
           question,
           cards,
           reading: data.reading,
+          answers: [{
+            mode: 'initial',
+            label: answerLabel('initial'),
+            text: data.reading,
+          }],
         };
         syncCompleteView();
         showReadingResult({
@@ -872,7 +1049,7 @@
         });
         hideToast();
       } else {
-        appendReadingText(data.reading);
+        appendReadingText(data.reading, mode);
         if (els.readingFollowupInput) els.readingFollowupInput.value = '';
         hideToast();
       }
@@ -949,6 +1126,10 @@
         followUp: (els.readingFollowupInput?.value || '').trim(),
       });
     });
+
+    els.sharePdf?.addEventListener('click', () => { downloadPdf(); });
+    els.shareEmail?.addEventListener('click', () => { sendEmail(); });
+    els.shareFacebook?.addEventListener('click', () => { shareFacebook(); });
 
     root.querySelector('[data-scroll-left]')?.addEventListener('click', () => {
       els.slider.scrollBy({ left: -270, behavior: 'smooth' });
