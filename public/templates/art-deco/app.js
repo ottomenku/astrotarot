@@ -28,7 +28,7 @@
     hu: {
       navLabel: 'Navigáció megnyitása',
       selected: 'kiválasztva',
-      title: 'Tedd fel a kérdésed, válassz Égi mestert, majd tarot figurát!',
+      title: 'Tedd fel a kérdésed a lenti szövegmezőben, majd válassz a pakliból Égi mestert, és tarot figurát!',
       placeholder: 'Mi az, amire most igazán szeretnél választ kapni?',
       hint: 'Először az Égi Orákulumból, aztán a Tarot pakliból választasz.',
       reading: 'Választott lapjaid',
@@ -78,7 +78,7 @@
     en: {
       navLabel: 'Open navigation',
       selected: 'selected',
-      title: 'Ask your question, choose a Celestial Master, then a tarot figure!',
+      title: 'Enter your question in the text field below, then choose a Celestial Master and a tarot figure from the decks!',
       placeholder: 'What would you truly like clarity about right now?',
       hint: 'First pick from the Celestial Oracle, then from the Tarot deck.',
       reading: 'Your chosen cards',
