@@ -100,7 +100,7 @@ class TarotReadingService
         $maxTokens = match ($mode) {
             self::MODE_EXPAND => 2200,
             self::MODE_CLARIFY => 1400,
-            default => 1600,
+            default => $this->looksMeaningless($question) ? 1200 : 1600,
         };
 
         try {
@@ -169,6 +169,18 @@ class TarotReadingService
         $lines[] = $locale === 'en' ? 'Question:' : 'Kérdés:';
         $lines[] = $question;
         $lines[] = '';
+
+        if ($this->looksMeaningless($question)) {
+            $lines[] = $locale === 'en'
+                ? 'SPECIAL CASE: The question above is gibberish / uninterpretable. Do not give a normal reading. Reply that Your Master cannot interpret the question, then send a short random poem they feel the seeker needs.'
+                : 'KÜLÖNLEGES ESET: A fenti „kérdés” értelmetlen karakterhalmaz / nem értelmezhető. Ne adj szokásos olvasatot. Írd meg, hogy a Mestered a kérdést nem tudja értelmezni, majd küldj egy rövid, véletlenszerű verset, amire szerinte szükség van.';
+            $lines[] = '';
+            $lines[] = $locale === 'en' ? 'Cards (context only, do not force a reading from them):' : 'Lapok (csak kontextus, ne erőltesd rájuk az olvasatot):';
+            $lines[] = $this->formatCards($locale, $cards);
+
+            return implode("\n", $lines);
+        }
+
         $lines[] = $locale === 'en' ? 'Draw context:' : 'Húzás kontextusa:';
         $lines[] = json_encode([
             'sun_sign' => $astro['sun_sign'] ?? null,
@@ -185,6 +197,91 @@ class TarotReadingService
             : 'Most írd meg az olvasatot: Égi mester adatai jelentéssel → választott figura neve/jelentése („úgy értelmezi, hogy…”) → válasz a kérdésre. Legfeljebb 10–12 mondat.';
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Detect keyboard mash / nonsense character strings posing as a question.
+     */
+    public function looksMeaningless(string $question): bool
+    {
+        $q = trim($question);
+        if ($q === '') {
+            return false;
+        }
+
+        $compact = preg_replace('/\s+/u', '', $q) ?? '';
+        if (mb_strlen($compact) < 8) {
+            return false;
+        }
+
+        $letters = preg_replace('/[^\p{L}]/u', '', $q) ?? '';
+        $letterLen = mb_strlen($letters);
+
+        if ($letterLen < 6) {
+            return true;
+        }
+
+        $vowelMatches = preg_match_all('/[aeiouyáéíóöőúüűAEIOUYÁÉÍÓÖŐÚÜŰ]/u', $letters);
+        $vowelCount = is_int($vowelMatches) ? $vowelMatches : 0;
+        $vowelRatio = $vowelCount / $letterLen;
+
+        $chars = preg_split('//u', mb_strtolower($letters), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $unique = count(array_unique($chars));
+
+        $words = preg_split('/\s+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $wordCount = count($words);
+
+        if ($letterLen >= 10 && $vowelRatio < 0.18) {
+            return true;
+        }
+
+        if ($letterLen >= 12 && $unique <= 4) {
+            return true;
+        }
+
+        // Long consonant runs are typical of keyboard mash, rare in normal questions.
+        if ($letterLen >= 10 && preg_match('/[bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ]{4,}/u', $letters) === 1) {
+            return true;
+        }
+
+        if ($wordCount === 1 && $letterLen >= 12 && $vowelRatio < 0.28) {
+            return true;
+        }
+
+        if ($wordCount === 1 && $letterLen >= 14 && $this->looksLikeKeyboardWalk($letters)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function looksLikeKeyboardWalk(string $letters): bool
+    {
+        $lower = mb_strtolower($letters);
+        $rows = [
+            'qwertyuiop',
+            'asdfghjkl',
+            'zxcvbnm',
+            'poiuytrewq',
+            'lkjhgfdsa',
+            'mnbvcxz',
+        ];
+
+        foreach ($rows as $row) {
+            if (mb_strpos($row.$row, $lower) !== false || mb_strpos($lower, $row) !== false) {
+                return true;
+            }
+            // Any 5+ character substring that sits on one keyboard row.
+            $len = mb_strlen($lower);
+            for ($i = 0; $i <= $len - 5; $i++) {
+                $chunk = mb_substr($lower, $i, 5);
+                if (mb_strpos($row, $chunk) !== false || mb_strpos(strrev($row), $chunk) !== false) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

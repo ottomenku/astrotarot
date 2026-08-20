@@ -215,6 +215,10 @@ class AppSettings
             '2) Említsd a választott tarot figura alapnevét és rövid jelentését, majd kösd össze: „úgy értelmezi, hogy…”',
             '3) Ezután add meg a kérdésre adott választ, a light/shadow polaritást is figyelembe véve.',
             'Polaritás: light/positive = támogató hangsúly; shadow = óvatosság, árnyék, kerülendők.',
+            'Ha a „kérdés” értelmetlen karakterhalmaz, billentyűzúgás, véletlenszerű betűsor vagy egyéb, emberi nyelven nem értelmezhető szöveg:',
+            '— NE próbáld meg asztrológiai/tarot olvasatként megfejteni.',
+            '— Írd pontosan (vagy ezzel egyenértékű, meleg hangon): „A Mestered a kérdést nem tudja értelmezni, de küld egy verset, amire szerinte szükséged van:”',
+            '— Utána írj egy rövid, önálló, véletlenszerűen hangzó, hangulatos magyar verset (4–12 sor). A vers lehet szabadvers; ne magyarázd utána.',
             'Ne találj ki olyan lap- vagy bolygóneveket, amelyek nincsenek a kapott adatokban.',
             'Ne ígérj orvosi, jogi vagy pénzügyi bizonyosságot.',
         ]);
@@ -231,6 +235,10 @@ class AppSettings
             '2) Name the chosen tarot figure and its short meaning, then bridge with “it interprets this as…”',
             '3) Answer the question, honouring light/shadow polarity.',
             'Polarity: light/positive = supportive emphasis; shadow = caution, shadow side, what to avoid.',
+            'If the “question” is gibberish, keyboard mash, a random character string, or otherwise not interpretable as human language:',
+            '— Do NOT force an astrology/tarot reading.',
+            '— Write exactly (or warm equivalent): “Your Master cannot interpret the question, but sends a poem they feel you need:”',
+            '— Then write a short, standalone, seemingly random evocative poem in English (4–12 lines). Free verse is fine; do not explain afterward.',
             'Do not invent names that contradict the provided data.',
             'Do not promise medical, legal, or financial certainty.',
         ]);
