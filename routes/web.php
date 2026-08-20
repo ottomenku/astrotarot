@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 
+Route::get('/promo', PromoShareController::class)->name('promo.share');
+
 Route::get('/locale/{locale}', LocaleController::class)->name('locale.switch');
 
 Route::post('/reading', ReadingController::class)

@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PromoShareTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_promo_share_page_exposes_facebook_open_graph_tags(): void
     {
         $this->get(route('promo.share'))
