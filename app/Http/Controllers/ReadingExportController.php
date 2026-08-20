@@ -102,13 +102,12 @@ class ReadingExportController extends Controller
         ]);
     }
 
-    public function show(string $token, OgImageService $ogImages): View
+    public function show(string $token): View
     {
         $share = ReadingShare::query()->where('token', $token)->firstOrFail();
         abort_if($share->isExpired(), 410);
 
         $payload = $share->payload;
-        $locale = ($payload['locale'] ?? 'hu') === 'en' ? 'en' : 'hu';
         $question = trim((string) ($payload['question'] ?? ''));
         $answers = is_array($payload['answers'] ?? null) ? $payload['answers'] : [];
         $answerTexts = [];
@@ -124,13 +123,8 @@ class ReadingExportController extends Controller
         $combined = trim($question.($answerTexts !== [] ? ' — '.implode(' ', $answerTexts) : ''));
         $description = mb_substr(preg_replace('/\s+/u', ' ', $combined) ?? '', 0, 220);
 
+        // Always point Facebook/OG at the composite endpoint (never a raw card PNG).
         $ogImage = route('reading.share.og', $share->token);
-        if (! $ogImages->canGenerate()) {
-            $firstCard = $payload['cards'][0] ?? null;
-            $ogImage = is_array($firstCard) && ! empty($firstCard['image_url'])
-                ? (string) $firstCard['image_url']
-                : asset('og/astrotarot-promo.jpg');
-        }
 
         return view('exports.share', [
             'payload' => $payload,
