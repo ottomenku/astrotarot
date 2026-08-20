@@ -77,6 +77,12 @@ class ReadingExportService
                 'variant' => (string) ($card['variant'] ?? 'positive'),
                 'deck' => (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot')),
                 'astro_caption' => (string) ($card['astro_caption'] ?? ''),
+                'image_src' => $this->canEmbedImages()
+                    ? $this->cardImageSrc(
+                        (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot')),
+                        (string) ($card['figure_id'] ?? '')
+                    )
+                    : null,
             ];
         }
 
@@ -146,5 +152,36 @@ class ReadingExportService
             'expand' => $locale === 'en' ? 'Deeper reading' : 'Bővebb kifejtés',
             default => $locale === 'en' ? 'Reading' : 'Olvasat',
         };
+    }
+
+    private function canEmbedImages(): bool
+    {
+        return extension_loaded('gd') && function_exists('imagecreatefrompng');
+    }
+
+    private function cardImageSrc(string $deck, string $figureId): ?string
+    {
+        if ($figureId === '') {
+            return null;
+        }
+
+        $folder = $deck === 'tarot' ? 'tarot-major' : 'egi-orakulum';
+        if ($deck === 'tarot' && preg_match('/^(wands|cups|swords|pentacles)-/', $figureId) === 1) {
+            $relative = "templates/art-deco/assets/{$folder}/figures/minors/{$figureId}.png";
+        } else {
+            $relative = "templates/art-deco/assets/{$folder}/figures/{$figureId}.png";
+        }
+
+        $absolute = public_path($relative);
+        if (! is_file($absolute)) {
+            return null;
+        }
+
+        $binary = @file_get_contents($absolute);
+        if ($binary === false || $binary === '') {
+            return null;
+        }
+
+        return 'data:image/png;base64,'.base64_encode($binary);
     }
 }

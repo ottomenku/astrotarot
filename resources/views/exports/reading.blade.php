@@ -38,6 +38,9 @@
             <tr>
                 @foreach ($payload['cards'] as $card)
                     <td>
+                        @if (!empty($card['image_src']))
+                            <img class="card-img" src="{{ $card['image_src'] }}" alt="">
+                        @endif
                         <p class="card-title">{{ $card['slot_title'] }}</p>
                         <p class="card-sub">
                             {{ $card['figure_name'] }}
