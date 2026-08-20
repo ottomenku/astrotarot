@@ -9,6 +9,7 @@
   const llmEnabled = root.dataset.llmEnabled !== '0';
   const isAuthenticated = root.dataset.authenticated === '1';
   const openAuthOnLoad = root.dataset.openAuth === '1';
+  let creditsBalance = Number.parseInt(root.dataset.credits || '0', 10) || 0;
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
   const initialLocale = root.dataset.locale === 'en' ? 'en' : 'hu';
   const drawProfile = (() => {
@@ -57,6 +58,7 @@
       followupNeedText: 'Írd be a pontosítást, mielőtt elküldöd.',
       guestPrompt: 'Kattints ide, hogy személyre szabott válaszokat kaphass!',
       messageNeedAuth: 'A személyre szabott válaszhoz jelentkezz be vagy regisztrálj.',
+      messageNeedCredits: 'Nincs elég kredited. A főmenü „Kreditek / Csomagok” pontjában kérhetsz újabbakat.',
     },
     en: {
       navLabel: 'Open navigation',
@@ -95,6 +97,7 @@
       followupNeedText: 'Write a clarification before sending.',
       guestPrompt: 'Click here to get personalized answers!',
       messageNeedAuth: 'Log in or sign up to receive personalized answers.',
+      messageNeedCredits: 'You do not have enough credits. Request more under “Credits / Packages” in the main menu.',
     },
   };
 
@@ -159,6 +162,7 @@
     readingFollowupSend: root.querySelector('[data-reading-followup-send]'),
     readingFollowupExpand: root.querySelector('[data-reading-followup-expand]'),
     authModal: root.querySelector('[data-auth-modal]'),
+    creditsWelcome: root.querySelector('[data-credits-welcome]'),
   };
 
   let language = initialLocale;
@@ -731,6 +735,22 @@
     });
   }
 
+  function updateCreditsBalance(next) {
+    if (typeof next !== 'number' || Number.isNaN(next)) return;
+    creditsBalance = Math.max(0, next);
+    root.dataset.credits = String(creditsBalance);
+    root.querySelectorAll('[data-credits-balance]').forEach((node) => {
+      node.textContent = String(creditsBalance);
+    });
+  }
+
+  function hideCreditsWelcome() {
+    if (!els.creditsWelcome) return;
+    els.creditsWelcome.hidden = true;
+    els.creditsWelcome.remove();
+    els.creditsWelcome = null;
+  }
+
   function readingAstroPayload() {
     return {
       sun_sign: drawProfile.sun_sign || null,
@@ -746,6 +766,11 @@
   async function requestReading({ mode = 'initial', followUp = '' } = {}) {
     if (requireAuth()) return;
     if (!readingUrl || selected.length !== SLOT_COUNT) return;
+
+    if (mode === 'initial' && creditsBalance < 1) {
+      showToast(t().messageNeedCredits, false);
+      return;
+    }
 
     const question = questionText();
     if (question.length < minQuestionChars) {
@@ -807,7 +832,17 @@
       });
 
       const data = await response.json().catch(() => ({}));
+      if (typeof data.credits === 'number') {
+        updateCreditsBalance(data.credits);
+      }
       if (!response.ok) {
+        if (response.status === 401) {
+          requireAuth();
+          throw new Error(data.error || t().messageNeedAuth);
+        }
+        if (response.status === 402) {
+          throw new Error(data.error || t().messageNeedCredits);
+        }
         throw new Error(data.error || t().messageError);
       }
 
@@ -827,6 +862,7 @@
           error: false,
           showFollowup: true,
         });
+        hideToast();
       } else {
         appendReadingText(data.reading);
         if (els.readingFollowupInput) els.readingFollowupInput.value = '';
@@ -846,19 +882,7 @@
     return requestReading({ mode: 'initial' });
   }
 
-  async function boot() {
-    const [oracleRes, tarotRes] = await Promise.all([
-      fetch(`${assetBase}/assets/egi-orakulum/deck.json`),
-      fetch(`${assetBase}/assets/tarot-major/deck.json`),
-    ]);
-    oracleDeck = await oracleRes.json();
-    tarotDeck = await tarotRes.json();
-
-    if (els.language) els.language.value = language;
-    applyCopy();
-    renderDeck(true);
-    renderChosen();
-
+  function bindUiEvents() {
     els.menuButton?.addEventListener('click', () => setMenuOpen(true));
     els.menuClose?.addEventListener('click', () => setMenuOpen(false));
     els.menuBackdrop?.addEventListener('click', () => setMenuOpen(false));
@@ -866,11 +890,13 @@
       if (event.key === 'Escape') {
         setMenuOpen(false);
         setAuthModalOpen(false);
+        hideCreditsWelcome();
         hideToast();
       }
     });
 
     els.readingToast?.querySelector('[data-reading-toast-close]')?.addEventListener('click', hideToast);
+    root.querySelector('[data-credits-welcome-close]')?.addEventListener('click', hideCreditsWelcome);
 
     if (!isAuthenticated && els.question) {
       const openGate = (event) => {
@@ -949,6 +975,31 @@
     });
 
     els.reset?.addEventListener('click', reset);
+  }
+
+  async function boot() {
+    if (els.language) els.language.value = language;
+    applyCopy();
+    bindUiEvents();
+
+    try {
+      const [oracleRes, tarotRes] = await Promise.all([
+        fetch(`${assetBase}/assets/egi-orakulum/deck.json`),
+        fetch(`${assetBase}/assets/tarot-major/deck.json`),
+      ]);
+      if (!oracleRes.ok || !tarotRes.ok) {
+        throw new Error('Deck assets unavailable');
+      }
+      oracleDeck = await oracleRes.json();
+      tarotDeck = await tarotRes.json();
+      renderDeck(true);
+      renderChosen();
+    } catch (error) {
+      console.error(error);
+      showToast(language === 'en'
+        ? 'Card decks could not be loaded. Please refresh.'
+        : 'A paklik nem töltődtek be. Frissítsd az oldalt.', false);
+    }
   }
 
   boot();

@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\ReadingLog;
+use App\Models\User;
+use App\Services\CreditService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -11,31 +13,12 @@ class ReadingControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_reading_requires_question_and_two_cards(): void
+    /**
+     * @return array<string, mixed>
+     */
+    private function validPayload(array $overrides = []): array
     {
-        $this->postJson(route('reading'), [
-            'question' => 'túl rövid',
-            'cards' => [],
-        ])->assertStatus(422);
-    }
-
-    public function test_reading_returns_model_text_and_logs_exchange(): void
-    {
-        config([
-            'services.openai.api_key' => 'test-key',
-            'services.openai.base_url' => 'https://api.openai.com/v1',
-            'services.openai.model' => 'gpt-4o-mini',
-        ]);
-
-        Http::fake([
-            'api.openai.com/*' => Http::response([
-                'choices' => [
-                    ['message' => ['content' => 'Az Égi mestered, a Mars, most a Skorpióban áll. A Mágus úgy értelmezi, hogy cselekedj.']],
-                ],
-            ], 200),
-        ]);
-
-        $response = $this->postJson(route('reading'), [
+        return array_merge([
             'question' => 'Mit tegyek most a kapcsolatommal?',
             'locale' => 'hu',
             'astro' => [
@@ -71,12 +54,52 @@ class ReadingControllerTest extends TestCase
                     'astro_caption' => 'A Mágus — A Mágus tudatos alkotóerőt hoz.',
                 ],
             ],
+        ], $overrides);
+    }
+
+    public function test_reading_requires_authentication(): void
+    {
+        $this->postJson(route('reading'), $this->validPayload())
+            ->assertUnauthorized();
+    }
+
+    public function test_reading_requires_question_and_two_cards(): void
+    {
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)->postJson(route('reading'), [
+            'question' => 'túl rövid',
+            'cards' => [],
+        ])->assertStatus(422);
+    }
+
+    public function test_reading_returns_model_text_and_logs_exchange(): void
+    {
+        config([
+            'services.openai.api_key' => 'test-key',
+            'services.openai.base_url' => 'https://api.openai.com/v1',
+            'services.openai.model' => 'gpt-4o-mini',
         ]);
+
+        Http::fake([
+            'api.openai.com/*' => Http::response([
+                'choices' => [
+                    ['message' => ['content' => 'Az Égi mestered, a Mars, most a Skorpióban áll. A Mágus úgy értelmezi, hogy cselekedj.']],
+                ],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create(['credits' => 10]);
+
+        $response = $this->actingAs($user)->postJson(route('reading'), $this->validPayload());
 
         $response->assertOk()->assertJson([
             'reading' => 'Az Égi mestered, a Mars, most a Skorpióban áll. A Mágus úgy értelmezi, hogy cselekedj.',
             'mode' => 'initial',
+            'credits' => 9,
         ]);
+
+        $this->assertSame(9, (int) $user->fresh()->credits);
 
         $this->assertDatabaseCount('reading_logs', 1);
         $log = ReadingLog::query()->first();
@@ -89,9 +112,24 @@ class ReadingControllerTest extends TestCase
         $this->assertStringContainsString('10–12 mondat', $log->user_prompt);
     }
 
+    public function test_reading_blocked_without_credits(): void
+    {
+        $user = User::factory()->create(['credits' => 0]);
+
+        $this->actingAs($user)
+            ->postJson(route('reading'), $this->validPayload())
+            ->assertStatus(402)
+            ->assertJsonPath('credits', 0);
+
+        $this->assertSame(0, (int) $user->fresh()->credits);
+        $this->assertDatabaseCount('reading_logs', 0);
+    }
+
     public function test_clarify_follow_up_requires_text_and_previous_reading(): void
     {
-        $this->postJson(route('reading'), [
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)->postJson(route('reading'), [
             'question' => 'Mit tegyek most a kapcsolatommal?',
             'mode' => 'clarify',
             'follow_up' => '',
@@ -113,7 +151,7 @@ class ReadingControllerTest extends TestCase
         ])->assertStatus(422);
     }
 
-    public function test_expand_follow_up_returns_model_text(): void
+    public function test_expand_follow_up_returns_model_text_without_debit(): void
     {
         config([
             'services.openai.api_key' => 'test-key',
@@ -129,7 +167,9 @@ class ReadingControllerTest extends TestCase
             ], 200),
         ]);
 
-        $response = $this->postJson(route('reading'), [
+        $user = User::factory()->create(['credits' => 3]);
+
+        $response = $this->actingAs($user)->postJson(route('reading'), [
             'question' => 'Mit tegyek most a kapcsolatommal?',
             'locale' => 'hu',
             'mode' => 'expand',
@@ -155,11 +195,40 @@ class ReadingControllerTest extends TestCase
         $response->assertOk()->assertJson([
             'reading' => 'Bővebb válasz a korábbi olvasathoz.',
             'mode' => 'expand',
+            'credits' => 3,
         ]);
+
+        $this->assertSame(3, (int) $user->fresh()->credits);
 
         $log = ReadingLog::query()->latest('id')->first();
         $this->assertSame('success', $log->status);
         $this->assertStringContainsString('[bővebb kifejtés]', $log->question);
         $this->assertStringContainsString('Korábbi olvasat:', $log->user_prompt);
+    }
+
+    public function test_credit_package_request_is_stored(): void
+    {
+        $user = User::factory()->create(['credits' => 5]);
+
+        $this->actingAs($user)
+            ->post(route('credits.request'), [
+                'package_key' => 'pack_30',
+                'note' => 'Kérem a csomagot',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('credit_requests', [
+            'user_id' => $user->id,
+            'package_key' => 'pack_30',
+            'credits' => 30,
+            'status' => 'pending',
+            'note' => 'Kérem a csomagot',
+        ]);
+    }
+
+    public function test_signup_bonus_constant(): void
+    {
+        $this->assertSame(10, CreditService::SIGNUP_BONUS);
+        $this->assertSame(1, CreditService::QUESTION_COST);
     }
 }

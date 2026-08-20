@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\CreditService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,10 @@ use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
 {
+    public function __construct(private readonly CreditService $credits)
+    {
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -26,13 +31,19 @@ class RegisterController extends Controller
             'email' => $data['email'],
             'password' => $data['password'],
             'role' => Role::User,
+            'credits' => 0,
         ]);
+
+        $this->credits->grantSignupBonus($user);
 
         event(new Registered($user));
 
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('home'));
+        return redirect()
+            ->intended(route('home'))
+            ->with('credits_welcome', true)
+            ->with('credits_balance', (int) $user->fresh()->credits);
     }
 }

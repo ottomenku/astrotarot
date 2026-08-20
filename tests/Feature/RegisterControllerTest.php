@@ -24,7 +24,10 @@ class RegisterControllerTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'teszt@example.com',
             'name' => 'Teszt User',
+            'credits' => 10,
         ]);
+        $response->assertSessionHas('credits_welcome', true);
+        $response->assertSessionHas('credits_balance', 10);
     }
 
     public function test_home_marks_guest_for_auth_gate(): void
@@ -86,6 +89,40 @@ class RegisterControllerTest extends TestCase
             ->get(route('home'))
             ->assertOk()
             ->assertSee('data-authenticated="1"', false)
+            ->assertSee('Kreditek / Csomagok', false)
             ->assertDontSee('data-guest-gate', false);
+    }
+
+    public function test_registration_welcome_message_is_shown_on_home(): void
+    {
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->mock(\App\Services\CardDrawProfileService::class, function ($mock) {
+            $mock->shouldReceive('forNow')->andReturn([
+                'sun_sign' => 'leo',
+                'element' => 'tűz',
+                'modality' => 'fő',
+                'tone' => 'pozitív',
+                'variant' => 'positive',
+                'tones' => ['pozitív', 'pozitív'],
+                'variants' => ['positive', 'positive'],
+                'slots' => ['leo', 'fire'],
+                'chart_mode' => 'now',
+                'datetime_utc' => '2026-08-20T12:00:00Z',
+                'chart' => ['objects' => [], 'aspects' => []],
+            ]);
+        });
+
+        \App\Models\Template::factory()->create([
+            'slug' => 'art-deco',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['credits_welcome' => true, 'credits_balance' => 10])
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee(__('messages.credits_welcome_title'), false)
+            ->assertSee(__('messages.credits_welcome_body'), false);
     }
 }

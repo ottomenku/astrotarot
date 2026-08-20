@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\AppSettings;
+use App\Services\CreditService;
 use App\Services\TarotReadingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,12 +12,23 @@ use Throwable;
 
 class ReadingController extends Controller
 {
-    public function __invoke(Request $request, TarotReadingService $readings, AppSettings $settings): JsonResponse
-    {
+    public function __invoke(
+        Request $request,
+        TarotReadingService $readings,
+        AppSettings $settings,
+        CreditService $credits,
+    ): JsonResponse {
         if (! $settings->llmEnabled()) {
             return response()->json([
                 'error' => __('messages.llm_disabled'),
             ], 503);
+        }
+
+        $user = $request->user();
+        if ($user === null) {
+            return response()->json([
+                'error' => __('messages.credits_auth_required'),
+            ], 401);
         }
 
         $minChars = $settings->minQuestionChars();
@@ -43,6 +55,14 @@ class ReadingController extends Controller
         ]);
 
         $mode = $data['mode'] ?? TarotReadingService::MODE_INITIAL;
+        $chargeQuestion = $mode === TarotReadingService::MODE_INITIAL;
+
+        if ($chargeQuestion && ! $credits->hasQuestionCredit($user)) {
+            return response()->json([
+                'error' => __('messages.credits_empty'),
+                'credits' => (int) $user->credits,
+            ], 402);
+        }
 
         if ($mode === TarotReadingService::MODE_CLARIFY && trim((string) ($data['follow_up'] ?? '')) === '') {
             return response()->json([
@@ -82,9 +102,22 @@ class ReadingController extends Controller
             ], 500);
         }
 
+        $balance = (int) $user->credits;
+        if ($chargeQuestion) {
+            try {
+                $balance = $credits->spendForQuestion($user->fresh());
+            } catch (RuntimeException $e) {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                    'credits' => (int) $user->fresh()->credits,
+                ], 402);
+            }
+        }
+
         return response()->json([
             'reading' => $text,
             'mode' => $mode,
+            'credits' => $balance,
         ]);
     }
 }

@@ -18,6 +18,7 @@
     data-min-question-chars="{{ $minQuestionChars }}"
     data-llm-enabled="{{ !empty($llmEnabled) ? '1' : '0' }}"
     data-authenticated="{{ auth()->check() ? '1' : '0' }}"
+    data-credits="{{ auth()->check() ? (int) auth()->user()->credits : 0 }}"
     data-open-auth="{{ (!auth()->check() && $errors->any()) ? '1' : '0' }}"
     data-draw-profile='@json($drawProfile)'
 >
@@ -27,6 +28,21 @@
             <span class="brand-name">Astro<span>Tarot</span></span>
         </a>
         <div class="header-actions">
+            @auth
+                <a
+                    class="credits-chip"
+                    href="{{ route('credits.packages') }}"
+                    title="{{ __('messages.credits_label') }}"
+                    aria-label="{{ __('messages.credits_balance', ['count' => (int) auth()->user()->credits]) }}"
+                >
+                    <svg class="credits-chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                        <circle cx="12" cy="12" r="6.4" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".7"/>
+                        <text x="12" y="12.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Georgia, serif" fill="currentColor">✦</text>
+                    </svg>
+                    <span data-credits-balance>{{ (int) auth()->user()->credits }}</span>
+                </a>
+            @endauth
             <label class="language-select">
                 <span class="sr-only">Language</span>
                 <select data-language>
@@ -48,12 +64,18 @@
         </div>
         <nav>
             @auth
+                <p class="menu-credits" data-credits-balance-wrap>
+                    {{ __('messages.credits_label') }}:
+                    <strong data-credits-balance>{{ (int) auth()->user()->credits }}</strong>
+                </p>
+                @php $menuIndex = 1; @endphp
                 @if(auth()->user()->isAdmin())
-                    <a href="{{ route('admin.ephemeris.index') }}"><span>01</span>Admin<b>↗</b></a>
+                    <a href="{{ route('admin.ephemeris.index') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>Admin<b>↗</b></a>
                 @endif
+                <a href="{{ route('credits.packages') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>{{ __('messages.credits_menu') }}<b>↗</b></a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit"><span>02</span>{{ __('messages.logout') }}<b>↗</b></button>
+                    <button type="submit"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>{{ __('messages.logout') }}<b>↗</b></button>
                 </form>
             @else
                 <button type="button" data-auth-open><span>01</span>{{ __('messages.login') }}<b>↗</b></button>
@@ -61,6 +83,16 @@
         </nav>
         <p>Égi Orákulum + Tarot</p>
     </aside>
+
+    @if (session('credits_welcome'))
+        <div class="credits-welcome" data-credits-welcome role="status">
+            <button type="button" class="credits-welcome-close" data-credits-welcome-close aria-label="Bezárás">×</button>
+            <p class="credits-welcome-kicker">AstroTarot</p>
+            <h2>{{ __('messages.credits_welcome_title') }}</h2>
+            <p>{{ __('messages.credits_welcome_body') }}</p>
+            <a class="credits-welcome-link" href="{{ route('credits.packages') }}">{{ __('messages.credits_menu') }}</a>
+        </div>
+    @endif
 
     <section class="deck-section" data-pick-stage aria-labelledby="deck-heading">
         <div class="compact-question">

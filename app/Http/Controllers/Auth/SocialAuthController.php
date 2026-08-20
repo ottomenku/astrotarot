@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Template;
 use App\Models\User;
+use App\Services\CreditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -17,6 +18,10 @@ class SocialAuthController extends Controller
 {
     /** @var list<string> */
     private const PROVIDERS = ['google', 'facebook'];
+
+    public function __construct(private readonly CreditService $credits)
+    {
+    }
 
     public function redirect(string $provider): SymfonyRedirectResponse|RedirectResponse
     {
@@ -64,11 +69,15 @@ class SocialAuthController extends Controller
             $user = User::query()->where('email', $email)->first();
         }
 
+        $isNew = false;
+
         if (! $user) {
+            $isNew = true;
             $user = new User([
                 'name' => $name !== '' ? $name : 'User',
                 'email' => $email,
                 'role' => Role::User,
+                'credits' => 0,
                 'template_id' => Template::query()->where('is_active', true)->value('id'),
             ]);
         }
@@ -81,6 +90,10 @@ class SocialAuthController extends Controller
         }
         $user->save();
 
+        if ($isNew) {
+            $this->credits->grantSignupBonus($user);
+        }
+
         Auth::login($user, true);
         request()->session()->regenerate();
 
@@ -88,7 +101,15 @@ class SocialAuthController extends Controller
             return redirect()->intended(route('admin.ephemeris.index'));
         }
 
-        return redirect()->intended(route('home'));
+        $redirect = redirect()->intended(route('home'));
+
+        if ($isNew) {
+            $redirect
+                ->with('credits_welcome', true)
+                ->with('credits_balance', (int) $user->fresh()->credits);
+        }
+
+        return $redirect;
     }
 
     private function isSupported(string $provider): bool

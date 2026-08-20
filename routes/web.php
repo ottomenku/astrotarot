@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\CreditPackageController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ReadingController;
@@ -21,7 +22,7 @@ Route::get('/', HomeController::class)->name('home');
 Route::get('/locale/{locale}', LocaleController::class)->name('locale.switch');
 
 Route::post('/reading', ReadingController::class)
-    ->middleware('throttle:8,1')
+    ->middleware(['auth', 'throttle:8,1'])
     ->name('reading');
 
 Route::middleware('guest')->group(function () {
@@ -41,6 +42,11 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [LoginController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/credits', [CreditPackageController::class, 'index'])->name('credits.packages');
+    Route::post('/credits/request', [CreditPackageController::class, 'request'])->name('credits.request');
+});
 
 Route::prefix('admin')
     ->name('admin.')

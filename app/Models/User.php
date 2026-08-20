@@ -20,6 +20,7 @@ class User extends Authenticatable
         'provider',
         'provider_id',
         'role',
+        'credits',
         'template_id',
     ];
 
@@ -34,6 +35,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => Role::class,
+            'credits' => 'integer',
         ];
     }
 
