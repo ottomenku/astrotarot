@@ -37,6 +37,36 @@ class CardDrawProfileService
         'változó' => 'mutable',
     ];
 
+    /** Objektumnév → chart id (angol és magyar címkék). */
+    private const CHART_OBJECT_IDS = [
+        'Sun' => 'sun',
+        'Moon' => 'moon',
+        'Mercury' => 'mercury',
+        'Venus' => 'venus',
+        'Mars' => 'mars',
+        'Jupiter' => 'jupiter',
+        'Saturn' => 'saturn',
+        'Uranus' => 'uranus',
+        'Neptune' => 'neptune',
+        'Pluto' => 'pluto',
+        'True Node' => 'true_node',
+        'Mean Lilith' => 'lilith',
+        'ASC' => 'asc',
+        'MC' => 'mc',
+        'South Node' => 'south_node',
+        'Nap' => 'sun',
+        'Hold' => 'moon',
+        'Merkúr' => 'mercury',
+        'Vénusz' => 'venus',
+        'Szaturnusz' => 'saturn',
+        'Uránusz' => 'uranus',
+        'Neptunusz' => 'neptune',
+        'Plútó' => 'pluto',
+        'Felszálló Holdcsomó' => 'true_node',
+        'Leszálló Holdcsomó' => 'south_node',
+        'Lilith' => 'lilith',
+    ];
+
     public function __construct(
         private readonly EphemerisService $ephemeris,
         private readonly EphemerisChartContext $chartContext,
@@ -219,19 +249,9 @@ class CardDrawProfileService
             ];
         }
 
-        $nameToId = [];
+        $nameToId = self::CHART_OBJECT_IDS;
         foreach ($objects as $object) {
             $nameToId[$object['name']] = $object['id'];
-        }
-        foreach ([
-            'Nap' => 'sun', 'Hold' => 'moon', 'Merkúr' => 'mercury', 'Vénusz' => 'venus',
-            'Mars' => 'mars', 'Jupiter' => 'jupiter', 'Szaturnusz' => 'saturn',
-            'Uránusz' => 'uranus', 'Neptunusz' => 'neptune', 'Plútó' => 'pluto',
-            'Felszálló Holdcsomó' => 'true_node', 'Leszálló Holdcsomó' => 'south_node',
-            'Lilith' => 'lilith', 'ASC' => 'asc', 'MC' => 'mc',
-            'True Node' => 'true_node', 'South Node' => 'south_node', 'Mean Lilith' => 'lilith',
-        ] as $label => $id) {
-            $nameToId[$label] = $id;
         }
 
         $aspects = [];
@@ -260,36 +280,7 @@ class CardDrawProfileService
 
     private function chartObjectId(string $name): string
     {
-        $map = [
-            'Sun' => 'sun',
-            'Moon' => 'moon',
-            'Mercury' => 'mercury',
-            'Venus' => 'venus',
-            'Mars' => 'mars',
-            'Jupiter' => 'jupiter',
-            'Saturn' => 'saturn',
-            'Uranus' => 'uranus',
-            'Neptune' => 'neptune',
-            'Pluto' => 'pluto',
-            'True Node' => 'true_node',
-            'Mean Lilith' => 'lilith',
-            'ASC' => 'asc',
-            'MC' => 'mc',
-            'South Node' => 'south_node',
-            'Nap' => 'sun',
-            'Hold' => 'moon',
-            'Merkúr' => 'mercury',
-            'Vénusz' => 'venus',
-            'Szaturnusz' => 'saturn',
-            'Uránusz' => 'uranus',
-            'Neptunusz' => 'neptune',
-            'Plútó' => 'pluto',
-            'Felszálló Holdcsomó' => 'true_node',
-            'Leszálló Holdcsomó' => 'south_node',
-            'Lilith' => 'lilith',
-        ];
-
-        return $map[$name] ?? strtolower(str_replace(' ', '_', $name));
+        return self::CHART_OBJECT_IDS[$name] ?? strtolower(str_replace(' ', '_', $name));
     }
 
     /**

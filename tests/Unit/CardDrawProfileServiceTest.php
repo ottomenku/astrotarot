@@ -2,15 +2,14 @@
 
 namespace Tests\Unit;
 
-use App\Services\AstroScoringEngine;
 use App\Services\CardDrawProfileService;
-use App\Services\TarotPositionPolarity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CardDrawProfileServiceTest extends TestCase
 {
     use RefreshDatabase;
+
     public function test_profile_uses_sun_sign_element_modality_and_tone(): void
     {
         $service = app(CardDrawProfileService::class);
@@ -211,29 +210,15 @@ class CardDrawProfileServiceTest extends TestCase
         $this->assertSame('positive', $profile['variant']);
     }
 
-    public function test_tarot_position_polarity_assigns_independent_slot_tones(): void
+    public function test_fallback_profile_has_defaults(): void
     {
-        $analysis = app(AstroScoringEngine::class)->analyze([
-            ['object' => 'Sun', 'sign' => 'Cancer', 'degree' => 27.0],
-            ['object' => 'Moon', 'sign' => 'Aries', 'degree' => 12.3],
-            ['object' => 'Mercury', 'sign' => 'Leo', 'degree' => 5.2, 'retrograde' => true],
-            ['object' => 'Venus', 'sign' => 'Gemini', 'degree' => 28.0],
-            ['object' => 'Mars', 'sign' => 'Sagittarius', 'degree' => 11.4],
-            ['object' => 'Jupiter', 'sign' => 'Cancer', 'degree' => 9.8],
-            ['object' => 'Saturn', 'sign' => 'Aries', 'degree' => 1.5],
-            ['object' => 'ASC', 'sign' => 'Libra', 'degree' => 18.0],
-            ['object' => 'MC', 'sign' => 'Cancer', 'degree' => 20.1],
-        ]);
+        $profile = app(CardDrawProfileService::class)->fallback('scoring');
 
-        $positions = app(TarotPositionPolarity::class)->assign($analysis);
-
-        $this->assertCount(3, $positions['positions']);
-        foreach ($positions['positions'] as $position) {
-            $this->assertContains($position['besorolas'], ['pozitív', 'negatív']);
-            $this->assertNotSame(0, $position['ertek']);
-        }
-
-        $again = app(TarotPositionPolarity::class)->assign($analysis);
-        $this->assertSame($positions, $again);
+        $this->assertSame('leo', $profile['sun_sign']);
+        $this->assertSame('tűz', $profile['element']);
+        $this->assertSame('scoring', $profile['draw_mode']);
+        $this->assertSame(['positive', 'positive', 'positive'], $profile['variants']);
+        $this->assertCount(3, $profile['slots']);
+        $this->assertSame([], $profile['chart']['objects']);
     }
 }

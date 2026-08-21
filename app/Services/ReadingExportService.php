@@ -12,6 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class ReadingExportService
 {
+    public function __construct(private readonly OgImageService $ogImages)
+    {
+    }
+
     /**
      * @param  array<string, mixed>  $data
      * @return array{locale: string, question: string, cards: list<array<string, mixed>>, answers: list<array{mode: string, label: string, text: string}>}
@@ -83,7 +87,7 @@ class ReadingExportService
                         (string) ($card['figure_id'] ?? '')
                     )
                     : null,
-                'image_url' => app(OgImageService::class)->figurePublicUrl(
+                'image_url' => $this->ogImages->figurePublicUrl(
                     (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot')),
                     (string) ($card['figure_id'] ?? '')
                 ),
@@ -149,7 +153,7 @@ class ReadingExportService
         ]);
     }
 
-    public function defaultAnswerLabel(string $locale, string $mode): string
+    private function defaultAnswerLabel(string $locale, string $mode): string
     {
         return match ($mode) {
             'clarify' => $locale === 'en' ? 'Clarification' : 'Pontosítás',
@@ -160,24 +164,13 @@ class ReadingExportService
 
     private function canEmbedImages(): bool
     {
-        return extension_loaded('gd') && function_exists('imagecreatefrompng');
+        return $this->ogImages->canGenerate();
     }
 
     private function cardImageSrc(string $deck, string $figureId): ?string
     {
-        if ($figureId === '') {
-            return null;
-        }
-
-        $folder = $deck === 'tarot' ? 'tarot-major' : 'egi-orakulum';
-        if ($deck === 'tarot' && preg_match('/^(wands|cups|swords|pentacles)-/', $figureId) === 1) {
-            $relative = "templates/art-deco/assets/{$folder}/figures/minors/{$figureId}.png";
-        } else {
-            $relative = "templates/art-deco/assets/{$folder}/figures/{$figureId}.png";
-        }
-
-        $absolute = public_path($relative);
-        if (! is_file($absolute)) {
+        $absolute = $this->ogImages->figureAbsolutePath($deck, $figureId);
+        if ($absolute === null) {
             return null;
         }
 

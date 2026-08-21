@@ -24,15 +24,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Template::query()->firstOrCreate(
-            ['slug' => 'classic'],
-            [
-                'name' => 'Classic',
-                'description' => 'Default classic template',
-                'is_active' => false,
-            ]
-        );
-
         if ($this->importAstroAdmins($artDeco->id)) {
             return;
         }

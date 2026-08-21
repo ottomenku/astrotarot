@@ -13,12 +13,12 @@ class PromptController extends Controller
     public function edit(AppSettings $settings): View
     {
         return view('admin.prompts.edit', [
-            'systemPromptHu' => $settings->get(AppSettings::SYSTEM_PROMPT_HU) ?: $settings->defaultSystemPromptHu(),
-            'systemPromptEn' => $settings->get(AppSettings::SYSTEM_PROMPT_EN) ?: $settings->defaultSystemPromptEn(),
-            'clarifyPromptHu' => $settings->get(AppSettings::CLARIFY_PROMPT_HU) ?: $settings->defaultClarifyPromptHu(),
-            'clarifyPromptEn' => $settings->get(AppSettings::CLARIFY_PROMPT_EN) ?: $settings->defaultClarifyPromptEn(),
-            'expandPromptHu' => $settings->get(AppSettings::EXPAND_PROMPT_HU) ?: $settings->defaultExpandPromptHu(),
-            'expandPromptEn' => $settings->get(AppSettings::EXPAND_PROMPT_EN) ?: $settings->defaultExpandPromptEn(),
+            'systemPromptHu' => $settings->systemPrompt('hu'),
+            'systemPromptEn' => $settings->systemPrompt('en'),
+            'clarifyPromptHu' => $settings->clarifyPrompt('hu'),
+            'clarifyPromptEn' => $settings->clarifyPrompt('en'),
+            'expandPromptHu' => $settings->expandPrompt('hu'),
+            'expandPromptEn' => $settings->expandPrompt('en'),
         ]);
     }
 

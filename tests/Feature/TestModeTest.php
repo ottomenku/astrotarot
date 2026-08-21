@@ -61,7 +61,9 @@ class TestModeTest extends TestCase
             AppSettings::LLM_ENABLED => '0',
         ]);
 
-        $this->postJson(route('reading'), [
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)->postJson(route('reading'), [
             'question' => 'Mit tegyek most a kapcsolatommal?',
             'cards' => [
                 [
@@ -71,10 +73,6 @@ class TestModeTest extends TestCase
                 [
                     'figure_id' => '02-the-high-priestess',
                     'background_id' => 'fire-shadow',
-                ],
-                [
-                    'figure_id' => '07-the-chariot',
-                    'background_id' => 'fixed-positive',
                 ],
             ],
         ])

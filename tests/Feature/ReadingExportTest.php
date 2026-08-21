@@ -114,4 +114,18 @@ class ReadingExportTest extends TestCase
             ->assertSee('og:title', false)
             ->assertSee(route('reading.share.og', $token), false);
     }
+
+    public function test_expired_share_is_gone(): void
+    {
+        $user = User::factory()->create();
+        $share = ReadingShare::query()->create([
+            'user_id' => $user->id,
+            'token' => str_repeat('a', 40),
+            'payload' => $this->payload(),
+            'expires_at' => now()->subDay(),
+        ]);
+
+        $this->get(route('reading.share.show', $share->token))->assertStatus(410);
+        $this->get(route('reading.share.og', $share->token))->assertStatus(410);
+    }
 }

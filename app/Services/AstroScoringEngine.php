@@ -429,10 +429,8 @@ final class AstroScoringEngine
             'Á'=>'A','É'=>'E','Í'=>'I','Ó'=>'O','Ö'=>'O','Ő'=>'O','Ú'=>'U','Ü'=>'U','Ű'=>'U',
             'á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ö'=>'o','ő'=>'o','ú'=>'u','ü'=>'u','ű'=>'u',
         ]);
-        $value = strtolower($value);
-        return preg_replace('/[^a-z0-9]+/', '_', $value) !== null
-            ? trim((string) preg_replace('/[^a-z0-9]+/', '_', $value), '_')
-            : $value;
+
+        return trim((string) preg_replace('/[^a-z0-9]+/', '_', strtolower($value)), '_');
     }
 
     private function displayObjectName(string $key, string $fallback): string

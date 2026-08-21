@@ -144,28 +144,46 @@ class AppSettings
 
     public function systemPrompt(string $locale): string
     {
-        $key = $locale === 'en' ? self::SYSTEM_PROMPT_EN : self::SYSTEM_PROMPT_HU;
-        $fallback = $locale === 'en' ? $this->defaultSystemPromptEn() : $this->defaultSystemPromptHu();
-
-        $value = trim((string) $this->get($key, $fallback));
-
-        return $value !== '' ? $value : $fallback;
+        return $this->localizedPrompt(
+            $locale,
+            self::SYSTEM_PROMPT_EN,
+            self::SYSTEM_PROMPT_HU,
+            $this->defaultSystemPromptEn(),
+            $this->defaultSystemPromptHu(),
+        );
     }
 
     public function clarifyPrompt(string $locale): string
     {
-        $key = $locale === 'en' ? self::CLARIFY_PROMPT_EN : self::CLARIFY_PROMPT_HU;
-        $fallback = $locale === 'en' ? $this->defaultClarifyPromptEn() : $this->defaultClarifyPromptHu();
-        $value = trim((string) $this->get($key, $fallback));
-
-        return $value !== '' ? $value : $fallback;
+        return $this->localizedPrompt(
+            $locale,
+            self::CLARIFY_PROMPT_EN,
+            self::CLARIFY_PROMPT_HU,
+            $this->defaultClarifyPromptEn(),
+            $this->defaultClarifyPromptHu(),
+        );
     }
 
     public function expandPrompt(string $locale): string
     {
-        $key = $locale === 'en' ? self::EXPAND_PROMPT_EN : self::EXPAND_PROMPT_HU;
-        $fallback = $locale === 'en' ? $this->defaultExpandPromptEn() : $this->defaultExpandPromptHu();
-        $value = trim((string) $this->get($key, $fallback));
+        return $this->localizedPrompt(
+            $locale,
+            self::EXPAND_PROMPT_EN,
+            self::EXPAND_PROMPT_HU,
+            $this->defaultExpandPromptEn(),
+            $this->defaultExpandPromptHu(),
+        );
+    }
+
+    private function localizedPrompt(
+        string $locale,
+        string $enKey,
+        string $huKey,
+        string $enFallback,
+        string $huFallback,
+    ): string {
+        $fallback = $locale === 'en' ? $enFallback : $huFallback;
+        $value = trim((string) $this->get($locale === 'en' ? $enKey : $huKey, $fallback));
 
         return $value !== '' ? $value : $fallback;
     }

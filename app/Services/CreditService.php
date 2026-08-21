@@ -45,13 +45,7 @@ class CreditService
 
     public function package(string $key): ?array
     {
-        foreach ($this->packages() as $package) {
-            if ($package['key'] === $key) {
-                return $package;
-            }
-        }
-
-        return null;
+        return $this->findByKey($this->packages(), $key);
     }
 
     /**
@@ -126,13 +120,7 @@ class CreditService
 
     public function plan(string $key): ?array
     {
-        foreach ($this->plans() as $plan) {
-            if ($plan['key'] === $key) {
-                return $plan;
-            }
-        }
-
-        return null;
+        return $this->findByKey($this->plans(), $key);
     }
 
     public function grantSignupBonus(User $user): void
@@ -228,5 +216,20 @@ class CreditService
     public function hasAstroMottoAccess(User $user): bool
     {
         return ($user->plan ?: self::PLAN_FREE) === self::PLAN_EXPERT;
+    }
+
+    /**
+     * @param  list<array{key: string}>  $items
+     * @return array<string, mixed>|null
+     */
+    private function findByKey(array $items, string $key): ?array
+    {
+        foreach ($items as $item) {
+            if ($item['key'] === $key) {
+                return $item;
+            }
+        }
+
+        return null;
     }
 }

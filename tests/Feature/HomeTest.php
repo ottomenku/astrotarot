@@ -62,4 +62,9 @@ class HomeTest extends TestCase
 
         $this->assertSame('en', session('locale'));
     }
+
+    public function test_invalid_locale_is_not_found(): void
+    {
+        $this->get(route('locale.switch', 'de'))->assertNotFound();
+    }
 }

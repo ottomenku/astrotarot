@@ -11,45 +11,35 @@ class OgImageService
 
     public function figureAbsolutePath(string $deck, string $figureId): ?string
     {
-        if ($figureId === '') {
-            return null;
-        }
+        $relative = $this->figureRelativePath($deck, $figureId);
 
-        $folder = $deck === 'tarot' ? 'tarot-major' : 'egi-orakulum';
-        if ($deck === 'tarot' && preg_match('/^(wands|cups|swords|pentacles)-/', $figureId) === 1) {
-            $relative = "templates/art-deco/assets/{$folder}/figures/minors/{$figureId}.png";
-        } else {
-            $relative = "templates/art-deco/assets/{$folder}/figures/{$figureId}.png";
-        }
-
-        $absolute = public_path($relative);
-
-        return is_file($absolute) ? $absolute : null;
+        return $relative === null ? null : public_path($relative);
     }
 
     public function figurePublicUrl(string $deck, string $figureId): ?string
     {
+        $relative = $this->figureRelativePath($deck, $figureId);
+
+        return $relative === null ? null : asset($relative);
+    }
+
+    public function figureRelativePath(string $deck, string $figureId): ?string
+    {
         if ($figureId === '') {
             return null;
         }
 
         $folder = $deck === 'tarot' ? 'tarot-major' : 'egi-orakulum';
-        if ($deck === 'tarot' && preg_match('/^(wands|cups|swords|pentacles)-/', $figureId) === 1) {
-            $relative = "templates/art-deco/assets/{$folder}/figures/minors/{$figureId}.png";
-        } else {
-            $relative = "templates/art-deco/assets/{$folder}/figures/{$figureId}.png";
-        }
+        $file = $deck === 'tarot' && preg_match('/^(wands|cups|swords|pentacles)-/', $figureId) === 1
+            ? "templates/art-deco/assets/{$folder}/figures/minors/{$figureId}.png"
+            : "templates/art-deco/assets/{$folder}/figures/{$figureId}.png";
 
-        if (! is_file(public_path($relative))) {
-            return null;
-        }
-
-        return asset($relative);
+        return is_file(public_path($file)) ? $file : null;
     }
 
     public function backgroundAbsolutePath(string $variant): string
     {
-        $tone = $variant === 'shadow' || $variant === 'negative' ? 'shadow' : 'light';
+        $tone = in_array($variant, ['shadow', 'negative', 'negatív'], true) ? 'shadow' : 'light';
 
         return public_path("templates/art-deco/assets/egi-orakulum/backgrounds/shared-{$tone}.png");
     }

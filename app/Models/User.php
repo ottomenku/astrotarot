@@ -63,9 +63,4 @@ class User extends Authenticatable
     {
         return in_array($this->planKey(), ['premium', 'expert'], true);
     }
-
-    public function isExpert(): bool
-    {
-        return $this->planKey() === 'expert';
-    }
 }
