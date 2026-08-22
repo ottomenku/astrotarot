@@ -1,5 +1,9 @@
 <?php
 
+$llmDriver = strtolower((string) env('LLM_DRIVER', 'openai')) === 'ollama'
+    ? 'ollama'
+    : 'openai';
+
 return [
 
     /*
@@ -36,10 +40,20 @@ return [
     ],
 
     'openai' => [
+        'driver' => $llmDriver,
         'api_key' => trim((string) env('OPENAI_API_KEY', '')),
-        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
-        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
-        'timeout' => (int) env('OPENAI_TIMEOUT', 120),
+        'base_url' => rtrim((string) env(
+            'OPENAI_BASE_URL',
+            $llmDriver === 'ollama' ? 'http://127.0.0.1:11434/v1' : 'https://api.openai.com/v1'
+        ), '/'),
+        'model' => (string) env(
+            'OPENAI_MODEL',
+            $llmDriver === 'ollama' ? 'llama3.2' : 'gpt-4o-mini'
+        ),
+        'timeout' => (int) env(
+            'OPENAI_TIMEOUT',
+            $llmDriver === 'ollama' ? 180 : 120
+        ),
     ],
 
     'google' => [

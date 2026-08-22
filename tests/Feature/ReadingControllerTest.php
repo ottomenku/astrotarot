@@ -214,7 +214,10 @@ class ReadingControllerTest extends TestCase
     public function test_missing_api_key_returns_error_without_spending_credit(): void
     {
         Http::preventStrayRequests();
-        config(['services.openai.api_key' => '']);
+        config([
+            'services.openai.driver' => 'openai',
+            'services.openai.api_key' => '',
+        ]);
 
         $user = User::factory()->create(['credits' => 10]);
 
@@ -226,6 +229,34 @@ class ReadingControllerTest extends TestCase
         $this->assertSame(10, (int) $user->fresh()->credits);
         $this->assertSame('error', ReadingLog::query()->first()?->status);
         $this->assertStringContainsString('OPENAI_API_KEY', (string) ReadingLog::query()->first()?->error);
+    }
+
+    public function test_ollama_reading_works_without_api_key(): void
+    {
+        config([
+            'services.openai.driver' => 'ollama',
+            'services.openai.api_key' => '',
+            'services.openai.base_url' => 'http://127.0.0.1:11434/v1',
+            'services.openai.model' => 'llama3.2',
+        ]);
+        Http::preventStrayRequests();
+        Http::fake([
+            '127.0.0.1:11434/*' => Http::response([
+                'choices' => [
+                    ['message' => ['content' => 'Az Ollama szerint cselekedj.']],
+                ],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)
+            ->postJson(route('reading'), $this->validPayload())
+            ->assertOk()
+            ->assertJsonPath('reading', 'Az Ollama szerint cselekedj.');
+
+        $this->assertSame(9, (int) $user->fresh()->credits);
+        $this->assertSame('llama3.2', ReadingLog::query()->first()?->model);
     }
 
     public function test_openai_http_error_returns_error_without_spending_credit(): void
@@ -299,6 +330,7 @@ class ReadingControllerTest extends TestCase
     private function fakeOpenAiHttp(int $status, array $body): void
     {
         config([
+            'services.openai.driver' => 'openai',
             'services.openai.api_key' => 'test-key',
             'services.openai.base_url' => 'https://api.openai.com/v1',
             'services.openai.model' => 'gpt-4o-mini',

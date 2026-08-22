@@ -13,7 +13,10 @@ class CheckReadingCommandTest extends TestCase
 
     public function test_check_fails_when_api_key_is_missing(): void
     {
-        config(['services.openai.api_key' => '']);
+        config([
+            'services.openai.driver' => 'openai',
+            'services.openai.api_key' => '',
+        ]);
 
         $this->artisan('reading:check')
             ->expectsOutputToContain('OPENAI_API_KEY missing')
@@ -65,6 +68,43 @@ class CheckReadingCommandTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'api.openai.com/*' => Http::response([
+                'choices' => [
+                    ['message' => ['content' => 'OK']],
+                ],
+            ], 200),
+        ]);
+
+        $this->artisan('reading:check', ['--ping' => true])
+            ->expectsOutputToContain('openai_ok=1')
+            ->assertSuccessful();
+    }
+
+    public function test_check_allows_ollama_without_api_key(): void
+    {
+        config([
+            'services.openai.driver' => 'ollama',
+            'services.openai.api_key' => '',
+            'services.openai.base_url' => 'http://127.0.0.1:11434/v1',
+            'services.openai.model' => 'llama3.2',
+        ]);
+
+        $this->artisan('reading:check')
+            ->expectsOutputToContain('driver=ollama')
+            ->expectsOutputToContain('key_set=0')
+            ->assertSuccessful();
+    }
+
+    public function test_ping_ollama_endpoint(): void
+    {
+        config([
+            'services.openai.driver' => 'ollama',
+            'services.openai.api_key' => '',
+            'services.openai.base_url' => 'http://127.0.0.1:11434/v1',
+            'services.openai.model' => 'llama3.2',
+        ]);
+        Http::preventStrayRequests();
+        Http::fake([
+            '127.0.0.1:11434/*' => Http::response([
                 'choices' => [
                     ['message' => ['content' => 'OK']],
                 ],

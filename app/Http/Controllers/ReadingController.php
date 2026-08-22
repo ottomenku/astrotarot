@@ -18,7 +18,7 @@ class ReadingController extends Controller
         AppSettings $settings,
         CreditService $credits,
     ): JsonResponse {
-        set_time_limit(180);
+        set_time_limit(max(180, (int) config('services.openai.timeout', 120) + 30));
 
         if (! $settings->llmEnabled()) {
             return response()->json([

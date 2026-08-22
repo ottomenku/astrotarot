@@ -17,6 +17,9 @@ class CheckReading extends Command
     public function handle(AppSettings $settings, OpenAIClient $openAI): int
     {
         $ok = true;
+        $driver = $openAI->driver();
+
+        $this->info('driver='.$driver);
 
         if (! $settings->llmEnabled()) {
             $this->error('llm_enabled=0');
@@ -26,11 +29,11 @@ class CheckReading extends Command
         }
 
         $key = trim((string) config('services.openai.api_key'));
-        if ($key === '') {
+        if ($openAI->requiresApiKey() && $key === '') {
             $this->error('OPENAI_API_KEY missing');
             $ok = false;
         } else {
-            $this->info('key_set=1');
+            $this->info('key_set='.($key !== '' ? '1' : '0'));
         }
 
         $this->info('model='.(string) config('services.openai.model'));
@@ -40,7 +43,7 @@ class CheckReading extends Command
             return $ok ? self::SUCCESS : self::FAILURE;
         }
 
-        if ($key === '') {
+        if ($openAI->requiresApiKey() && $key === '') {
             return self::FAILURE;
         }
 

@@ -9,18 +9,41 @@ use RuntimeException;
 
 class OpenAIClient
 {
+    public function driver(): string
+    {
+        return strtolower((string) config('services.openai.driver', 'openai')) === 'ollama'
+            ? 'ollama'
+            : 'openai';
+    }
+
+    public function requiresApiKey(): bool
+    {
+        if ($this->driver() === 'ollama') {
+            return false;
+        }
+
+        $base = strtolower((string) config('services.openai.base_url', ''));
+
+        return ! str_contains($base, ':11434');
+    }
+
     private function http(): PendingRequest
     {
         $apiKey = trim((string) config('services.openai.api_key'));
 
-        if ($apiKey === '') {
+        if ($apiKey === '' && $this->requiresApiKey()) {
             throw new RuntimeException('OPENAI_API_KEY is not configured.');
         }
 
-        return Http::withToken($apiKey)
-            ->acceptJson()
+        $request = Http::acceptJson()
             ->asJson()
             ->timeout((int) config('services.openai.timeout', 120));
+
+        if ($apiKey !== '') {
+            $request = $request->withToken($apiKey);
+        }
+
+        return $request;
     }
 
     /**

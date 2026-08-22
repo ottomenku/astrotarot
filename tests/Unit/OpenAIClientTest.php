@@ -11,7 +11,10 @@ class OpenAIClientTest extends TestCase
 {
     public function test_empty_api_key_is_rejected(): void
     {
-        config(['services.openai.api_key' => '   ']);
+        config([
+            'services.openai.driver' => 'openai',
+            'services.openai.api_key' => '   ',
+        ]);
         Http::preventStrayRequests();
 
         $this->expectException(RuntimeException::class);
@@ -46,6 +49,36 @@ class OpenAIClientTest extends TestCase
         $this->assertTrue($response->successful());
         Http::assertSent(function ($request) {
             return $request->hasHeader('Authorization', 'Bearer test-key');
+        });
+    }
+
+    public function test_ollama_does_not_require_an_api_key(): void
+    {
+        config([
+            'services.openai.driver' => 'ollama',
+            'services.openai.api_key' => '',
+            'services.openai.base_url' => 'http://127.0.0.1:11434/v1',
+            'services.openai.model' => 'llama3.2',
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            '127.0.0.1:11434/*' => Http::response([
+                'choices' => [
+                    ['message' => ['content' => 'OK']],
+                ],
+            ], 200),
+        ]);
+
+        $response = app(OpenAIClient::class)->chat([
+            ['role' => 'user', 'content' => 'OK'],
+        ]);
+
+        $this->assertTrue($response->successful());
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), '127.0.0.1:11434/v1/chat/completions')
+                && $request['model'] === 'llama3.2'
+                && ! $request->hasHeader('Authorization');
         });
     }
 }
