@@ -60,7 +60,8 @@ class ReadingControllerTest extends TestCase
     public function test_reading_requires_authentication(): void
     {
         $this->postJson(route('reading'), $this->validPayload())
-            ->assertUnauthorized();
+            ->assertUnauthorized()
+            ->assertJsonPath('error', fn ($value) => is_string($value) && $value !== '');
     }
 
     public function test_reading_requires_question_and_two_cards(): void
@@ -70,24 +71,14 @@ class ReadingControllerTest extends TestCase
         $this->actingAs($user)->postJson(route('reading'), [
             'question' => 'túl rövid',
             'cards' => [],
-        ])->assertStatus(422);
+        ])
+            ->assertStatus(422)
+            ->assertJsonPath('error', fn ($value) => is_string($value) && $value !== '');
     }
 
     public function test_reading_returns_model_text_and_logs_exchange(): void
     {
-        config([
-            'services.openai.api_key' => 'test-key',
-            'services.openai.base_url' => 'https://api.openai.com/v1',
-            'services.openai.model' => 'gpt-4o-mini',
-        ]);
-
-        Http::fake([
-            'api.openai.com/*' => Http::response([
-                'choices' => [
-                    ['message' => ['content' => 'Az Égi mestered, a Mars, most a Skorpióban áll. A Mágus úgy értelmezi, hogy cselekedj.']],
-                ],
-            ], 200),
-        ]);
+        $this->fakeOpenAi('Az Égi mestered, a Mars, most a Skorpióban áll. A Mágus úgy értelmezi, hogy cselekedj.');
 
         $user = User::factory()->create(['credits' => 10]);
 
@@ -153,19 +144,7 @@ class ReadingControllerTest extends TestCase
 
     public function test_expand_follow_up_returns_model_text_without_debit(): void
     {
-        config([
-            'services.openai.api_key' => 'test-key',
-            'services.openai.base_url' => 'https://api.openai.com/v1',
-            'services.openai.model' => 'gpt-4o-mini',
-        ]);
-
-        Http::fake([
-            'api.openai.com/*' => Http::response([
-                'choices' => [
-                    ['message' => ['content' => 'Bővebb válasz a korábbi olvasathoz.']],
-                ],
-            ], 200),
-        ]);
+        $this->fakeOpenAi('Bővebb válasz a korábbi olvasathoz.');
 
         $user = User::factory()->create(['credits' => 3]);
 
@@ -230,5 +209,113 @@ class ReadingControllerTest extends TestCase
     {
         $this->assertSame(10, CreditService::SIGNUP_BONUS);
         $this->assertSame(1, CreditService::QUESTION_COST);
+    }
+
+    public function test_missing_api_key_returns_error_without_spending_credit(): void
+    {
+        Http::preventStrayRequests();
+        config(['services.openai.api_key' => '']);
+
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)
+            ->postJson(route('reading'), $this->validPayload())
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'Az értelmezés most nem elérhető. Próbáld újra később.');
+
+        $this->assertSame(10, (int) $user->fresh()->credits);
+        $this->assertSame('error', ReadingLog::query()->first()?->status);
+        $this->assertStringContainsString('OPENAI_API_KEY', (string) ReadingLog::query()->first()?->error);
+    }
+
+    public function test_openai_http_error_returns_error_without_spending_credit(): void
+    {
+        $this->fakeOpenAiHttp(401, [
+            'error' => ['message' => 'Incorrect API key provided'],
+        ]);
+
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)
+            ->postJson(route('reading'), $this->validPayload())
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'Az értelmezés most nem elérhető. Próbáld újra később.');
+
+        $this->assertSame(10, (int) $user->fresh()->credits);
+        $log = ReadingLog::query()->first();
+        $this->assertSame('error', $log?->status);
+        $this->assertStringContainsString('HTTP 401', (string) $log?->error);
+    }
+
+    public function test_empty_model_response_returns_error_without_spending_credit(): void
+    {
+        $this->fakeOpenAi('   ');
+
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)
+            ->postJson(route('reading'), $this->validPayload())
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'Üres választ kaptunk az értelmezőtől.');
+
+        $this->assertSame(10, (int) $user->fresh()->credits);
+        $this->assertSame('Empty model response', ReadingLog::query()->first()?->error);
+    }
+
+    public function test_long_astro_caption_is_accepted(): void
+    {
+        $this->fakeOpenAi('Rendben.');
+
+        $payload = $this->validPayload();
+        $payload['cards'][0]['astro_caption'] = str_repeat('ég ', 900);
+
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)
+            ->postJson(route('reading'), $payload)
+            ->assertOk()
+            ->assertJsonPath('reading', 'Rendben.');
+    }
+
+    public function test_expired_csrf_json_includes_error_key(): void
+    {
+        $handler = app(\Illuminate\Contracts\Debug\ExceptionHandler::class);
+        $request = \Illuminate\Http\Request::create('/reading', 'POST', [], [], [], [
+            'HTTP_ACCEPT' => 'application/json',
+        ]);
+
+        $response = $handler->render($request, new \Illuminate\Session\TokenMismatchException);
+
+        $this->assertSame(419, $response->getStatusCode());
+        $this->assertSame(
+            'A munkamenet lejárt. Frissítsd az oldalt, majd próbáld újra.',
+            json_decode($response->getContent(), true)['error'] ?? null
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $body
+     */
+    private function fakeOpenAiHttp(int $status, array $body): void
+    {
+        config([
+            'services.openai.api_key' => 'test-key',
+            'services.openai.base_url' => 'https://api.openai.com/v1',
+            'services.openai.model' => 'gpt-4o-mini',
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.openai.com/*' => Http::response($body, $status),
+        ]);
+    }
+
+    private function fakeOpenAi(string $content): void
+    {
+        $this->fakeOpenAiHttp(200, [
+            'choices' => [
+                ['message' => ['content' => $content]],
+            ],
+        ]);
     }
 }

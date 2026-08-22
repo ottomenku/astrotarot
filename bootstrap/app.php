@@ -33,7 +33,11 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
-            if ($response->getStatusCode() === 419 && $request->expectsJson()) {
+            if (! $request->expectsJson()) {
+                return $response;
+            }
+
+            if ($response->getStatusCode() === 419) {
                 return response()->json([
                     'error' => app()->getLocale() === 'en'
                         ? 'Your session expired. Please refresh the page and try again.'
@@ -41,6 +45,28 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 419);
             }
 
-            return $response;
+            $status = $response->getStatusCode();
+            if ($status < 400) {
+                return $response;
+            }
+
+            $payload = json_decode($response->getContent(), true);
+            if (! is_array($payload)) {
+                return $response;
+            }
+
+            $existing = $payload['error'] ?? null;
+            if (is_string($existing) && $existing !== '') {
+                return $response;
+            }
+
+            $message = $payload['message'] ?? null;
+            if (! is_string($message) || $message === '') {
+                return $response;
+            }
+
+            $payload['error'] = $message;
+
+            return response()->json($payload, $status);
         });
     })->create();

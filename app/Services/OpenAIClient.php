@@ -11,7 +11,7 @@ class OpenAIClient
 {
     private function http(): PendingRequest
     {
-        $apiKey = (string) config('services.openai.api_key');
+        $apiKey = trim((string) config('services.openai.api_key'));
 
         if ($apiKey === '') {
             throw new RuntimeException('OPENAI_API_KEY is not configured.');
