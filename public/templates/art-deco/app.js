@@ -18,6 +18,24 @@
   let creditsBalance = Number.parseInt(root.dataset.credits || '0', 10) || 0;
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
   const initialLocale = root.dataset.locale === 'en' ? 'en' : 'hu';
+
+  function jsonErrorMessage(data, fallback) {
+    if (typeof data?.error === 'string' && data.error.trim()) return data.error;
+    if (typeof data?.message === 'string' && data.message.trim()) return data.message;
+    const first = data?.errors && Object.values(data.errors).flat()
+      .find((item) => typeof item === 'string' && item.trim());
+    return first || fallback;
+  }
+
+  function jsonHeaders(extra = {}) {
+    return {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'X-CSRF-TOKEN': csrfToken,
+      'X-Requested-With': 'XMLHttpRequest',
+      ...extra,
+    };
+  }
   const drawProfile = (() => {
     try {
       return JSON.parse(root.dataset.drawProfile || '{}');
@@ -42,6 +60,7 @@
       messageLoading: 'Az LLM gondolkodik…',
       messageNeedQuestion: 'Írj legalább {n} karakteres kérdést, mielőtt lapot választasz.',
       messageError: 'Az értelmezés most nem sikerült. Próbáld újra egy pillanat múlva.',
+      sessionExpired: 'A munkamenet lejárt. Frissítsd az oldalt, majd próbáld újra.',
       messageLlmDisabled: 'Az LLM értelmezés jelenleg ki van kapcsolva.',
       deckOracle: 'Égi Orákulum',
       deckTarot: 'Tarot pakli',
@@ -93,6 +112,7 @@
       messageLoading: 'The LLM is thinking…',
       messageNeedQuestion: 'Write a question of at least {n} characters before choosing a card.',
       messageError: 'The reading could not be created. Please try again in a moment.',
+      sessionExpired: 'Your session expired. Please refresh the page and try again.',
       messageLlmDisabled: 'LLM readings are currently turned off.',
       deckOracle: 'Celestial Oracle',
       deckTarot: 'Tarot deck',
@@ -753,17 +773,16 @@
   async function postJson(url, body) {
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'X-CSRF-TOKEN': csrfToken,
-        'X-Requested-With': 'XMLHttpRequest',
-      },
+      credentials: 'same-origin',
+      headers: jsonHeaders(),
       body: JSON.stringify(body),
     });
     const data = await response.json().catch(() => ({}));
+    if (response.status === 419) {
+      throw new Error(t().sessionExpired);
+    }
     if (!response.ok) {
-      throw new Error(data.error || t().shareError);
+      throw new Error(jsonErrorMessage(data, t().shareError));
     }
     return data;
   }
@@ -780,17 +799,16 @@
     try {
       const response = await fetch(exportPdfUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/pdf',
-          'X-CSRF-TOKEN': csrfToken,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
+        credentials: 'same-origin',
+        headers: jsonHeaders({ Accept: 'application/pdf' }),
         body: JSON.stringify(payload),
       });
+      if (response.status === 419) {
+        throw new Error(t().sessionExpired);
+      }
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || t().shareError);
+        throw new Error(jsonErrorMessage(data, t().shareError));
       }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -925,7 +943,7 @@
         polarity,
         deck: draw.deck,
         slot_title: t().slotTitles[slot],
-        astro_caption: slotCaptionText(slot, draw.figureId),
+        astro_caption: slotCaptionText(slot, draw.figureId).slice(0, 8000),
       };
     });
   }
@@ -1008,12 +1026,8 @@
     try {
       const response = await fetch(readingUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
+        credentials: 'same-origin',
+        headers: jsonHeaders(),
         signal: controller.signal,
         body: JSON.stringify({
           question,
@@ -1031,14 +1045,17 @@
         updateCreditsBalance(data.credits);
       }
       if (!response.ok) {
+        if (response.status === 419) {
+          throw new Error(t().sessionExpired);
+        }
         if (response.status === 401) {
           requireAuth();
-          throw new Error(data.error || t().messageNeedAuth);
+          throw new Error(jsonErrorMessage(data, t().messageNeedAuth));
         }
         if (response.status === 402) {
-          throw new Error(data.error || t().messageNeedCredits);
+          throw new Error(jsonErrorMessage(data, t().messageNeedCredits));
         }
-        throw new Error(data.error || t().messageError);
+        throw new Error(jsonErrorMessage(data, t().messageError));
       }
 
       if (!data.reading) {

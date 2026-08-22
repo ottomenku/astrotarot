@@ -18,6 +18,8 @@ class ReadingController extends Controller
         AppSettings $settings,
         CreditService $credits,
     ): JsonResponse {
+        set_time_limit(180);
+
         if (! $settings->llmEnabled()) {
             return response()->json([
                 'error' => __('messages.llm_disabled'),
@@ -51,7 +53,7 @@ class ReadingController extends Controller
             'cards.*.polarity' => ['nullable', 'string', 'max:32'],
             'cards.*.deck' => ['nullable', 'string', 'max:32'],
             'cards.*.slot_title' => ['nullable', 'string', 'max:120'],
-            'cards.*.astro_caption' => ['nullable', 'string', 'max:2000'],
+            'cards.*.astro_caption' => ['nullable', 'string', 'max:8000'],
         ]);
 
         $mode = $data['mode'] ?? TarotReadingService::MODE_INITIAL;

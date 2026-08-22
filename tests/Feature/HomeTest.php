@@ -51,6 +51,7 @@ class HomeTest extends TestCase
             ->assertSee('AstroTarot', false)
             ->assertSee('data-deck-slider', false)
             ->assertSee('data-draw-profile', false)
+            ->assertSee('data-reading-url="/reading"', false)
             ->assertSee(asset('templates/art-deco/app.js'), false);
     }
 
