@@ -90,11 +90,38 @@ class TestModeTest extends TestCase
             ->put(route('admin.test-mode.update'), [
                 // site_enabled unchecked
                 'llm_enabled' => '1',
+                'llm_route' => AppSettings::LLM_ROUTE_OPENAI,
             ])
             ->assertRedirect(route('admin.test-mode.edit'));
 
         $settings = app(AppSettings::class);
         $this->assertFalse($settings->siteEnabled());
         $this->assertTrue($settings->llmEnabled());
+        $this->assertSame(AppSettings::LLM_ROUTE_OPENAI, $settings->llmRoute());
+    }
+
+    public function test_admin_can_choose_ollama_models(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.test-mode.edit'))
+            ->assertOk()
+            ->assertSee(__('admin.test_mode.llm_route'), false)
+            ->assertSee('llama3.2', false)
+            ->assertSee('qwen2.5:14b', false);
+
+        $this->actingAs($admin)
+            ->put(route('admin.test-mode.update'), [
+                'site_enabled' => '1',
+                'llm_enabled' => '1',
+                'llm_route' => AppSettings::LLM_ROUTE_OLLAMA_SMALL,
+            ])
+            ->assertRedirect(route('admin.test-mode.edit'));
+
+        $this->assertSame(
+            AppSettings::LLM_ROUTE_OLLAMA_SMALL,
+            app(AppSettings::class)->llmRoute()
+        );
     }
 }

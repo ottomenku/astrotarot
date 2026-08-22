@@ -12,11 +12,41 @@ use Throwable;
 
 class OpenAIClient
 {
+    public function __construct(private readonly AppSettings $settings)
+    {
+    }
+
+    public function route(): string
+    {
+        return $this->settings->effectiveLlmRoute();
+    }
+
     public function driver(): string
     {
-        return strtolower((string) config('services.openai.driver', 'openai')) === 'ollama'
-            ? 'ollama'
-            : 'openai';
+        return $this->route() === AppSettings::LLM_ROUTE_OPENAI
+            ? 'openai'
+            : 'ollama';
+    }
+
+    public function selectedModel(?string $override = null): string
+    {
+        if (is_string($override) && trim($override) !== '') {
+            return trim($override);
+        }
+
+        return match ($this->route()) {
+            AppSettings::LLM_ROUTE_OPENAI => $this->openAiModel(),
+            AppSettings::LLM_ROUTE_OLLAMA_SMALL => (string) config('services.openai.ollama_small_model', 'llama3.2'),
+            AppSettings::LLM_ROUTE_OLLAMA_LARGE => (string) config('services.openai.ollama_large_model', 'qwen2.5:14b'),
+            default => (string) config('services.openai.model', 'gpt-4o-mini'),
+        };
+    }
+
+    public function baseUrl(): string
+    {
+        return $this->driver() === 'ollama'
+            ? $this->ollamaBaseUrl()
+            : $this->openAiBaseUrl();
     }
 
     public function requiresApiKey(): bool
@@ -25,7 +55,7 @@ class OpenAIClient
             return false;
         }
 
-        $base = strtolower((string) config('services.openai.base_url', ''));
+        $base = strtolower($this->openAiBaseUrl());
 
         return ! str_contains($base, ':11434');
     }
@@ -75,14 +105,30 @@ class OpenAIClient
      */
     public function complete(array $messages, ?string $model = null, array $options = []): LlmChatResult
     {
-        $baseUrl = rtrim((string) config('services.openai.base_url', 'https://api.openai.com/v1'), '/');
-        $model = $model ?: (string) config('services.openai.model', 'gpt-4o-mini');
-        $provider = $this->driver() === 'ollama' ? 'ollama' : 'openai';
+        $model = $this->selectedModel($model);
+
+        if ($this->driver() === 'openai') {
+            $response = $this->postChat(
+                $this->openAiBaseUrl(),
+                $model,
+                $messages,
+                $options,
+                $this->requiresApiKey(),
+            );
+
+            return new LlmChatResult($response, 'openai', $model, false);
+        }
 
         try {
-            $response = $this->postChat($baseUrl, $model, $messages, $options, $this->requiresApiKey());
+            $response = $this->postChat(
+                $this->ollamaBaseUrl(),
+                $model,
+                $messages,
+                $options,
+                false,
+            );
 
-            return new LlmChatResult($response, $provider, $model, false);
+            return new LlmChatResult($response, 'ollama', $model, false);
         } catch (ConnectionException $e) {
             return $this->fallbackOrThrow($e, $messages, $options);
         }
@@ -117,10 +163,39 @@ class OpenAIClient
 
         Log::warning('Ollama unreachable, falling back to OpenAI', ['error' => $e->getMessage()]);
 
-        $baseUrl = rtrim((string) config('services.openai.cloud_base_url', 'https://api.openai.com/v1'), '/');
-        $model = (string) config('services.openai.cloud_model', 'gpt-4o-mini');
-        $response = $this->postChat($baseUrl, $model, $messages, $options, true);
+        $model = $this->openAiModel();
+        $response = $this->postChat($this->openAiBaseUrl(), $model, $messages, $options, true);
 
         return new LlmChatResult($response, 'openai', $model, true);
+    }
+
+    private function ollamaBaseUrl(): string
+    {
+        $base = rtrim((string) config('services.openai.base_url', ''), '/');
+        if (str_contains($base, ':11434')) {
+            return $base;
+        }
+
+        return rtrim((string) config('services.openai.ollama_base_url', 'http://127.0.0.1:11434/v1'), '/');
+    }
+
+    private function openAiBaseUrl(): string
+    {
+        $base = rtrim((string) config('services.openai.base_url', 'https://api.openai.com/v1'), '/');
+        if (str_contains($base, ':11434')) {
+            return rtrim((string) config('services.openai.cloud_base_url', 'https://api.openai.com/v1'), '/');
+        }
+
+        return $base !== '' ? $base : 'https://api.openai.com/v1';
+    }
+
+    private function openAiModel(): string
+    {
+        $driver = strtolower((string) config('services.openai.driver', 'openai'));
+        $configured = $driver === 'ollama'
+            ? (string) config('services.openai.cloud_model', 'gpt-4o-mini')
+            : (string) config('services.openai.model', 'gpt-4o-mini');
+
+        return $configured !== '' ? $configured : 'gpt-4o-mini';
     }
 }

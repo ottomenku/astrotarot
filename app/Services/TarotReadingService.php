@@ -46,7 +46,7 @@ class TarotReadingService
         $mode = $this->normalizeMode((string) ($payload['mode'] ?? self::MODE_INITIAL));
         $previousReading = trim((string) ($payload['previous_reading'] ?? ''));
         $followUp = trim((string) ($payload['follow_up'] ?? ''));
-        $requestedModel = (string) config('services.openai.model', 'gpt-4o-mini');
+        $requestedModel = $this->openAI->selectedModel();
 
         if ($question === '' || count($cards) !== 2) {
             throw new RuntimeException('A reading requires a question and exactly 2 cards.');

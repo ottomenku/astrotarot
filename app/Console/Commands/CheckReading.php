@@ -19,6 +19,7 @@ class CheckReading extends Command
         $ok = true;
         $driver = $openAI->driver();
 
+        $this->info('route='.$openAI->route());
         $this->info('driver='.$driver);
 
         if (! $settings->llmEnabled()) {
@@ -36,8 +37,8 @@ class CheckReading extends Command
             $this->info('key_set='.($key !== '' ? '1' : '0'));
         }
 
-        $this->info('model='.(string) config('services.openai.model'));
-        $this->info('base='.(string) config('services.openai.base_url'));
+        $this->info('model='.$openAI->selectedModel());
+        $this->info('base='.$openAI->baseUrl());
 
         if (! $this->option('ping')) {
             return $ok ? self::SUCCESS : self::FAILURE;

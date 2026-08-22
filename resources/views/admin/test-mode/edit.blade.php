@@ -47,6 +47,49 @@
                         <span class="muted"> — {{ __('admin.test_mode.llm_enabled_hint') }}</span>
                     </span>
                 </label>
+
+                <p style="margin:1rem 0 .4rem"><strong>{{ __('admin.test_mode.llm_route') }}</strong></p>
+                <p class="muted" style="margin:0 0 .75rem">{{ __('admin.test_mode.llm_route_hint') }}</p>
+
+                <label style="display:flex;align-items:flex-start;gap:.6rem;margin:.45rem 0">
+                    <input
+                        type="radio"
+                        name="llm_route"
+                        value="{{ \App\Services\AppSettings::LLM_ROUTE_OLLAMA_SMALL }}"
+                        @checked(old('llm_route', $llmRoute) === \App\Services\AppSettings::LLM_ROUTE_OLLAMA_SMALL)
+                        style="width:auto;margin-top:.25rem"
+                    >
+                    <span>
+                        <strong>{{ __('admin.test_mode.llm_route_small', ['model' => $smallModel]) }}</strong>
+                        <span class="muted"> — {{ __('admin.test_mode.llm_route_small_hint') }}</span>
+                    </span>
+                </label>
+                <label style="display:flex;align-items:flex-start;gap:.6rem;margin:.45rem 0">
+                    <input
+                        type="radio"
+                        name="llm_route"
+                        value="{{ \App\Services\AppSettings::LLM_ROUTE_OLLAMA_LARGE }}"
+                        @checked(old('llm_route', $llmRoute) === \App\Services\AppSettings::LLM_ROUTE_OLLAMA_LARGE)
+                        style="width:auto;margin-top:.25rem"
+                    >
+                    <span>
+                        <strong>{{ __('admin.test_mode.llm_route_large', ['model' => $largeModel]) }}</strong>
+                        <span class="muted"> — {{ __('admin.test_mode.llm_route_large_hint') }}</span>
+                    </span>
+                </label>
+                <label style="display:flex;align-items:flex-start;gap:.6rem;margin:.45rem 0">
+                    <input
+                        type="radio"
+                        name="llm_route"
+                        value="{{ \App\Services\AppSettings::LLM_ROUTE_OPENAI }}"
+                        @checked(old('llm_route', $llmRoute) === \App\Services\AppSettings::LLM_ROUTE_OPENAI)
+                        style="width:auto;margin-top:.25rem"
+                    >
+                    <span>
+                        <strong>{{ __('admin.test_mode.llm_route_openai', ['model' => $cloudModel]) }}</strong>
+                        <span class="muted"> — {{ __('admin.test_mode.llm_route_openai_hint') }}</span>
+                    </span>
+                </label>
             </fieldset>
 
             <button type="submit">{{ __('admin.test_mode.save') }}</button>

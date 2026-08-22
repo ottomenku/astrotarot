@@ -31,6 +31,21 @@ class AppSettings
 
     public const LLM_ENABLED = 'llm_enabled';
 
+    public const LLM_ROUTE = 'llm_route';
+
+    public const LLM_ROUTE_OLLAMA_SMALL = 'ollama_small';
+
+    public const LLM_ROUTE_OLLAMA_LARGE = 'ollama_large';
+
+    public const LLM_ROUTE_OPENAI = 'openai';
+
+    /** @var list<string> */
+    public const LLM_ROUTES = [
+        self::LLM_ROUTE_OLLAMA_SMALL,
+        self::LLM_ROUTE_OLLAMA_LARGE,
+        self::LLM_ROUTE_OPENAI,
+    ];
+
     public const SLOT_ALLOCATION = 'slot_allocation';
 
     public const SLOT_SOURCE_SUN = 'sun_sign';
@@ -79,6 +94,33 @@ class AppSettings
     public function llmEnabled(): bool
     {
         return $this->flag(self::LLM_ENABLED, true);
+    }
+
+    public function llmRoute(): ?string
+    {
+        $value = (string) $this->get(self::LLM_ROUTE, '');
+
+        return in_array($value, self::LLM_ROUTES, true) ? $value : null;
+    }
+
+    public function inferredLlmRoute(): string
+    {
+        $driver = strtolower((string) config('services.openai.driver', 'openai'));
+        if ($driver !== 'ollama') {
+            return self::LLM_ROUTE_OPENAI;
+        }
+
+        $model = (string) config('services.openai.model', '');
+        $small = (string) config('services.openai.ollama_small_model', 'llama3.2');
+
+        return $model === $small
+            ? self::LLM_ROUTE_OLLAMA_SMALL
+            : self::LLM_ROUTE_OLLAMA_LARGE;
+    }
+
+    public function effectiveLlmRoute(): string
+    {
+        return $this->llmRoute() ?? $this->inferredLlmRoute();
     }
 
     private function flag(string $key, bool $default): bool

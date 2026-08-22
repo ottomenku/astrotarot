@@ -89,4 +89,26 @@ class AppSettingsTest extends TestCase
         $this->assertFalse($settings->siteEnabled());
         $this->assertTrue($settings->llmEnabled());
     }
+
+    public function test_llm_route_defaults_from_driver_and_rejects_unknown_values(): void
+    {
+        $settings = app(AppSettings::class);
+
+        config(['services.openai.driver' => 'openai']);
+        $this->assertNull($settings->llmRoute());
+        $this->assertSame(AppSettings::LLM_ROUTE_OPENAI, $settings->effectiveLlmRoute());
+
+        config([
+            'services.openai.driver' => 'ollama',
+            'services.openai.model' => 'qwen2.5:14b',
+            'services.openai.ollama_small_model' => 'llama3.2',
+        ]);
+        $this->assertSame(AppSettings::LLM_ROUTE_OLLAMA_LARGE, $settings->effectiveLlmRoute());
+
+        $settings->putMany([AppSettings::LLM_ROUTE => 'not-a-route']);
+        $this->assertNull($settings->llmRoute());
+
+        $settings->putMany([AppSettings::LLM_ROUTE => AppSettings::LLM_ROUTE_OLLAMA_SMALL]);
+        $this->assertSame(AppSettings::LLM_ROUTE_OLLAMA_SMALL, $settings->effectiveLlmRoute());
+    }
 }

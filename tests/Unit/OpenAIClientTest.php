@@ -2,13 +2,16 @@
 
 namespace Tests\Unit;
 
+use App\Services\AppSettings;
 use App\Services\OpenAIClient;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Tests\TestCase;
 
 class OpenAIClientTest extends TestCase
 {
+    use RefreshDatabase;
     public function test_empty_api_key_is_rejected(): void
     {
         config([
@@ -119,6 +122,81 @@ class OpenAIClientTest extends TestCase
         Http::assertSent(function ($request) {
             return str_contains($request->url(), 'api.openai.com/v1/chat/completions')
                 && $request['model'] === 'gpt-4o-mini';
+        });
+    }
+
+    public function test_admin_openai_route_skips_local_ollama(): void
+    {
+        config([
+            'services.openai.driver' => 'ollama',
+            'services.openai.api_key' => 'sk-test',
+            'services.openai.base_url' => 'http://127.0.0.1:11434/v1',
+            'services.openai.model' => 'qwen2.5:14b',
+            'services.openai.fallback_to_openai' => true,
+            'services.openai.cloud_base_url' => 'https://api.openai.com/v1',
+            'services.openai.cloud_model' => 'gpt-4o-mini',
+        ]);
+        app(AppSettings::class)->putMany([
+            AppSettings::LLM_ROUTE => AppSettings::LLM_ROUTE_OPENAI,
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.openai.com/*' => Http::response([
+                'choices' => [
+                    ['message' => ['content' => 'cloud']],
+                ],
+            ], 200),
+        ]);
+
+        $result = app(OpenAIClient::class)->complete([
+            ['role' => 'user', 'content' => 'OK'],
+        ]);
+
+        $this->assertSame('openai', $result->provider);
+        $this->assertFalse($result->fallback);
+        $this->assertSame('gpt-4o-mini', $result->model);
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'api.openai.com/v1/chat/completions')
+                && $request['model'] === 'gpt-4o-mini';
+        });
+        Http::assertNotSent(function ($request) {
+            return str_contains($request->url(), '11434');
+        });
+    }
+
+    public function test_admin_small_route_sends_the_small_ollama_model(): void
+    {
+        config([
+            'services.openai.driver' => 'ollama',
+            'services.openai.api_key' => '',
+            'services.openai.base_url' => 'http://127.0.0.1:11434/v1',
+            'services.openai.model' => 'qwen2.5:14b',
+            'services.openai.ollama_small_model' => 'llama3.2',
+            'services.openai.ollama_large_model' => 'qwen2.5:14b',
+        ]);
+        app(AppSettings::class)->putMany([
+            AppSettings::LLM_ROUTE => AppSettings::LLM_ROUTE_OLLAMA_SMALL,
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            '127.0.0.1:11434/*' => Http::response([
+                'choices' => [
+                    ['message' => ['content' => 'OK']],
+                ],
+            ], 200),
+        ]);
+
+        $result = app(OpenAIClient::class)->complete([
+            ['role' => 'user', 'content' => 'OK'],
+        ]);
+
+        $this->assertSame('ollama', $result->provider);
+        $this->assertSame('llama3.2', $result->model);
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), '127.0.0.1:11434/v1/chat/completions')
+                && $request['model'] === 'llama3.2';
         });
     }
 }

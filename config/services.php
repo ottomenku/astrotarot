@@ -57,6 +57,9 @@ return [
         'fallback_to_openai' => filter_var(env('LLM_FALLBACK_OPENAI', false), FILTER_VALIDATE_BOOLEAN),
         'cloud_base_url' => rtrim((string) env('OPENAI_CLOUD_BASE_URL', 'https://api.openai.com/v1'), '/'),
         'cloud_model' => (string) env('OPENAI_CLOUD_MODEL', 'gpt-4o-mini'),
+        'ollama_base_url' => rtrim((string) env('OLLAMA_BASE_URL', 'http://127.0.0.1:11434/v1'), '/'),
+        'ollama_small_model' => (string) env('OLLAMA_SMALL_MODEL', 'llama3.2'),
+        'ollama_large_model' => (string) env('OLLAMA_LARGE_MODEL', 'qwen2.5:14b'),
     ],
 
     'google' => [

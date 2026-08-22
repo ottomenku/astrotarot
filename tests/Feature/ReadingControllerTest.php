@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ReadingLog;
 use App\Models\User;
+use App\Services\AppSettings;
 use App\Services\CreditService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -315,6 +316,44 @@ class ReadingControllerTest extends TestCase
         $this->assertTrue((bool) $log?->llm_fallback);
         $this->assertSame('gpt-4o-mini', $log?->model);
         $this->assertSame('OpenAI · gpt-4o-mini (tartalék)', $log?->sourceLabel('hu'));
+    }
+
+    public function test_openai_only_route_does_not_call_ollama(): void
+    {
+        config([
+            'services.openai.driver' => 'ollama',
+            'services.openai.api_key' => 'sk-test',
+            'services.openai.base_url' => 'http://127.0.0.1:11434/v1',
+            'services.openai.model' => 'qwen2.5:14b',
+            'services.openai.fallback_to_openai' => true,
+            'services.openai.cloud_base_url' => 'https://api.openai.com/v1',
+            'services.openai.cloud_model' => 'gpt-4o-mini',
+        ]);
+        app(AppSettings::class)->putMany([
+            AppSettings::LLM_ROUTE => AppSettings::LLM_ROUTE_OPENAI,
+        ]);
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.openai.com/*' => Http::response([
+                'choices' => [
+                    ['message' => ['content' => 'Csak felhő.']],
+                ],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)
+            ->postJson(route('reading'), $this->validPayload())
+            ->assertOk()
+            ->assertJsonPath('reading', 'Csak felhő.')
+            ->assertJsonPath('source.provider', 'openai')
+            ->assertJsonPath('source.fallback', false)
+            ->assertJsonPath('source.model', 'gpt-4o-mini');
+
+        Http::assertNotSent(function ($request) {
+            return str_contains($request->url(), '11434');
+        });
     }
 
     public function test_openai_http_error_returns_error_without_spending_credit(): void
