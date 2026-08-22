@@ -65,6 +65,9 @@
     @foreach ($payload['answers'] as $answer)
         <div class="block">
             <p class="answer-label">{{ $answer['label'] }}</p>
+            @if (!empty($answer['source']))
+                <p class="card-sub">{{ ($payload['locale'] ?? 'hu') === 'en' ? 'Source' : 'Forrás' }}: {{ $answer['source'] }}</p>
+            @endif
             <p class="answer">{{ $answer['text'] }}</p>
         </div>
     @endforeach

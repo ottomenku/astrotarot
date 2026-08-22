@@ -53,6 +53,7 @@ class ReadingExportService
                 'mode' => $mode,
                 'label' => $label,
                 'text' => $text,
+                'source' => trim((string) ($answer['source'] ?? '')),
             ];
         }
 

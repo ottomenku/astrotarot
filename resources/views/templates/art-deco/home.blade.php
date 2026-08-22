@@ -146,6 +146,7 @@
             <p class="reading-inline-kicker" data-reading-kicker></p>
             <h2 class="reading-inline-title" data-reading-title></h2>
             <div class="reading-inline-body" data-reading-body></div>
+            <p class="reading-inline-source" data-reading-source hidden></p>
             <div class="reading-followup" data-reading-followup hidden>
                 <label class="reading-followup-label" for="reading-followup-input" data-reading-followup-label>Pontosítást kérek…</label>
                 <textarea id="reading-followup-input" class="reading-followup-input" data-reading-followup-input rows="3" maxlength="500" placeholder="Pontosítást kérek…"></textarea>

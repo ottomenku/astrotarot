@@ -27,6 +27,9 @@
         <p class="credits-lead" style="font-style:italic">{{ $log->question }}</p>
 
         <h2 class="credits-section-title">{{ __('messages.history_answer') }}</h2>
+        @if ($log->sourceLabel())
+            <p class="credits-kicker">{{ __('messages.history_source') }}: {{ $log->sourceLabel() }}</p>
+        @endif
         <p class="credits-lead" style="white-space:pre-wrap">{{ $log->response }}</p>
 
         @if (is_array($log->cards))

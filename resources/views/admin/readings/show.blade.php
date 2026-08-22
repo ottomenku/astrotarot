@@ -22,7 +22,7 @@
             </div>
             <div class="field">
                 <label>{{ __('admin.readings.model') }}</label>
-                <p>{{ $log->model ?: '—' }}</p>
+                <p>{{ $log->sourceLabel() ?: ($log->model ?: '—') }}</p>
             </div>
         </div>
 

@@ -84,7 +84,7 @@ class ReadingController extends Controller
         }
 
         try {
-            $text = $readings->interpret([
+            $result = $readings->interpret([
                 'question' => $data['question'],
                 'locale' => $data['locale'] ?? app()->getLocale(),
                 'cards' => $data['cards'],
@@ -105,6 +105,9 @@ class ReadingController extends Controller
             ], 500);
         }
 
+        $text = $result['text'];
+        $source = $result['source'];
+
         $balance = (int) $user->credits;
         if ($chargeQuestion) {
             try {
@@ -119,6 +122,7 @@ class ReadingController extends Controller
 
         return response()->json([
             'reading' => $text,
+            'source' => $source,
             'mode' => $mode,
             'credits' => $balance,
         ]);

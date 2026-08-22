@@ -107,12 +107,15 @@ class OpenAIClientTest extends TestCase
             ], 200);
         });
 
-        $response = app(OpenAIClient::class)->chat([
+        $response = app(OpenAIClient::class)->complete([
             ['role' => 'user', 'content' => 'OK'],
         ]);
 
-        $this->assertTrue($response->successful());
-        $this->assertSame('cloud', $response->json('choices.0.message.content'));
+        $this->assertTrue($response->response->successful());
+        $this->assertSame('openai', $response->provider);
+        $this->assertTrue($response->fallback);
+        $this->assertSame('gpt-4o-mini', $response->model);
+        $this->assertSame('OpenAI · gpt-4o-mini (tartalék)', $response->label('hu'));
         Http::assertSent(function ($request) {
             return str_contains($request->url(), 'api.openai.com/v1/chat/completions')
                 && $request['model'] === 'gpt-4o-mini';

@@ -19,8 +19,8 @@ set_kv() {
 
 set_kv LLM_DRIVER ollama
 set_kv OPENAI_BASE_URL 'http://127.0.0.1:11434/v1'
-set_kv OPENAI_MODEL llama3.2
-set_kv OPENAI_TIMEOUT 180
+set_kv OPENAI_MODEL qwen2.5:14b
+set_kv OPENAI_TIMEOUT 300
 set_kv LLM_FALLBACK_OPENAI true
 
 php artisan config:clear

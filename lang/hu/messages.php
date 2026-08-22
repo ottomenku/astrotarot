@@ -59,6 +59,7 @@ return [
     'history_detail' => 'Olvasat részletei',
     'history_question' => 'Kérdés',
     'history_answer' => 'Válasz',
+    'history_source' => 'Forrás',
     'history_cards' => 'Lapok',
     'share_label' => 'Mentés / megosztás',
     'share_pdf' => 'PDF letöltés',

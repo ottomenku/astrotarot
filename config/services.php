@@ -48,11 +48,11 @@ return [
         ), '/'),
         'model' => (string) env(
             'OPENAI_MODEL',
-            $llmDriver === 'ollama' ? 'llama3.2' : 'gpt-4o-mini'
+            $llmDriver === 'ollama' ? 'qwen2.5:14b' : 'gpt-4o-mini'
         ),
         'timeout' => (int) env(
             'OPENAI_TIMEOUT',
-            $llmDriver === 'ollama' ? 180 : 120
+            $llmDriver === 'ollama' ? 300 : 120
         ),
         'fallback_to_openai' => filter_var(env('LLM_FALLBACK_OPENAI', false), FILTER_VALIDATE_BOOLEAN),
         'cloud_base_url' => rtrim((string) env('OPENAI_CLOUD_BASE_URL', 'https://api.openai.com/v1'), '/'),

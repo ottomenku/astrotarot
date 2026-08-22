@@ -47,6 +47,7 @@ class ReadingFrontendContractTest extends TestCase
 
         $this->assertStringContainsString('function jsonErrorMessage(', $js);
         $this->assertStringContainsString('sessionExpired', $js);
+        $this->assertStringContainsString('sourcePrefix', $js);
         $this->assertStringContainsString("credentials: 'same-origin'", $js);
         $this->assertStringContainsString('response.status === 419', $js);
     }

@@ -33,8 +33,9 @@ class TarotReadingService
      *   ip?: string|null,
      *   user_id?: int|null
      * }  $payload
+     * @return array{text: string, source: array{provider: string, model: string, fallback: bool, label: string}}
      */
-    public function interpret(array $payload): string
+    public function interpret(array $payload): array
     {
         $locale = ($payload['locale'] ?? 'hu') === 'en' ? 'en' : 'hu';
         $question = trim((string) ($payload['question'] ?? ''));
@@ -45,7 +46,7 @@ class TarotReadingService
         $mode = $this->normalizeMode((string) ($payload['mode'] ?? self::MODE_INITIAL));
         $previousReading = trim((string) ($payload['previous_reading'] ?? ''));
         $followUp = trim((string) ($payload['follow_up'] ?? ''));
-        $model = (string) config('services.openai.model', 'gpt-4o-mini');
+        $requestedModel = (string) config('services.openai.model', 'gpt-4o-mini');
 
         if ($question === '' || count($cards) !== 2) {
             throw new RuntimeException('A reading requires a question and exactly 2 cards.');
@@ -94,7 +95,9 @@ class TarotReadingService
             'system_prompt' => $systemPrompt,
             'user_prompt' => $userPrompt,
             'response' => null,
-            'model' => $model,
+            'model' => $requestedModel,
+            'llm_provider' => null,
+            'llm_fallback' => false,
             'status' => 'pending',
             'error' => null,
             'ip' => $ip,
@@ -107,13 +110,14 @@ class TarotReadingService
         };
 
         try {
-            $response = $this->openAI->chat([
+            $result = $this->openAI->complete([
                 ['role' => 'system', 'content' => $systemPrompt],
                 ['role' => 'user', 'content' => $userPrompt],
-            ], $model, [
+            ], $requestedModel, [
                 'temperature' => $mode === self::MODE_EXPAND ? 0.8 : 0.85,
                 'max_tokens' => $maxTokens,
             ]);
+            $response = $result->response;
         } catch (Throwable $e) {
             Log::error('Tarot reading OpenAI request failed', ['error' => $e->getMessage(), 'mode' => $mode]);
             $log->update([
@@ -149,10 +153,16 @@ class TarotReadingService
         $log->update([
             'status' => 'success',
             'response' => $text,
+            'model' => $result->model,
+            'llm_provider' => $result->provider,
+            'llm_fallback' => $result->fallback,
             'error' => null,
         ]);
 
-        return $text;
+        return [
+            'text' => $text,
+            'source' => $result->toArray($locale),
+        ];
     }
 
     private function normalizeMode(string $mode): string

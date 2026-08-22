@@ -21,7 +21,7 @@ class ReadingExportServiceTest extends TestCase
                 ['figure_id' => '01-the-magician', 'deck' => 'tarot'],
             ],
             'answers' => [
-                ['mode' => 'initial', 'text' => 'Első válasz'],
+                ['mode' => 'initial', 'text' => 'Első válasz', 'source' => 'Ollama · qwen2.5:14b'],
                 ['mode' => 'clarify', 'text' => 'Pontosítás szövege'],
             ],
         ]);
@@ -32,6 +32,7 @@ class ReadingExportServiceTest extends TestCase
         $this->assertSame('Égi mester', $payload['cards'][0]['slot_title']);
         $this->assertSame('Választott figura', $payload['cards'][1]['slot_title']);
         $this->assertSame('Olvasat', $payload['answers'][0]['label']);
+        $this->assertSame('Ollama · qwen2.5:14b', $payload['answers'][0]['source']);
         $this->assertSame('Pontosítás', $payload['answers'][1]['label']);
     }
 

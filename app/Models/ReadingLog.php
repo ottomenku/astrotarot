@@ -16,6 +16,8 @@ class ReadingLog extends Model
         'user_prompt',
         'response',
         'model',
+        'llm_provider',
+        'llm_fallback',
         'status',
         'error',
         'ip',
@@ -26,6 +28,29 @@ class ReadingLog extends Model
         return [
             'cards' => 'array',
             'astro' => 'array',
+            'llm_fallback' => 'boolean',
         ];
+    }
+
+    public function sourceLabel(?string $locale = null): string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $provider = (string) ($this->llm_provider ?? '');
+        $model = (string) ($this->model ?? '');
+        $name = match ($provider) {
+            'ollama' => 'Ollama',
+            'openai' => 'OpenAI',
+            default => '',
+        };
+        $label = trim($name.' · '.$model, ' ·');
+        if ($label === '') {
+            return '';
+        }
+
+        if ($this->llm_fallback) {
+            $label .= $locale === 'en' ? ' (fallback)' : ' (tartalék)';
+        }
+
+        return $label;
     }
 }

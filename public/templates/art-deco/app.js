@@ -96,6 +96,7 @@
       answerInitial: 'Olvasat',
       answerClarify: 'Pontosítás',
       answerExpand: 'Bővebb kifejtés',
+      sourcePrefix: 'Forrás',
     },
     en: {
       navLabel: 'Open navigation',
@@ -148,6 +149,7 @@
       answerInitial: 'Reading',
       answerClarify: 'Clarification',
       answerExpand: 'Deeper reading',
+      sourcePrefix: 'Source',
     },
   };
 
@@ -205,6 +207,7 @@
     readingKicker: root.querySelector('[data-reading-kicker]'),
     readingTitle: root.querySelector('[data-reading-title]'),
     readingBody: root.querySelector('[data-reading-body]'),
+    readingSource: root.querySelector('[data-reading-source]'),
     readingToast: root.querySelector('[data-reading-toast]'),
     readingFollowup: root.querySelector('[data-reading-followup]'),
     readingFollowupLabel: root.querySelector('[data-reading-followup-label]'),
@@ -233,7 +236,7 @@
   let lastReadingKey = '';
   let questionTimer = null;
   let renderedDeckKey = '';
-  /** @type {{question:string, cards:any[], reading:string, answers: {mode:string, label:string, text:string}[]}|null} */
+  /** @type {{question:string, cards:any[], reading:string, answers: {mode:string, label:string, text:string, source?:string}[]}|null} */
   let activeReading = null;
   let lockedQuestion = '';
   let shareBusy = false;
@@ -873,7 +876,20 @@
     }
   }
 
-  function showReadingResult({ body, error = false, showFollowup = false }) {
+  function formatSource(source) {
+    const label = source?.label;
+    if (!label) return '';
+    return `${t().sourcePrefix}: ${label}`;
+  }
+
+  function setReadingSource(source) {
+    if (!els.readingSource) return;
+    const text = formatSource(source);
+    els.readingSource.textContent = text;
+    els.readingSource.hidden = !text;
+  }
+
+  function showReadingResult({ body, error = false, showFollowup = false, source = null }) {
     if (!els.readingResult || !els.readingBody) return;
     const text = t();
     hideToast();
@@ -882,6 +898,7 @@
     els.readingBody.classList.remove('is-loading');
     els.readingBody.classList.toggle('is-error', error);
     els.readingBody.textContent = body;
+    setReadingSource(error ? null : source);
     els.readingResult.hidden = false;
     if (els.readingFollowup) {
       els.readingFollowup.hidden = !showFollowup || error;
@@ -900,6 +917,7 @@
       els.readingBody.textContent = '';
       els.readingBody.classList.remove('is-loading', 'is-error');
     }
+    setReadingSource(null);
     if (els.readingFollowup) els.readingFollowup.hidden = true;
     showShareActions(false);
   }
@@ -910,12 +928,13 @@
     if (els.readingFollowupInput) els.readingFollowupInput.disabled = busy;
   }
 
-  function appendReadingText(extra, mode = 'expand') {
+  function appendReadingText(extra, mode = 'expand', source = null) {
     if (!els.readingBody || !extra) return;
     const current = els.readingBody.textContent || '';
     els.readingBody.textContent = current
       ? `${current}\n\n———\n\n${extra}`
       : extra;
+    setReadingSource(source);
     if (activeReading) {
       activeReading.reading = els.readingBody.textContent;
       activeReading.answers = activeReading.answers || [];
@@ -923,6 +942,7 @@
         mode,
         label: answerLabel(mode),
         text: extra,
+        source: source?.label || '',
       });
     }
     showShareActions(true);
@@ -1071,6 +1091,7 @@
             mode: 'initial',
             label: answerLabel('initial'),
             text: data.reading,
+            source: data.source?.label || '',
           }],
         };
         syncCompleteView();
@@ -1078,10 +1099,11 @@
           body: data.reading,
           error: false,
           showFollowup: true,
+          source: data.source || null,
         });
         hideToast();
       } else {
-        appendReadingText(data.reading, mode);
+        appendReadingText(data.reading, mode, data.source || null);
         if (els.readingFollowupInput) els.readingFollowupInput.value = '';
         hideToast();
       }

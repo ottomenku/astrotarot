@@ -59,6 +59,7 @@ return [
     'history_detail' => 'Reading details',
     'history_question' => 'Question',
     'history_answer' => 'Answer',
+    'history_source' => 'Source',
     'history_cards' => 'Cards',
     'share_label' => 'Save / share',
     'share_pdf' => 'Download PDF',

@@ -88,6 +88,11 @@ class ReadingControllerTest extends TestCase
             'reading' => 'Az Égi mestered, a Mars, most a Skorpióban áll. A Mágus úgy értelmezi, hogy cselekedj.',
             'mode' => 'initial',
             'credits' => 9,
+            'source' => [
+                'provider' => 'openai',
+                'model' => 'gpt-4o-mini',
+                'fallback' => false,
+            ],
         ]);
 
         $this->assertSame(9, (int) $user->fresh()->credits);
@@ -95,6 +100,10 @@ class ReadingControllerTest extends TestCase
         $this->assertDatabaseCount('reading_logs', 1);
         $log = ReadingLog::query()->first();
         $this->assertSame('success', $log->status);
+        $this->assertSame('openai', $log->llm_provider);
+        $this->assertFalse((bool) $log->llm_fallback);
+        $this->assertSame('gpt-4o-mini', $log->model);
+        $this->assertSame('OpenAI · gpt-4o-mini', $log->sourceLabel('hu'));
         $this->assertSame('Mit tegyek most a kapcsolatommal?', $log->question);
         $this->assertNotEmpty($log->system_prompt);
         $this->assertNotEmpty($log->user_prompt);
@@ -253,10 +262,59 @@ class ReadingControllerTest extends TestCase
         $this->actingAs($user)
             ->postJson(route('reading'), $this->validPayload())
             ->assertOk()
-            ->assertJsonPath('reading', 'Az Ollama szerint cselekedj.');
+            ->assertJsonPath('reading', 'Az Ollama szerint cselekedj.')
+            ->assertJsonPath('source.provider', 'ollama')
+            ->assertJsonPath('source.model', 'llama3.2')
+            ->assertJsonPath('source.fallback', false);
 
         $this->assertSame(9, (int) $user->fresh()->credits);
-        $this->assertSame('llama3.2', ReadingLog::query()->first()?->model);
+        $log = ReadingLog::query()->first();
+        $this->assertSame('llama3.2', $log?->model);
+        $this->assertSame('ollama', $log?->llm_provider);
+        $this->assertFalse((bool) $log?->llm_fallback);
+        $this->assertSame('Ollama · llama3.2', $log?->sourceLabel('hu'));
+    }
+
+    public function test_ollama_fallback_is_logged_as_openai(): void
+    {
+        config([
+            'services.openai.driver' => 'ollama',
+            'services.openai.api_key' => 'sk-test',
+            'services.openai.base_url' => 'http://127.0.0.1:11434/v1',
+            'services.openai.model' => 'qwen2.5:14b',
+            'services.openai.fallback_to_openai' => true,
+            'services.openai.cloud_base_url' => 'https://api.openai.com/v1',
+            'services.openai.cloud_model' => 'gpt-4o-mini',
+        ]);
+        Http::preventStrayRequests();
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), '11434')) {
+                throw new \Illuminate\Http\Client\ConnectionException('Failed to connect');
+            }
+
+            return Http::response([
+                'choices' => [
+                    ['message' => ['content' => 'Cloud válasz.']],
+                ],
+            ], 200);
+        });
+
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)
+            ->postJson(route('reading'), $this->validPayload())
+            ->assertOk()
+            ->assertJsonPath('reading', 'Cloud válasz.')
+            ->assertJsonPath('source.provider', 'openai')
+            ->assertJsonPath('source.model', 'gpt-4o-mini')
+            ->assertJsonPath('source.fallback', true)
+            ->assertJsonPath('source.label', 'OpenAI · gpt-4o-mini (tartalék)');
+
+        $log = ReadingLog::query()->first();
+        $this->assertSame('openai', $log?->llm_provider);
+        $this->assertTrue((bool) $log?->llm_fallback);
+        $this->assertSame('gpt-4o-mini', $log?->model);
+        $this->assertSame('OpenAI · gpt-4o-mini (tartalék)', $log?->sourceLabel('hu'));
     }
 
     public function test_openai_http_error_returns_error_without_spending_credit(): void

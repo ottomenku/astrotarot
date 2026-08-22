@@ -67,11 +67,22 @@ class OpenAIClient
      */
     public function chat(array $messages, ?string $model = null, array $options = []): Response
     {
+        return $this->complete($messages, $model, $options)->response;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $messages
+     */
+    public function complete(array $messages, ?string $model = null, array $options = []): LlmChatResult
+    {
         $baseUrl = rtrim((string) config('services.openai.base_url', 'https://api.openai.com/v1'), '/');
         $model = $model ?: (string) config('services.openai.model', 'gpt-4o-mini');
+        $provider = $this->driver() === 'ollama' ? 'ollama' : 'openai';
 
         try {
-            return $this->postChat($baseUrl, $model, $messages, $options, $this->requiresApiKey());
+            $response = $this->postChat($baseUrl, $model, $messages, $options, $this->requiresApiKey());
+
+            return new LlmChatResult($response, $provider, $model, false);
         } catch (ConnectionException $e) {
             return $this->fallbackOrThrow($e, $messages, $options);
         }
@@ -98,7 +109,7 @@ class OpenAIClient
     /**
      * @param  array<int, array<string, mixed>>  $messages
      */
-    private function fallbackOrThrow(Throwable $e, array $messages, array $options): Response
+    private function fallbackOrThrow(Throwable $e, array $messages, array $options): LlmChatResult
     {
         if (! $this->canFallbackToOpenAi()) {
             throw $e;
@@ -108,7 +119,8 @@ class OpenAIClient
 
         $baseUrl = rtrim((string) config('services.openai.cloud_base_url', 'https://api.openai.com/v1'), '/');
         $model = (string) config('services.openai.cloud_model', 'gpt-4o-mini');
+        $response = $this->postChat($baseUrl, $model, $messages, $options, true);
 
-        return $this->postChat($baseUrl, $model, $messages, $options, true);
+        return new LlmChatResult($response, 'openai', $model, true);
     }
 }

@@ -134,6 +134,8 @@ button { -webkit-tap-highlight-color:transparent; }
 .reading-inline-kicker { margin:0 0 8px; color:var(--gold); font-size:10px; letter-spacing:2px; text-transform:uppercase; }
 .reading-inline-title { margin:0 0 14px; color:var(--gold-pale); font:italic clamp(20px,4vw,28px)/1.2 Georgia,serif; }
 .reading-inline-body { color:var(--paper); font:15px/1.65 Georgia,serif; white-space:pre-wrap; }
+.reading-inline-source { margin:10px 0 0; color:#9a95a4; font:12px/1.45 Georgia,serif; }
+.reading-inline-source[hidden] { display:none; }
 .reading-inline-body.is-loading { color:#9a95a4; font-style:italic; }
 .reading-inline-body.is-error { color:#e0b4b4; }
 .chosen-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }

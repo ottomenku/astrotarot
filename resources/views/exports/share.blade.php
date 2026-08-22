@@ -78,6 +78,9 @@
         @foreach (($payload['answers'] ?? []) as $answer)
             <article class="share-answer">
                 <h3>{{ $answer['label'] ?? '' }}</h3>
+                @if (!empty($answer['source']))
+                    <p class="share-meta">{{ ($payload['locale'] ?? 'hu') === 'en' ? 'Source' : 'Forrás' }}: {{ $answer['source'] }}</p>
+                @endif
                 <p>{{ $answer['text'] ?? '' }}</p>
             </article>
         @endforeach
