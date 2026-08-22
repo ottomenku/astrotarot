@@ -81,4 +81,41 @@ class OpenAIClientTest extends TestCase
                 && ! $request->hasHeader('Authorization');
         });
     }
+
+    public function test_ollama_falls_back_to_openai_when_unreachable(): void
+    {
+        config([
+            'services.openai.driver' => 'ollama',
+            'services.openai.api_key' => 'sk-test',
+            'services.openai.base_url' => 'http://127.0.0.1:11434/v1',
+            'services.openai.model' => 'llama3.2',
+            'services.openai.fallback_to_openai' => true,
+            'services.openai.cloud_base_url' => 'https://api.openai.com/v1',
+            'services.openai.cloud_model' => 'gpt-4o-mini',
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), '11434')) {
+                throw new \Illuminate\Http\Client\ConnectionException('Failed to connect');
+            }
+
+            return Http::response([
+                'choices' => [
+                    ['message' => ['content' => 'cloud']],
+                ],
+            ], 200);
+        });
+
+        $response = app(OpenAIClient::class)->chat([
+            ['role' => 'user', 'content' => 'OK'],
+        ]);
+
+        $this->assertTrue($response->successful());
+        $this->assertSame('cloud', $response->json('choices.0.message.content'));
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'api.openai.com/v1/chat/completions')
+                && $request['model'] === 'gpt-4o-mini';
+        });
+    }
 }

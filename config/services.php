@@ -54,6 +54,9 @@ return [
             'OPENAI_TIMEOUT',
             $llmDriver === 'ollama' ? 180 : 120
         ),
+        'fallback_to_openai' => filter_var(env('LLM_FALLBACK_OPENAI', false), FILTER_VALIDATE_BOOLEAN),
+        'cloud_base_url' => rtrim((string) env('OPENAI_CLOUD_BASE_URL', 'https://api.openai.com/v1'), '/'),
+        'cloud_model' => (string) env('OPENAI_CLOUD_MODEL', 'gpt-4o-mini'),
     ],
 
     'google' => [
