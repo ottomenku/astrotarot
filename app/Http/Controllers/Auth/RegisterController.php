@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AppSettings;
 use App\Services\CreditService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -18,8 +19,13 @@ class RegisterController extends Controller
     {
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AppSettings $settings): RedirectResponse
     {
+        if (! $settings->registrationEnabled()) {
+            return redirect()
+                ->route('home')
+                ->withErrors(['email' => __('messages.registration_closed')]);
+        }
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],

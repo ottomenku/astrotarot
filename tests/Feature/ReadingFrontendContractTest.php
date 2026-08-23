@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Template;
+use App\Models\User;
 use App\Services\CardDrawProfileService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -34,11 +35,17 @@ class ReadingFrontendContractTest extends TestCase
             ]);
         });
 
-        $this->get(route('home'))
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('home'))
             ->assertOk()
             ->assertSee('<meta name="csrf-token"', false)
             ->assertSee('data-reading-url="/reading"', false)
-            ->assertSee('data-llm-enabled="1"', false);
+            ->assertSee('data-llm-enabled="1"', false)
+            ->assertSee('data-reset', false)
+            ->assertSee('data-reading-followup-send', false)
+            ->assertSee('data-reading-followup-expand', false);
     }
 
     public function test_reading_javascript_maps_backend_errors(): void
@@ -50,5 +57,6 @@ class ReadingFrontendContractTest extends TestCase
         $this->assertStringContainsString('sourcePrefix', $js);
         $this->assertStringContainsString("credentials: 'same-origin'", $js);
         $this->assertStringContainsString('response.status === 419', $js);
+        $this->assertStringContainsString("querySelectorAll('[data-reset]')", $js);
     }
 }

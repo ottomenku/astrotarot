@@ -83,10 +83,12 @@ class AppSettingsTest extends TestCase
 
         $settings->putMany([
             AppSettings::SITE_ENABLED => 'off',
+            AppSettings::REGISTRATION_ENABLED => '0',
             AppSettings::LLM_ENABLED => 'yes',
         ]);
 
         $this->assertFalse($settings->siteEnabled());
+        $this->assertFalse($settings->registrationEnabled());
         $this->assertTrue($settings->llmEnabled());
     }
 

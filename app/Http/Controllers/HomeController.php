@@ -15,6 +15,15 @@ class HomeController extends Controller
             ->where('is_active', true)
             ->first();
 
+        $landingView = $template ? "templates.{$template->slug}.landing" : null;
+        if (! auth()->check() && $landingView && view()->exists($landingView)) {
+            return view($landingView, [
+                'template' => $template,
+                'assetBase' => asset("templates/{$template->slug}"),
+                'registrationEnabled' => $settings->registrationEnabled(),
+            ]);
+        }
+
         if ($template && view()->exists("templates.{$template->slug}.home")) {
             return view("templates.{$template->slug}.home", [
                 'template' => $template,
@@ -22,6 +31,7 @@ class HomeController extends Controller
                 'drawProfile' => $drawProfile->forNow(),
                 'minQuestionChars' => $settings->minQuestionChars(),
                 'llmEnabled' => $settings->llmEnabled(),
+                'registrationEnabled' => $settings->registrationEnabled(),
             ]);
         }
 

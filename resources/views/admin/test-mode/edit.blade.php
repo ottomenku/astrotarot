@@ -33,6 +33,23 @@
             </fieldset>
 
             <fieldset class="field" style="border:0;padding:0;margin:0 0 1.25rem">
+                <legend style="font-weight:600;margin-bottom:.5rem">{{ __('admin.test_mode.registration_section') }}</legend>
+                <label style="display:flex;align-items:flex-start;gap:.6rem;margin:.55rem 0">
+                    <input
+                        type="checkbox"
+                        name="registration_enabled"
+                        value="1"
+                        @checked(old('registration_enabled', $registrationEnabled))
+                        style="width:auto;margin-top:.25rem"
+                    >
+                    <span>
+                        <strong>{{ __('admin.test_mode.registration_enabled') }}</strong>
+                        <span class="muted"> — {{ __('admin.test_mode.registration_enabled_hint') }}</span>
+                    </span>
+                </label>
+            </fieldset>
+
+            <fieldset class="field" style="border:0;padding:0;margin:0 0 1.25rem">
                 <legend style="font-weight:600;margin-bottom:.5rem">{{ __('admin.test_mode.llm_section') }}</legend>
                 <label style="display:flex;align-items:flex-start;gap:.6rem;margin:.55rem 0">
                     <input

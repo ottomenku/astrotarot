@@ -39,6 +39,10 @@ class SocialAuthTest extends TestCase
     {
         $this->get(route('login'))
             ->assertOk()
+            ->assertSee('auth-modal', false)
+            ->assertSee('data-auth-home', false)
+            ->assertSee('app-shell', false)
+            ->assertSee(__('messages.auth_modal_title'), false)
             ->assertSee(__('messages.login_google'), false)
             ->assertSee(__('messages.login_facebook'), false);
     }
@@ -94,6 +98,28 @@ class SocialAuthTest extends TestCase
         $this->get(route('auth.social.redirect', 'google'))
             ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
+    }
+
+    public function test_new_social_user_is_blocked_when_registration_is_closed(): void
+    {
+        app(\App\Services\AppSettings::class)->putMany([
+            \App\Services\AppSettings::REGISTRATION_ENABLED => '0',
+        ]);
+
+        $this->mockSocialite('google', [
+            'id' => 'g-new',
+            'name' => 'New Google',
+            'email' => 'new.google@example.com',
+        ]);
+
+        $this->get(route('auth.social.callback', 'google'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', [
+            'email' => 'new.google@example.com',
+        ]);
     }
 
     /**

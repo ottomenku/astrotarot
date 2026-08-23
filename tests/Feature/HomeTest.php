@@ -23,7 +23,25 @@ class HomeTest extends TestCase
             ->assertSee(__('messages.welcome'), false);
     }
 
-    public function test_home_renders_active_art_deco_template(): void
+    public function test_home_renders_landing_for_guests(): void
+    {
+        Template::factory()->create([
+            'name' => 'Art Deco',
+            'slug' => 'art-deco',
+            'is_active' => true,
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('AstroTarot', false)
+            ->assertSee(__('messages.landing_title'), false)
+            ->assertSee('landing-tarot.jpg', false)
+            ->assertSee('data-auth-modal', false)
+            ->assertSee('data-auth-open="login"', false)
+            ->assertDontSee('data-deck-slider', false);
+    }
+
+    public function test_authenticated_home_renders_active_art_deco_template(): void
     {
         Template::factory()->create([
             'name' => 'Art Deco',
@@ -46,7 +64,10 @@ class HomeTest extends TestCase
             ]);
         });
 
-        $this->get(route('home'))
+        $user = \App\Models\User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('home'))
             ->assertOk()
             ->assertSee('AstroTarot', false)
             ->assertSee('data-deck-slider', false)

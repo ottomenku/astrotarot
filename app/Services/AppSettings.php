@@ -29,6 +29,8 @@ class AppSettings
 
     public const SITE_ENABLED = 'site_enabled';
 
+    public const REGISTRATION_ENABLED = 'registration_enabled';
+
     public const LLM_ENABLED = 'llm_enabled';
 
     public const LLM_ROUTE = 'llm_route';
@@ -89,6 +91,11 @@ class AppSettings
     public function siteEnabled(): bool
     {
         return $this->flag(self::SITE_ENABLED, true);
+    }
+
+    public function registrationEnabled(): bool
+    {
+        return $this->flag(self::REGISTRATION_ENABLED, true);
     }
 
     public function llmEnabled(): bool

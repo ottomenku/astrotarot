@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Template;
 use App\Models\User;
+use App\Services\AppSettings;
 use App\Services\CreditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -72,6 +73,12 @@ class SocialAuthController extends Controller
         $isNew = false;
 
         if (! $user) {
+            if (! app(AppSettings::class)->registrationEnabled()) {
+                return redirect()
+                    ->route('login')
+                    ->withErrors(['email' => __('messages.registration_closed')]);
+            }
+
             $isNew = true;
             $user = new User([
                 'name' => $name !== '' ? $name : 'User',

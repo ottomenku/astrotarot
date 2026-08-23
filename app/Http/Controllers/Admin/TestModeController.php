@@ -15,6 +15,7 @@ class TestModeController extends Controller
     {
         return view('admin.test-mode.edit', [
             'siteEnabled' => $settings->siteEnabled(),
+            'registrationEnabled' => $settings->registrationEnabled(),
             'llmEnabled' => $settings->llmEnabled(),
             'llmRoute' => $settings->effectiveLlmRoute(),
             'smallModel' => (string) config('services.openai.ollama_small_model', 'llama3.2'),
@@ -27,12 +28,14 @@ class TestModeController extends Controller
     {
         $data = $request->validate([
             'site_enabled' => ['nullable', 'boolean'],
+            'registration_enabled' => ['nullable', 'boolean'],
             'llm_enabled' => ['nullable', 'boolean'],
             'llm_route' => ['required', 'string', Rule::in(AppSettings::LLM_ROUTES)],
         ]);
 
         $settings->putMany([
             AppSettings::SITE_ENABLED => $request->boolean('site_enabled') ? '1' : '0',
+            AppSettings::REGISTRATION_ENABLED => $request->boolean('registration_enabled') ? '1' : '0',
             AppSettings::LLM_ENABLED => $request->boolean('llm_enabled') ? '1' : '0',
             AppSettings::LLM_ROUTE => $data['llm_route'],
         ]);

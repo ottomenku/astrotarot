@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\AppSettings;
 use App\Services\CreditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,9 +16,15 @@ class LoginController extends Controller
     {
     }
 
-    public function create(): View
+    public function create(Request $request, AppSettings $settings): View
     {
-        return view('auth.login');
+        $wantsRegister = $request->boolean('register') || filled($request->old('name'));
+
+        return view('auth.login', [
+            'assetBase' => asset('templates/art-deco'),
+            'registrationEnabled' => $settings->registrationEnabled(),
+            'authStartTab' => $wantsRegister ? 'register' : 'login',
+        ]);
     }
 
     public function store(Request $request): RedirectResponse

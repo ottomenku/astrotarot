@@ -30,24 +30,8 @@ class RegisterControllerTest extends TestCase
         $response->assertSessionHas('credits_balance', 10);
     }
 
-    public function test_home_marks_guest_for_auth_gate(): void
+    public function test_guest_home_shows_landing_instead_of_draw(): void
     {
-        $this->mock(\App\Services\CardDrawProfileService::class, function ($mock) {
-            $mock->shouldReceive('forNow')->andReturn([
-                'sun_sign' => 'leo',
-                'element' => 'tűz',
-                'modality' => 'fő',
-                'tone' => 'pozitív',
-                'variant' => 'positive',
-                'tones' => ['pozitív', 'pozitív'],
-                'variants' => ['positive', 'positive'],
-                'slots' => ['leo', 'fire'],
-                'chart_mode' => 'now',
-                'datetime_utc' => '2026-08-20T12:00:00Z',
-                'chart' => ['objects' => [], 'aspects' => []],
-            ]);
-        });
-
         \App\Models\Template::factory()->create([
             'slug' => 'art-deco',
             'is_active' => true,
@@ -55,9 +39,8 @@ class RegisterControllerTest extends TestCase
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('data-authenticated="0"', false)
-            ->assertSee('data-guest-gate', false)
-            ->assertSee('data-auth-modal', false);
+            ->assertSee(__('messages.landing_title'), false)
+            ->assertDontSee('data-guest-gate', false);
     }
 
     public function test_authenticated_home_skips_guest_gate(): void

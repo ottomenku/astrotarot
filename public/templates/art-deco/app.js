@@ -200,7 +200,7 @@
     pickStage: root.querySelector('[data-pick-stage]'),
     resultHeader: root.querySelector('[data-result-header]'),
     askedQuestion: root.querySelector('[data-asked-question]'),
-    reset: root.querySelector('[data-reset]'),
+    resetButtons: root.querySelectorAll('[data-reset]'),
     slider: root.querySelector('[data-deck-slider]'),
     chosen: root.querySelector('[data-chosen-grid]'),
     readingResult: root.querySelector('[data-reading-result]'),
@@ -483,7 +483,9 @@
       els.question.placeholder = isAuthenticated ? text.placeholder : text.guestPrompt;
     }
     if (els.hint) els.hint.innerHTML = `<span>☾</span>${text.hint}`;
-    if (els.reset) els.reset.textContent = `↺ ${text.reset}`;
+    els.resetButtons?.forEach((button) => {
+      button.textContent = text.reset;
+    });
     if (els.readingKicker) els.readingKicker.textContent = text.messageKicker;
     if (els.readingTitle) els.readingTitle.textContent = text.messageTitle;
     if (els.readingFollowupLabel) els.readingFollowupLabel.textContent = text.followupLabel;
@@ -638,9 +640,9 @@
       els.askedQuestion.textContent = lockedQuestion || questionText();
       els.askedQuestion.hidden = !(lockedQuestion || questionText());
     }
-    if (els.reset) {
-      els.reset.hidden = !complete;
-    }
+    els.resetButtons?.forEach((button) => {
+      button.hidden = !complete;
+    });
 
     if (!complete) {
       clearReadingResult();
@@ -1217,7 +1219,9 @@
       }, 600);
     });
 
-    els.reset?.addEventListener('click', reset);
+    els.resetButtons?.forEach((button) => {
+      button.addEventListener('click', reset);
+    });
   }
 
   async function boot() {
