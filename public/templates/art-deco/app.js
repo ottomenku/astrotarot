@@ -566,10 +566,7 @@
       button.setAttribute('aria-pressed', 'false');
       button.setAttribute('aria-label', `${String(index + 1).padStart(2, '0')}. kártya`);
       button.dataset.backIndex = String(index);
-      button.innerHTML = `
-        <img src="${backSrc}" alt="" draggable="false" decoding="async">
-        <span class="card-number">${String(index + 1).padStart(2, '0')}</span>
-      `;
+      button.innerHTML = `<img src="${backSrc}" alt="" draggable="false" decoding="async">`;
       button.addEventListener('click', () => toggleBack(index));
       els.slider.appendChild(button);
     }

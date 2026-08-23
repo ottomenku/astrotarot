@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ __('messages.login') }} · AstroTarot</title>
+    @php($assetBase = $assetBase ?? asset('templates/art-deco'))
     <link rel="stylesheet" href="{{ $assetBase }}/app.css?v={{ filemtime(public_path('templates/art-deco/app.css')) }}">
 </head>
 <body>

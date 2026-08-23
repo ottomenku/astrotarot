@@ -48,6 +48,17 @@ class LandingRegistrationTest extends TestCase
             ->assertSee(__('messages.registration_closed'), false)
             ->assertDontSee(__('messages.register_submit'), false);
 
+        $admin = User::factory()->admin()->create([
+            'password' => 'password',
+        ]);
+
+        $this->post('/login', [
+            'email' => $admin->email,
+            'password' => 'password',
+        ])->assertRedirect(route('admin.ephemeris.index'));
+        $this->assertAuthenticatedAs($admin);
+        $this->post(route('logout'));
+
         $member = User::factory()->create();
 
         $this->mock(CardDrawProfileService::class, function ($mock) {

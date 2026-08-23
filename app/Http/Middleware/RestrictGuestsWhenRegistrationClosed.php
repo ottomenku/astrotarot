@@ -39,15 +39,17 @@ class RestrictGuestsWhenRegistrationClosed
 
     private function isExempt(Request $request): bool
     {
-        return $request->routeIs([
-            'home',
-            'login',
-            'logout',
-            'locale.switch',
-            'auth.social.redirect',
-            'auth.social.callback',
-            'reading.share.show',
-            'reading.share.og',
-        ]);
+        return $request->is('login')
+            || $request->routeIs([
+                'home',
+                'login',
+                'login.store',
+                'logout',
+                'locale.switch',
+                'auth.social.redirect',
+                'auth.social.callback',
+                'reading.share.show',
+                'reading.share.og',
+            ]);
     }
 }
