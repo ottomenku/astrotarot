@@ -9,7 +9,12 @@
   const exportEmailUrl = root.dataset.exportEmailUrl || '';
   const shareCreateUrl = root.dataset.shareUrl || '';
   const userEmail = root.dataset.userEmail || '';
-  let canExportPdf = root.dataset.canExportPdf === '1';
+  let featureAccess = {};
+  try {
+    featureAccess = JSON.parse(root.dataset.featureAccess || '{}') || {};
+  } catch {
+    featureAccess = {};
+  }
   const creditsPackagesUrl = root.dataset.creditsPackagesUrl || '/credits';
   const minQuestionChars = Math.max(1, Number.parseInt(root.dataset.minQuestionChars || '10', 10) || 10);
   const llmEnabled = root.dataset.llmEnabled !== '0';
@@ -25,6 +30,25 @@
     const first = data?.errors && Object.values(data.errors).flat()
       .find((item) => typeof item === 'string' && item.trim());
     return first || fallback;
+  }
+
+  function featureState(key) {
+    const row = featureAccess[key];
+    if (!row || typeof row !== 'object') {
+      return { allowed: true, cost: 0, will_charge: false, message: '' };
+    }
+    return {
+      allowed: row.allowed !== false,
+      cost: Number.parseInt(row.cost, 10) || 0,
+      will_charge: row.will_charge === true,
+      message: typeof row.message === 'string' ? row.message : '',
+    };
+  }
+
+  function readingFeatureKey(mode) {
+    if (mode === 'clarify') return 'reading.clarify';
+    if (mode === 'expand') return 'reading.expand';
+    return 'reading.initial';
   }
 
   function jsonHeaders(extra = {}) {
@@ -44,6 +68,24 @@
     }
   })();
 
+  let gameConfig = {};
+  try {
+    gameConfig = JSON.parse(root.dataset.game || '{}') || {};
+  } catch {
+    gameConfig = {};
+  }
+  const packBase = (root.dataset.packBase || gameConfig.pack_base || '/card-pack').replace(/\/$/, '');
+  const fallbackSlots = [
+    { pack_slug: 'egi-orakulum', title_hu: 'Égi Orákulum', title_en: 'Celestial Oracle', info_mode: 'astro', row: 1, place: 1, full_bleed: false },
+    { pack_slug: 'tarot', title_hu: 'Tarot figura', title_en: 'Tarot figure', info_mode: 'meaning', row: 1, place: 2, full_bleed: false },
+  ];
+  const gameSlots = (Array.isArray(gameConfig.slots) && gameConfig.slots.length)
+    ? gameConfig.slots
+    : fallbackSlots;
+  const SLOT_COUNT = gameSlots.length;
+  const hasQuestion = gameConfig.has_question !== false;
+  const gameId = gameConfig.id || null;
+
   const copy = {
     hu: {
       navLabel: 'Navigáció megnyitása',
@@ -54,7 +96,7 @@
       reading: 'Választott lapjaid',
       waiting: 'Rád vár',
       reset: 'Új húzás',
-      incomplete: 'Válassz 2 lapot és írd be a kérdésed',
+      incomplete: 'Válaszd ki a lapokat, és írd be a kérdésed',
       messageTitle: 'A lapok üzenete',
       messageKicker: 'AstroTarot értelmezés',
       messageLoading: 'Az LLM gondolkodik…',
@@ -107,7 +149,7 @@
       reading: 'Your chosen cards',
       waiting: 'Waiting for you',
       reset: 'New reading',
-      incomplete: 'Choose 2 cards and enter your question',
+      incomplete: 'Choose the cards and enter your question',
       messageTitle: 'The message of your cards',
       messageKicker: 'AstroTarot reading',
       messageLoading: 'The LLM is thinking…',
@@ -183,9 +225,6 @@
     },
   };
 
-  const romans = ['I', 'II'];
-  const SLOT_COUNT = 2;
-
   const els = {
     menuButton: root.querySelector('[data-menu-open]'),
     menuClose: root.querySelector('[data-menu-close]'),
@@ -193,6 +232,8 @@
     sideMenu: root.querySelector('[data-side-menu]'),
     language: root.querySelector('[data-language]'),
     title: root.querySelector('[data-title]'),
+    gameDescription: root.querySelector('[data-game-description]'),
+    questionWrap: root.querySelector('[data-question-wrap]'),
     question: root.querySelector('[data-question]'),
     counter: root.querySelector('[data-counter]'),
     hint: root.querySelector('[data-hint]'),
@@ -224,12 +265,8 @@
   };
 
   let language = initialLocale;
-  /** @type {{id:string, figures:any[], cardBack:string, backgrounds?: any}|null} */
-  let oracleDeck = null;
-  /** @type {{id:string, figures:any[], cardBack:string}|null} */
-  let tarotDeck = null;
-  /** @type {'oracle'|'tarot'} */
-  let activeDeck = 'oracle';
+  /** @type {Record<string, {id?:string, figures:any[], cardBack?:string, backgrounds?: any}|null>} */
+  const decksBySlug = {};
   /** @type {{deck:string, backIndex:number, figureId:string, backgroundId:string, variant:string}[]} */
   let selected = [];
   let readingRequest = null;
@@ -255,12 +292,78 @@
     return Math.random() < 0.5 ? 'shadow' : 'positive';
   }
 
+  function packSlug(key) {
+    const value = String(key || '');
+    if (value === 'oracle' || value === 'egi-orakulum') return 'egi-orakulum';
+    if (value === 'tarot' || value === 'tarot-major') return 'tarot';
+    if (value === 'cigany' || value === 'cigany-kartya') return 'cigany-kartya';
+    return value;
+  }
+
+  function slotDef(index) {
+    return gameSlots[index] || null;
+  }
+
+  function slotTitle(index) {
+    const slot = slotDef(index);
+    if (!slot) return '';
+    if (language === 'en') return slot.title_en || slot.title || slot.title_hu || '';
+    return slot.title_hu || slot.title || slot.title_en || '';
+  }
+
+  function currentSlotIndex() {
+    return selected.length;
+  }
+
+  function currentPackSlug() {
+    return packSlug(slotDef(currentSlotIndex())?.pack_slug || gameSlots[0]?.pack_slug || 'egi-orakulum');
+  }
+
+  function packHasBackgrounds(slug) {
+    const key = packSlug(slug);
+    if (gameConfig.packs && gameConfig.packs[key] && typeof gameConfig.packs[key].has_backgrounds === 'boolean') {
+      return gameConfig.packs[key].has_backgrounds;
+    }
+    const slot = gameSlots.find((item) => packSlug(item.pack_slug) === key);
+    return slot ? slot.full_bleed !== true : true;
+  }
+
+  function roman(n) {
+    const map = [
+      [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+    ];
+    let value = Math.max(1, Number(n) || 1);
+    let out = '';
+    map.forEach(([num, glyph]) => {
+      while (value >= num) {
+        out += glyph;
+        value -= num;
+      }
+    });
+    return out;
+  }
+
+  function groupedRows() {
+    const map = new Map();
+    gameSlots.forEach((slot, index) => {
+      const row = Number(slot.row) || 1;
+      if (!map.has(row)) map.set(row, []);
+      map.get(row).push({ slot, index });
+    });
+    return [...map.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([row, items]) => ({
+        row,
+        items: items.sort((a, b) => (Number(a.slot.place) || 0) - (Number(b.slot.place) || 0)),
+      }));
+  }
+
   function currentDeck() {
-    return activeDeck === 'tarot' ? tarotDeck : oracleDeck;
+    return decksBySlug[currentPackSlug()] || null;
   }
 
   function figureMeta(deckKey, figureId) {
-    const deck = deckKey === 'tarot' ? tarotDeck : oracleDeck;
+    const deck = decksBySlug[packSlug(deckKey)];
     return deck?.figures?.find((figure) => figure.id === figureId) || null;
   }
 
@@ -291,7 +394,7 @@
 
   function localizeObjectName(object, fallback = '') {
     if (!object) return fallback;
-    const oracle = oracleDeck?.figures?.find((figure) => figure.id === object.id);
+    const oracle = (decksBySlug['egi-orakulum']?.figures || []).find((figure) => figure.id === object.id);
     if (oracle) return oracle[language] || oracle.en || object.name || fallback;
     return object.name || fallback;
   }
@@ -388,7 +491,11 @@
   }
 
   function tarotCaptionHtml(figureId) {
-    const meta = figureMeta('tarot', figureId);
+    return meaningCaptionHtml('tarot', figureId);
+  }
+
+  function meaningCaptionHtml(deckKey, figureId) {
+    const meta = figureMeta(deckKey, figureId);
     const title = meta ? (meta[language] || meta.en || figureId) : figureId;
     const blurb = meta?.blurb?.[language] || meta?.blurb?.en || meta?.keyword?.[language] || '';
     return `
@@ -397,41 +504,48 @@
     `;
   }
 
-  function slotCaptionText(slot, figureId) {
-    if (slot === 0) {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = oracleCaptionHtml(figureId);
-      return tmp.textContent.replace(/\s+/g, ' ').trim();
-    }
-    const meta = figureMeta('tarot', figureId);
+  function slotCaptionHtml(index, figureId) {
+    const slot = slotDef(index);
+    const mode = slot?.info_mode || (index === 0 ? 'astro' : 'meaning');
+    const deckKey = packSlug(slot?.pack_slug || (index === 0 ? 'egi-orakulum' : 'tarot'));
+    if (mode === 'astro') return oracleCaptionHtml(figureId);
+    if (mode === 'meaning') return meaningCaptionHtml(deckKey, figureId);
+    const meta = figureMeta(deckKey, figureId);
     const title = meta ? (meta[language] || meta.en || figureId) : figureId;
-    const blurb = meta?.blurb?.[language] || meta?.blurb?.en || '';
-    return [title, blurb].filter(Boolean).join(' — ');
+    return `<h3>${escapeHtml(title)}</h3>`;
+  }
+
+  function slotCaptionText(slot, figureId) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = slotCaptionHtml(slot, figureId);
+    return tmp.textContent.replace(/\s+/g, ' ').trim();
   }
 
   function cardBackSrc(deckKey) {
-    const deck = deckKey === 'tarot' ? tarotDeck : oracleDeck;
+    const slug = packSlug(deckKey);
+    const deck = decksBySlug[slug];
     const relative = deck?.cardBack || 'card-back/card-back.png';
-    const folder = deckKey === 'tarot' ? 'tarot-major' : 'egi-orakulum';
-    return `${assetBase}/assets/${folder}/${relative}`;
+    return `${packBase}/${slug}/${relative}`;
   }
 
-  function backgroundSrc(variant) {
+  function backgroundSrc(deckKey, variant) {
+    if (!packHasBackgrounds(deckKey)) return '';
+    const slug = packSlug(deckKey);
     const tone = variant === 'shadow' ? 'shadow' : 'light';
-    return `${assetBase}/assets/egi-orakulum/backgrounds/shared-${tone}.png`;
+    return `${packBase}/${slug}/backgrounds/shared-${tone}.png`;
   }
 
   function figureSrc(deckKey, figureId) {
-    const folder = deckKey === 'tarot' ? 'tarot-major' : 'egi-orakulum';
-    if (deckKey === 'tarot') {
+    const slug = packSlug(deckKey);
+    if (slug === 'tarot') {
       if (figureId === 'significator') {
-        return `${assetBase}/assets/${folder}/figures/significator.png`;
+        return `${packBase}/${slug}/figures/significator.png`;
       }
       if (/^(wands|cups|swords|pentacles)-/.test(figureId)) {
-        return `${assetBase}/assets/${folder}/figures/minors/${figureId}.png`;
+        return `${packBase}/${slug}/figures/minors/${figureId}.png`;
       }
     }
-    return `${assetBase}/assets/${folder}/figures/${figureId}.png`;
+    return `${packBase}/${slug}/figures/${figureId}.png`;
   }
 
   function setMenuOpen(open) {
@@ -475,14 +589,28 @@
     return true;
   }
 
+  function gameDescription() {
+    if (language === 'en') {
+      return gameConfig.description_en || gameConfig.description || t().title;
+    }
+    return gameConfig.description_hu || gameConfig.description || t().title;
+  }
+
   function applyCopy() {
     const text = t();
+    const heading = gameDescription();
+    const hint = gameSlots.map((_, index) => slotTitle(index)).filter(Boolean).join(' → ') || text.hint;
     if (els.menuButton) els.menuButton.setAttribute('aria-label', text.navLabel);
-    if (els.title) els.title.textContent = text.title;
+    if (els.gameDescription) {
+      els.gameDescription.textContent = heading;
+      els.gameDescription.hidden = heading.trim() === '';
+    }
+    if (els.title && els.title !== els.gameDescription) els.title.textContent = heading;
+    if (els.questionWrap) els.questionWrap.hidden = !hasQuestion;
     if (els.question) {
       els.question.placeholder = isAuthenticated ? text.placeholder : text.guestPrompt;
     }
-    if (els.hint) els.hint.innerHTML = `<span>☾</span>${text.hint}`;
+    if (els.hint) els.hint.innerHTML = `<span>☾</span>${hint}`;
     els.resetButtons?.forEach((button) => {
       button.textContent = text.reset;
     });
@@ -501,7 +629,10 @@
     if (els.shareFacebook) els.shareFacebook.setAttribute('title', text.shareFacebook);
     if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/${SLOT_COUNT} ${text.selected}`;
     if (els.deckLabel) {
-      els.deckLabel.textContent = activeDeck === 'tarot' ? text.deckTarot : text.deckOracle;
+      const next = slotDef(currentSlotIndex());
+      els.deckLabel.textContent = next
+        ? slotTitle(currentSlotIndex())
+        : (language === 'en' ? 'Draw complete' : 'Húzás kész');
     }
     if (els.askedQuestion && lockedQuestion) {
       els.askedQuestion.textContent = lockedQuestion;
@@ -523,7 +654,7 @@
     [...els.slider.children].forEach((button) => {
       const index = Number.parseInt(button.dataset.backIndex || '-1', 10);
       const chosenIndex = selected.findIndex(
-        (item) => item.deck === activeDeck && item.backIndex === index
+        (item) => packSlug(item.deck) === currentPackSlug() && item.backIndex === index
       );
       const isSelected = chosenIndex >= 0;
       button.classList.toggle('is-selected', isSelected);
@@ -548,13 +679,13 @@
     const deck = currentDeck();
     if (!deck) return;
 
-    const deckKey = `${activeDeck}:${deck.figures.length}`;
+    const deckKey = `${currentPackSlug()}:${deck.figures.length}`;
     if (!force && renderedDeckKey === deckKey && els.slider.children.length === deck.figures.length) {
       syncDeckSelection();
       return;
     }
 
-    const backSrc = cardBackSrc(activeDeck);
+    const backSrc = cardBackSrc(currentPackSlug());
     els.slider.innerHTML = '';
     renderedDeckKey = deckKey;
 
@@ -579,45 +710,56 @@
     if (!els.chosen) return;
     const text = t();
     els.chosen.innerHTML = '';
+    els.chosen.className = 'chosen-grid';
 
-    for (let slot = 0; slot < SLOT_COUNT; slot += 1) {
-      const draw = selected[slot];
-      const article = document.createElement('article');
-      article.className = `chosen-card${draw ? ' has-card' : ' is-placeholder'}`;
-      const deckKey = slot === 0 ? 'oracle' : 'tarot';
+    groupedRows().forEach((group) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'chosen-row';
+      rowEl.dataset.places = String(group.items.length);
 
-      if (!draw) {
-        article.innerHTML = `
-          <h3 class="slot-title">${text.slotTitles[slot]}</h3>
+      group.items.forEach(({ slot, index }) => {
+        const draw = selected[index];
+        const article = document.createElement('article');
+        article.className = `chosen-card${draw ? ' has-card' : ' is-placeholder'}`;
+        const deckKey = packSlug(draw?.deck || slot.pack_slug);
+        const fullBleed = slot.full_bleed === true || !packHasBackgrounds(deckKey);
+
+        if (!draw) {
+          article.innerHTML = `
+          <h3 class="slot-title">${escapeHtml(slotTitle(index))}</h3>
           <p class="polarity-label is-light">—</p>
           <div class="card-art placeholder-art">
             <img class="card-back" src="${cardBackSrc(deckKey)}" alt="" decoding="async">
-            <span class="roman">${romans[slot]}</span>
+            <span class="roman">${roman(index + 1)}</span>
           </div>
           <div class="card-caption">
-            <h3>${text.waiting}</h3>
+            <h3>${escapeHtml(text.waiting)}</h3>
           </div>
         `;
-      } else {
-        const caption = slot === 0
-          ? oracleCaptionHtml(draw.figureId)
-          : tarotCaptionHtml(draw.figureId);
-        article.innerHTML = `
-          <h3 class="slot-title">${text.slotTitles[slot]}</h3>
+        } else {
+          const bg = backgroundSrc(deckKey, draw.variant);
+          const bgTag = (!fullBleed && bg)
+            ? `<img class="card-background" src="${bg}" alt="" decoding="async">`
+            : '';
+          article.innerHTML = `
+          <h3 class="slot-title">${escapeHtml(slotTitle(index))}</h3>
           <p class="polarity-label ${polarityClass(draw.variant)}">${polarityLabel(draw.variant)}</p>
-          <div class="card-art">
-            <img class="card-background" src="${backgroundSrc(draw.variant)}" alt="" decoding="async">
+          <div class="card-art${fullBleed ? ' is-full-bleed' : ''}">
+            ${bgTag}
             <img class="card-figure" src="${figureSrc(draw.deck, draw.figureId)}" alt="" decoding="async">
-            <span class="roman">${romans[slot]}</span>
+            <span class="roman">${roman(index + 1)}</span>
           </div>
           <div class="card-caption">
-            ${caption}
+            ${slotCaptionHtml(index, draw.figureId)}
           </div>
         `;
-      }
+        }
 
-      els.chosen.appendChild(article);
-    }
+        rowEl.appendChild(article);
+      });
+
+      els.chosen.appendChild(rowEl);
+    });
 
     syncCompleteView();
   }
@@ -634,8 +776,9 @@
       els.resultHeader.hidden = !complete;
     }
     if (els.askedQuestion) {
+      const shown = hasQuestion && (lockedQuestion || questionText());
       els.askedQuestion.textContent = lockedQuestion || questionText();
-      els.askedQuestion.hidden = !(lockedQuestion || questionText());
+      els.askedQuestion.hidden = !shown;
     }
     els.resetButtons?.forEach((button) => {
       button.hidden = !complete;
@@ -649,21 +792,21 @@
   function toggleBack(backIndex) {
     if (requireAuth()) return;
     if (selected.length >= SLOT_COUNT) return;
-    if (selected.some((item) => item.deck === activeDeck && item.backIndex === backIndex)) {
+    const deckKey = currentPackSlug();
+    if (selected.some((item) => packSlug(item.deck) === deckKey && item.backIndex === backIndex)) {
       return;
     }
 
-    if (selected.length === 0 && questionText().length < minQuestionChars) {
+    if (hasQuestion && selected.length === 0 && questionText().length < minQuestionChars) {
       els.question?.focus();
       showToast(needQuestionMessage(), false);
       return;
     }
 
-    const deckKey = activeDeck;
     const deck = currentDeck();
     if (!deck) return;
 
-    const used = selected.filter((item) => item.deck === deckKey).map((item) => item.figureId);
+    const used = selected.filter((item) => packSlug(item.deck) === deckKey).map((item) => item.figureId);
     const available = deck.figures.filter((figure) => !used.includes(figure.id));
     const pool = available.length ? available : deck.figures;
     const figure = pick(pool);
@@ -672,27 +815,20 @@
       deck: deckKey,
       backIndex,
       figureId: figure.id,
-      backgroundId: 'shared',
+      backgroundId: packHasBackgrounds(deckKey) ? 'shared' : 'none',
       variant: randomVariant(),
     });
 
     if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/${SLOT_COUNT} ${t().selected}`;
 
-    if (selected.length === 1) {
-      activeDeck = 'tarot';
-      applyCopy();
-      renderDeck(true);
-    } else {
-      renderDeck();
-    }
-
+    applyCopy();
+    renderDeck(true);
     renderChosen();
     maybeRequestReading();
   }
 
   function reset() {
     selected = [];
-    activeDeck = 'oracle';
     lastReadingKey = '';
     activeReading = null;
     lockedQuestion = '';
@@ -780,6 +916,9 @@
       body: JSON.stringify(body),
     });
     const data = await response.json().catch(() => ({}));
+    if (typeof data.credits === 'number') {
+      updateCreditsBalance(data.credits);
+    }
     if (response.status === 419) {
       throw new Error(t().sessionExpired);
     }
@@ -792,8 +931,13 @@
   async function downloadPdf() {
     const payload = exportPayload();
     if (!payload || !exportPdfUrl || shareBusy) return;
-    if (!canExportPdf) {
-      showToast(t().sharePdfLocked, false);
+    const pdfFeature = featureState('reading.export.pdf');
+    if (!pdfFeature.allowed) {
+      showToast(pdfFeature.message || t().sharePdfLocked, false);
+      return;
+    }
+    if (pdfFeature.will_charge && creditsBalance < pdfFeature.cost) {
+      showToast(t().messageNeedCredits, false);
       return;
     }
     setShareBusy(true);
@@ -821,6 +965,10 @@
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
+      const remaining = response.headers.get('X-Credits-Remaining');
+      if (remaining !== null && remaining !== '') {
+        updateCreditsBalance(Number.parseInt(remaining, 10));
+      }
       hideToast();
     } catch (error) {
       showToast(error?.message || t().shareError, false);
@@ -832,8 +980,13 @@
   async function sendEmail() {
     const payload = exportPayload();
     if (!payload || !exportEmailUrl || shareBusy) return;
-    if (!canExportPdf) {
-      showToast(t().sharePdfLocked, false);
+    const emailFeature = featureState('reading.export.email');
+    if (!emailFeature.allowed) {
+      showToast(emailFeature.message || t().sharePdfLocked, false);
+      return;
+    }
+    if (emailFeature.will_charge && creditsBalance < emailFeature.cost) {
+      showToast(t().messageNeedCredits, false);
       return;
     }
     const email = window.prompt(t().shareEmailPrompt, userEmail || '');
@@ -858,6 +1011,15 @@
   async function shareFacebook() {
     const payload = exportPayload();
     if (!payload || !shareCreateUrl || shareBusy) return;
+    const shareFeature = featureState('reading.share');
+    if (!shareFeature.allowed) {
+      showToast(shareFeature.message || t().shareError, false);
+      return;
+    }
+    if (shareFeature.will_charge && creditsBalance < shareFeature.cost) {
+      showToast(t().messageNeedCredits, false);
+      return;
+    }
     setShareBusy(true);
     showToast(t().shareBusy, true);
     try {
@@ -960,8 +1122,11 @@
         background: draw.backgroundId,
         variant: draw.variant,
         polarity,
-        deck: draw.deck,
-        slot_title: t().slotTitles[slot],
+        deck: packSlug(draw.deck),
+        row: Number(slotDef(slot)?.row) || 1,
+        place: Number(slotDef(slot)?.place) || (slot + 1),
+        slot_title: slotTitle(slot),
+        info_mode: slotDef(slot)?.info_mode || '',
         astro_caption: slotCaptionText(slot, draw.figureId).slice(0, 8000),
       };
     });
@@ -984,14 +1149,19 @@
   }
 
   function readingAstroPayload() {
+    const scoring = (drawProfile.scoring && typeof drawProfile.scoring === 'object')
+      ? drawProfile.scoring
+      : {};
     return {
       sun_sign: drawProfile.sun_sign || null,
       element: drawProfile.element || null,
       modality: drawProfile.modality || null,
+      tone: drawProfile.tone || null,
       tones: drawProfile.tones || [],
       variants: drawProfile.variants || [],
       datetime_utc: drawProfile.datetime_utc || null,
       chart_mode: drawProfile.chart_mode || null,
+      scoring,
     };
   }
 
@@ -999,13 +1169,20 @@
     if (requireAuth()) return;
     if (!readingUrl || selected.length !== SLOT_COUNT) return;
 
-    if (mode === 'initial' && creditsBalance < 1) {
+    const feature = featureState(readingFeatureKey(mode));
+    if (!feature.allowed) {
+      showToast(feature.message || t().messageNeedCredits, false);
+      return;
+    }
+    if (feature.will_charge && creditsBalance < feature.cost) {
       showToast(t().messageNeedCredits, false);
       return;
     }
 
-    const question = questionText();
-    if (question.length < minQuestionChars) {
+    const question = hasQuestion
+      ? questionText()
+      : (language === 'en' ? 'No question for this game.' : 'Ehhez a játékhoz nincs kérdés.');
+    if (hasQuestion && question.length < minQuestionChars) {
       showToast(needQuestionMessage(), false);
       els.question?.focus();
       return;
@@ -1052,6 +1229,7 @@
           question,
           locale: language,
           mode,
+          game_id: gameId || undefined,
           follow_up: followUp || undefined,
           previous_reading: mode === 'initial' ? undefined : activeReading?.reading,
           cards,
@@ -1227,15 +1405,14 @@
     bindUiEvents();
 
     try {
-      const [oracleRes, tarotRes] = await Promise.all([
-        fetch(`${assetBase}/assets/egi-orakulum/deck.json`),
-        fetch(`${assetBase}/assets/tarot-major/deck.json`),
-      ]);
-      if (!oracleRes.ok || !tarotRes.ok) {
+      const slugs = [...new Set(gameSlots.map((slot) => packSlug(slot.pack_slug)))];
+      const responses = await Promise.all(slugs.map((slug) => fetch(`${packBase}/${slug}/deck.json`)));
+      if (responses.some((response) => !response.ok)) {
         throw new Error('Deck assets unavailable');
       }
-      oracleDeck = await oracleRes.json();
-      tarotDeck = await tarotRes.json();
+      await Promise.all(responses.map(async (response, index) => {
+        decksBySlug[slugs[index]] = await response.json();
+      }));
       renderDeck(true);
       renderChosen();
     } catch (error) {

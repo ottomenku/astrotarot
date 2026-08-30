@@ -1,6 +1,12 @@
 <?php
 
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\DataDeletionRequestController;
 use App\Http\Controllers\Admin\EphemerisController;
+use App\Http\Controllers\Admin\FeatureAccessController;
+use App\Http\Controllers\Admin\GameController;
+use App\Http\Controllers\Admin\LegalController;
+use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\PromptController;
 use App\Http\Controllers\Admin\ReadingLogController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -8,16 +14,19 @@ use App\Http\Controllers\Admin\SlotAllocationController;
 use App\Http\Controllers\Admin\TemplateController;
 use App\Http\Controllers\Admin\TestModeController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\LegalAcceptController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\CreditPackageController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PromoShareController;
 use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\ReadingExportController;
 use App\Http\Controllers\ReadingHistoryController;
+use App\Support\FeatureCatalog;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -30,11 +39,17 @@ Route::post('/reading', ReadingController::class)
     ->middleware(['auth', 'throttle:8,1'])
     ->name('reading');
 
+Route::get('/aszf', [LegalPageController::class, 'terms'])->name('legal.terms');
+Route::get('/adatkezeles', [LegalPageController::class, 'privacy'])->name('legal.privacy');
+Route::get('/kapcsolat', [LegalPageController::class, 'contact'])->name('legal.contact');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
     Route::post('/register', [RegisterController::class, 'store'])
         ->name('register');
+    Route::get('/register/legal', [LegalAcceptController::class, 'create'])->name('register.legal');
+    Route::post('/register/legal', [LegalAcceptController::class, 'store'])->name('register.legal.store');
 
     Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
         ->whereIn('provider', ['google', 'facebook'])
@@ -49,11 +64,36 @@ Route::post('/logout', [LoginController::class, 'destroy'])
     ->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/credits', [CreditPackageController::class, 'index'])->name('credits.packages');
-    Route::post('/credits/request', [CreditPackageController::class, 'request'])->name('credits.request');
-    Route::post('/credits/promo', [CreditPackageController::class, 'activatePromo'])->name('credits.promo');
-    Route::get('/my-readings', [ReadingHistoryController::class, 'index'])->name('readings.history');
-    Route::get('/my-readings/{reading}', [ReadingHistoryController::class, 'show'])->name('readings.history.show');
+    Route::get('/credits', [CreditPackageController::class, 'index'])
+        ->middleware('feature:'.FeatureCatalog::CREDITS_PAGE)
+        ->name('credits.packages');
+    Route::post('/credits/request', [CreditPackageController::class, 'request'])
+        ->middleware('feature:'.FeatureCatalog::CREDITS_REQUEST)
+        ->name('credits.request');
+    Route::post('/credits/promo', [CreditPackageController::class, 'activatePromo'])
+        ->middleware('feature:'.FeatureCatalog::CREDITS_PROMO)
+        ->name('credits.promo');
+    Route::get('/account', [AccountController::class, 'show'])
+        ->middleware('feature:'.FeatureCatalog::ACCOUNT)
+        ->name('account.show');
+    Route::get('/account/readings/{reading}', [AccountController::class, 'showReading'])
+        ->middleware('feature:'.FeatureCatalog::ACCOUNT)
+        ->name('account.readings.show');
+    Route::delete('/account/readings/{reading}', [AccountController::class, 'destroyReading'])
+        ->middleware('feature:'.FeatureCatalog::ACCOUNT)
+        ->name('account.readings.destroy');
+    Route::delete('/account/readings', [AccountController::class, 'destroyAllReadings'])
+        ->middleware('feature:'.FeatureCatalog::ACCOUNT)
+        ->name('account.readings.destroy-all');
+    Route::post('/account/deletion-request', [AccountController::class, 'storeDeletionRequest'])
+        ->middleware(['feature:'.FeatureCatalog::ACCOUNT, 'throttle:5,60'])
+        ->name('account.deletion-request.store');
+    Route::get('/my-readings', [ReadingHistoryController::class, 'index'])
+        ->middleware('feature:'.FeatureCatalog::HISTORY)
+        ->name('readings.history');
+    Route::get('/my-readings/{reading}', [ReadingHistoryController::class, 'show'])
+        ->middleware('feature:'.FeatureCatalog::HISTORY)
+        ->name('readings.history.show');
     Route::post('/reading/export/pdf', [ReadingExportController::class, 'pdf'])
         ->middleware('throttle:12,1')
         ->name('reading.export.pdf');
@@ -93,6 +133,28 @@ Route::prefix('admin')
         Route::put('/prompts', [PromptController::class, 'update'])->name('prompts.update');
         Route::post('/prompts/reset', [PromptController::class, 'reset'])->name('prompts.reset');
 
+        Route::get('/legal', [LegalController::class, 'edit'])->name('legal.edit');
+        Route::put('/legal', [LegalController::class, 'update'])->name('legal.update');
+
+        Route::get('/packages', [PackageController::class, 'index'])->name('packages.index');
+        Route::get('/packages/create', [PackageController::class, 'create'])->name('packages.create');
+        Route::post('/packages', [PackageController::class, 'store'])->name('packages.store');
+        Route::get('/packages/{package}/edit', [PackageController::class, 'edit'])->name('packages.edit');
+        Route::put('/packages/{package}', [PackageController::class, 'update'])->name('packages.update');
+        Route::post('/packages/{package}/toggle', [PackageController::class, 'toggle'])->name('packages.toggle');
+
+        Route::get('/games', [GameController::class, 'index'])->name('games.index');
+        Route::get('/games/create', [GameController::class, 'create'])->name('games.create');
+        Route::post('/games', [GameController::class, 'store'])->name('games.store');
+        Route::get('/games/{game}/edit', [GameController::class, 'edit'])->name('games.edit');
+        Route::put('/games/{game}', [GameController::class, 'update'])->name('games.update');
+        Route::post('/games/{game}/toggle', [GameController::class, 'toggle'])->name('games.toggle');
+        Route::post('/games/{game}/default', [GameController::class, 'makeDefault'])->name('games.default');
+        Route::delete('/games/{game}', [GameController::class, 'destroy'])->name('games.destroy');
+
+        Route::get('/access', [FeatureAccessController::class, 'edit'])->name('feature-access.edit');
+        Route::put('/access', [FeatureAccessController::class, 'update'])->name('feature-access.update');
+
         Route::get('/readings', [ReadingLogController::class, 'index'])->name('readings.index');
         Route::get('/readings/{reading}', [ReadingLogController::class, 'show'])->name('readings.show');
 
@@ -101,6 +163,10 @@ Route::prefix('admin')
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+
+        Route::get('/deletion-requests', [DataDeletionRequestController::class, 'index'])->name('deletion-requests.index');
+        Route::post('/deletion-requests/{deletionRequest}/process', [DataDeletionRequestController::class, 'process'])->name('deletion-requests.process');
+        Route::post('/deletion-requests/{deletionRequest}/reject', [DataDeletionRequestController::class, 'reject'])->name('deletion-requests.reject');
 
         Route::get('/templates', [TemplateController::class, 'index'])->name('templates.index');
         Route::post('/templates', [TemplateController::class, 'store'])->name('templates.store');

@@ -169,6 +169,7 @@ class CardDrawProfileService
             'tones' => $tones,
             'variants' => $variants,
             'draw_mode' => $mode,
+            'scoring' => $this->scoringSnapshot($clean, $element, $modality, $tone),
         ]);
     }
 
@@ -198,11 +199,13 @@ class CardDrawProfileService
             $variants = ['positive', 'positive', 'positive'];
         }
 
+        $tone = $tones[0] ?? 'pozitív';
+
         return $this->withSlotAllocation([
             'sun_sign' => 'leo',
             'element' => 'tűz',
             'modality' => 'fő',
-            'tone' => $tones[0] ?? 'pozitív',
+            'tone' => $tone,
             'variant' => $variants[0] ?? 'positive',
             'tones' => $tones,
             'variants' => $variants,
@@ -213,7 +216,32 @@ class CardDrawProfileService
                 'objects' => [],
                 'aspects' => [],
             ],
+            'scoring' => $this->scoringSnapshot([], 'tűz', 'fő', $tone),
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $clean
+     * @return array<string, mixed>
+     */
+    private function scoringSnapshot(array $clean, string $element, string $modality, string $tone): array
+    {
+        $elemDom = is_array($clean['elem_dominancia'] ?? null) ? $clean['elem_dominancia'] : [];
+        $modDom = is_array($clean['minoseg_dominancia'] ?? null) ? $clean['minoseg_dominancia'] : [];
+        $toneDom = is_array($clean['pozitiv_negativ'] ?? null) ? $clean['pozitiv_negativ'] : [];
+
+        return [
+            'elements' => is_array($clean['elemek'] ?? null) ? $clean['elemek'] : [],
+            'element_name' => $element,
+            'element_value' => $elemDom['nyers_ertek'] ?? $elemDom['ertek'] ?? null,
+            'modalities' => is_array($clean['minosegek'] ?? null) ? $clean['minosegek'] : [],
+            'modality_name' => $modality,
+            'modality_value' => $modDom['nyers_ertek'] ?? $modDom['ertek'] ?? null,
+            'tone_name' => $tone,
+            'tone_positive' => $toneDom['nyers_pozitiv'] ?? $toneDom['pozitiv'] ?? null,
+            'tone_negative' => $toneDom['nyers_negativ'] ?? $toneDom['negativ'] ?? null,
+            'tone_net' => $toneDom['netto_ertek'] ?? null,
+        ];
     }
 
     /**

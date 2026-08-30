@@ -29,6 +29,20 @@
         .admin-nav { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
         .admin-nav a { text-decoration: none; }
         .admin-nav a.active { font-weight: 700; text-decoration: underline; }
+        .rule-card { border: 1px solid var(--line); border-radius: .4rem; padding: .85rem .9rem .35rem; margin-bottom: .85rem; background: rgba(255,255,255,.45); }
+        .html-editor-toolbar { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .4rem; }
+        .html-editor-toolbar button { width: auto; background: #fff; color: var(--ink); }
+        .html-editor-surface { min-height: 11rem; border: 1px solid var(--line); border-radius: .35rem; padding: .65rem .8rem; background: #fff; }
+        .html-editor-surface:focus { outline: 2px solid color-mix(in srgb, var(--accent) 35%, white); }
+        .html-editor-source { position: absolute; left: -9999px; width: 1px; height: 1px; }
+        .html-editor { position: relative; }
+        .feature-marks { display:inline-flex; align-items:center; gap:3px; vertical-align:middle; }
+        .feature-mark { display:inline-flex; }
+        .pkg-icon { width:12px; height:12px; display:block; flex:none; }
+        .pkg-icon-heart { color:#E8C547; }
+        .pkg-icon-sun { color:#F0A020; }
+        .pkg-icon-crown { color:#D4AF37; }
+        .pkg-icon-star { color:#E8C547; }
     </style>
 </head>
 <body>
@@ -57,5 +71,6 @@
         @endif
         @yield('content')
     </div>
+    @stack('scripts')
 </body>
 </html>

@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Game;
 use App\Services\AppSettings;
 use App\Services\CreditService;
+use App\Services\FeatureAccessService;
 use App\Services\TarotReadingService;
+use App\Support\FeatureCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -17,6 +20,7 @@ class ReadingController extends Controller
         TarotReadingService $readings,
         AppSettings $settings,
         CreditService $credits,
+        FeatureAccessService $features,
     ): JsonResponse {
         set_time_limit(max(180, (int) config('services.openai.timeout', 120) + 30));
 
@@ -34,15 +38,23 @@ class ReadingController extends Controller
         }
 
         $minChars = $settings->minQuestionChars();
+        $game = Game::query()->find($request->input('game_id'));
+        $hasQuestion = $game?->has_question ?? true;
+        $slotCount = $game?->rules()->count() ?: null;
 
         $data = $request->validate([
-            'question' => ['required', 'string', 'min:'.$minChars, 'max:280'],
+            'question' => $hasQuestion
+                ? ['required', 'string', 'min:'.$minChars, 'max:280']
+                : ['nullable', 'string', 'max:280'],
             'locale' => ['nullable', 'string', 'in:hu,en'],
             'mode' => ['nullable', 'string', 'in:initial,clarify,expand'],
             'previous_reading' => ['nullable', 'string', 'max:12000'],
             'follow_up' => ['nullable', 'string', 'max:500'],
             'astro' => ['nullable', 'array'],
-            'cards' => ['required', 'array', 'size:2'],
+            'game_id' => ['nullable', 'integer', 'exists:games,id'],
+            'cards' => $slotCount
+                ? ['required', 'array', 'size:'.$slotCount]
+                : ['required', 'array', 'min:1', 'max:49'],
             'cards.*.figure_id' => ['required', 'string', 'max:64'],
             'cards.*.figure_name' => ['nullable', 'string', 'max:120'],
             'cards.*.keyword' => ['nullable', 'string', 'max:120'],
@@ -51,19 +63,26 @@ class ReadingController extends Controller
             'cards.*.background' => ['nullable', 'string', 'max:64'],
             'cards.*.variant' => ['nullable', 'string', 'max:32'],
             'cards.*.polarity' => ['nullable', 'string', 'max:32'],
-            'cards.*.deck' => ['nullable', 'string', 'max:32'],
+            'cards.*.deck' => ['nullable', 'string', 'max:64'],
             'cards.*.slot_title' => ['nullable', 'string', 'max:120'],
+            'cards.*.info_mode' => ['nullable', 'string', 'max:32'],
+            'cards.*.row' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'cards.*.place' => ['nullable', 'integer', 'min:1', 'max:7'],
             'cards.*.astro_caption' => ['nullable', 'string', 'max:8000'],
         ]);
 
         $mode = $data['mode'] ?? TarotReadingService::MODE_INITIAL;
-        $chargeQuestion = $mode === TarotReadingService::MODE_INITIAL;
-
-        if ($chargeQuestion && ! $credits->hasQuestionCredit($user)) {
+        $featureKey = match ($mode) {
+            TarotReadingService::MODE_CLARIFY => FeatureCatalog::CLARIFY,
+            TarotReadingService::MODE_EXPAND => FeatureCatalog::EXPAND,
+            default => FeatureCatalog::READING,
+        };
+        $decision = $features->decide($user, $featureKey);
+        if (! $decision['allowed']) {
             return response()->json([
-                'error' => __('messages.credits_empty'),
+                'error' => $decision['message'],
                 'credits' => (int) $user->credits,
-            ], 402);
+            ], $decision['status']);
         }
 
         if ($mode === TarotReadingService::MODE_CLARIFY && trim((string) ($data['follow_up'] ?? '')) === '') {
@@ -84,14 +103,31 @@ class ReadingController extends Controller
         }
 
         try {
+            $locale = $data['locale'] ?? app()->getLocale();
+            $question = trim((string) ($data['question'] ?? ''));
+            if (! $hasQuestion && $question === '') {
+                $question = $locale === 'en' ? 'No question for this game.' : 'Ehhez a játékhoz nincs kérdés.';
+            }
+
+            $systemPrompt = null;
+            if ($mode === TarotReadingService::MODE_INITIAL && $game !== null) {
+                $systemPrompt = $game->prompt($locale);
+                if ($systemPrompt === '') {
+                    $systemPrompt = null;
+                }
+            }
+
+            $cards = $this->cardsWithGameRules($game, $data['cards'], $locale);
+
             $result = $readings->interpret([
-                'question' => $data['question'],
-                'locale' => $data['locale'] ?? app()->getLocale(),
-                'cards' => $data['cards'],
+                'question' => $question,
+                'locale' => $locale,
+                'cards' => $cards,
                 'astro' => $data['astro'] ?? [],
                 'mode' => $mode,
                 'previous_reading' => $data['previous_reading'] ?? null,
                 'follow_up' => $data['follow_up'] ?? null,
+                'system_prompt' => $systemPrompt,
                 'ip' => $request->ip(),
                 'user_id' => $user->id,
             ]);
@@ -109,9 +145,10 @@ class ReadingController extends Controller
         $source = $result['source'];
 
         $balance = (int) $user->credits;
-        if ($chargeQuestion) {
+        $charge = $features->decide($user->fresh(), $featureKey);
+        if ($charge['will_charge']) {
             try {
-                $balance = $credits->spendForQuestion($user->fresh());
+                $balance = $credits->spend($user->fresh(), $charge['cost']);
             } catch (RuntimeException $e) {
                 return response()->json([
                     'error' => $e->getMessage(),
@@ -126,5 +163,32 @@ class ReadingController extends Controller
             'mode' => $mode,
             'credits' => $balance,
         ]);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $cards
+     * @return list<array<string, mixed>>
+     */
+    private function cardsWithGameRules(?Game $game, array $cards, string $locale): array
+    {
+        if ($game === null) {
+            return array_values($cards);
+        }
+
+        $game->loadMissing(['rules' => fn ($query) => $query->ordered()]);
+        $rules = $game->rules->values();
+
+        foreach ($cards as $index => $card) {
+            $rule = $rules->get($index);
+            if ($rule === null) {
+                continue;
+            }
+            $cards[$index]['row'] = (int) $rule->row;
+            $cards[$index]['place'] = (int) $rule->place;
+            $cards[$index]['slot_title'] = $rule->title($locale);
+            $cards[$index]['info_mode'] = $rule->info_mode;
+        }
+
+        return array_values($cards);
     }
 }

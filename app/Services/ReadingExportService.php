@@ -12,9 +12,7 @@ use Illuminate\Validation\ValidationException;
 
 class ReadingExportService
 {
-    public function __construct(private readonly OgImageService $ogImages)
-    {
-    }
+    public function __construct(private readonly OgImageService $ogImages) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -27,7 +25,7 @@ class ReadingExportService
         $cards = array_values(is_array($data['cards'] ?? null) ? $data['cards'] : []);
         $answersIn = array_values(is_array($data['answers'] ?? null) ? $data['answers'] : []);
 
-        if ($question === '' || count($cards) !== 2 || $answersIn === []) {
+        if ($question === '' || $cards === [] || $answersIn === []) {
             throw ValidationException::withMessages([
                 'payload' => $locale === 'en'
                     ? 'A complete reading is required for export.'
@@ -95,11 +93,11 @@ class ReadingExportService
             ];
         }
 
-        if (count($normalizedCards) !== 2) {
+        if ($normalizedCards === []) {
             throw ValidationException::withMessages([
                 'cards' => $locale === 'en'
-                    ? 'Exactly two cards are required.'
-                    : 'Pontosan két lap szükséges.',
+                    ? 'At least one card is required.'
+                    : 'Legalább egy lap szükséges.',
             ]);
         }
 

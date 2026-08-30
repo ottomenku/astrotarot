@@ -15,9 +15,7 @@ use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
 {
-    public function __construct(private readonly CreditService $credits)
-    {
-    }
+    public function __construct(private readonly CreditService $credits) {}
 
     public function store(Request $request, AppSettings $settings): RedirectResponse
     {
@@ -30,6 +28,8 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            'terms' => ['accepted'],
+            'privacy' => ['accepted'],
         ]);
 
         $user = User::query()->create([
@@ -39,6 +39,8 @@ class RegisterController extends Controller
             'role' => Role::User,
             'credits' => 0,
             'plan' => 'free',
+            'terms_accepted_at' => now(),
+            'privacy_accepted_at' => now(),
         ]);
 
         $this->credits->grantSignupBonus($user);

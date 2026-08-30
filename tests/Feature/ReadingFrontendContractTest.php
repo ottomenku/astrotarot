@@ -41,7 +41,13 @@ class ReadingFrontendContractTest extends TestCase
             ->get(route('home'))
             ->assertOk()
             ->assertSee('<meta name="csrf-token"', false)
-            ->assertSee('data-reading-url="/reading"', false)
+            ->assertSee('data-game-description', false)
+            ->assertSee('Tedd fel a kérdésed a lenti szövegmezőben', false)
+            ->assertSee('data-question-wrap', false)
+            ->assertSee('data-pack-base=', false)
+            ->assertSee('data-game=', false)
+            ->assertSee('card-pack', false)
+            ->assertSee('data-feature-access=', false)
             ->assertSee('data-llm-enabled="1"', false)
             ->assertSee('data-reset', false)
             ->assertSee('data-reading-followup-send', false)
@@ -52,7 +58,15 @@ class ReadingFrontendContractTest extends TestCase
     {
         $js = (string) file_get_contents(public_path('templates/art-deco/app.js'));
 
-        $this->assertStringContainsString('function jsonErrorMessage(', $js);
+        $this->assertStringContainsString('function featureState(', $js);
+        $this->assertStringContainsString('data-game-description', $js);
+        $this->assertStringContainsString('function gameDescription(', $js);
+        $this->assertStringContainsString('packBase', $js);
+        $this->assertStringContainsString('gameSlots', $js);
+        $this->assertStringContainsString('scoring', $js);
+        $this->assertStringContainsString('row:', $js);
+        $this->assertStringContainsString('/card-pack', $js);
+        $this->assertStringContainsString('reading.initial', $js);
         $this->assertStringContainsString('sessionExpired', $js);
         $this->assertStringContainsString('sourcePrefix', $js);
         $this->assertStringContainsString("credentials: 'same-origin'", $js);

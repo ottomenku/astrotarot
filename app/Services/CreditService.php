@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Package;
 use App\Models\User;
+use App\Support\FeatureCatalog;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -51,76 +53,16 @@ class CreditService
     /**
      * Subscription-style plans shown on the packages page.
      *
-     * @return list<array{
-     *   key: string,
-     *   price_huf: int|null,
-     *   monthly_credits: int,
-     *   label_hu: string,
-     *   label_en: string,
-     *   features_hu: list<string>,
-     *   features_en: list<string>
-     * }>
+     * @return list<Package>
      */
     public function plans(): array
     {
-        return [
-            [
-                'key' => self::PLAN_FREE,
-                'price_huf' => null,
-                'monthly_credits' => 0,
-                'label_hu' => 'Free',
-                'label_en' => 'Free',
-                'features_hu' => [
-                    'Regisztrációkor 10 kredit',
-                    'Minden nap +1 kredit bejelentkezéskor',
-                    'Alap olvasatok',
-                ],
-                'features_en' => [
-                    '10 credits on signup',
-                    '+1 credit each day on login',
-                    'Basic readings',
-                ],
-            ],
-            [
-                'key' => self::PLAN_PREMIUM,
-                'price_huf' => 1600,
-                'monthly_credits' => 50,
-                'label_hu' => 'Premium',
-                'label_en' => 'Premium',
-                'features_hu' => [
-                    'Havi 50 kredit',
-                    'PDF mentés',
-                    'Kérdések naplózása és visszanézése',
-                ],
-                'features_en' => [
-                    '50 credits / month',
-                    'PDF export',
-                    'Question log & history',
-                ],
-            ],
-            [
-                'key' => self::PLAN_EXPERT,
-                'price_huf' => 2500,
-                'monthly_credits' => 100,
-                'label_hu' => 'Expert',
-                'label_en' => 'Expert',
-                'features_hu' => [
-                    'Havi 100 kredit',
-                    'Minden Premium előny',
-                    'Prémium hozzáférés az AstroMotto asztrológiai oldalhoz',
-                ],
-                'features_en' => [
-                    '100 credits / month',
-                    'All Premium benefits',
-                    'Premium access to the AstroMotto astrology site',
-                ],
-            ],
-        ];
+        return Package::query()->active()->ordered()->get()->all();
     }
 
-    public function plan(string $key): ?array
+    public function plan(string $key): ?Package
     {
-        return $this->findByKey($this->plans(), $key);
+        return Package::query()->where('slug', $key)->first();
     }
 
     public function grantSignupBonus(User $user): void
@@ -140,8 +82,13 @@ class CreditService
             /** @var User $locked */
             $locked = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
             $plan = $locked->plan ?: self::PLAN_FREE;
+            $package = $this->plan($plan);
 
-            if ($plan !== self::PLAN_FREE) {
+            if ($package !== null && ! $package->isFree()) {
+                return (int) $locked->credits;
+            }
+
+            if ($package === null && $plan !== self::PLAN_FREE) {
                 return (int) $locked->credits;
             }
 
@@ -164,7 +111,7 @@ class CreditService
     public function activatePromoPlan(User $user, string $planKey): User
     {
         $plan = $this->plan($planKey);
-        if ($plan === null || $planKey === self::PLAN_FREE) {
+        if ($plan === null || ! $plan->is_active || $plan->isFree()) {
             throw new RuntimeException(__('messages.credits_package_invalid'));
         }
 
@@ -174,28 +121,37 @@ class CreditService
 
             $locked->plan = $planKey;
             $locked->plan_started_at = now();
-            $locked->credits = (int) $locked->credits + (int) $plan['monthly_credits'];
+            $locked->credits = (int) $locked->credits + (int) $plan->credits;
             $locked->save();
 
             return $locked->fresh();
         });
     }
 
-    public function spendForQuestion(User $user): int
+    public function spend(User $user, int $cost): int
     {
-        return DB::transaction(function () use ($user) {
+        if ($cost <= 0) {
+            return (int) $user->credits;
+        }
+
+        return DB::transaction(function () use ($user, $cost) {
             /** @var User $locked */
             $locked = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
 
-            if ((int) $locked->credits < self::QUESTION_COST) {
+            if ((int) $locked->credits < $cost) {
                 throw new RuntimeException(__('messages.credits_empty'));
             }
 
-            $locked->credits = (int) $locked->credits - self::QUESTION_COST;
+            $locked->credits = (int) $locked->credits - $cost;
             $locked->save();
 
             return (int) $locked->credits;
         });
+    }
+
+    public function spendForQuestion(User $user): int
+    {
+        return $this->spend($user, self::QUESTION_COST);
     }
 
     public function hasQuestionCredit(User $user): bool
@@ -205,17 +161,17 @@ class CreditService
 
     public function canExportPdf(User $user): bool
     {
-        return in_array($user->plan ?: self::PLAN_FREE, [self::PLAN_PREMIUM, self::PLAN_EXPERT], true);
+        return app(FeatureAccessService::class)->can($user, FeatureCatalog::PDF);
     }
 
     public function canViewHistory(User $user): bool
     {
-        return $this->canExportPdf($user);
+        return app(FeatureAccessService::class)->can($user, FeatureCatalog::HISTORY);
     }
 
     public function hasAstroMottoAccess(User $user): bool
     {
-        return ($user->plan ?: self::PLAN_FREE) === self::PLAN_EXPERT;
+        return app(FeatureAccessService::class)->can($user, FeatureCatalog::ASTROMOTTO);
     }
 
     /**

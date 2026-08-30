@@ -54,6 +54,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'contact_email' => env('CONTACT_EMAIL', 'hello@astrotarot.hu'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

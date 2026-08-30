@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Support\CardPackCatalog;
+
 class OgImageService
 {
     public function canGenerate(): bool
@@ -25,23 +27,14 @@ class OgImageService
 
     public function figureRelativePath(string $deck, string $figureId): ?string
     {
-        if ($figureId === '') {
-            return null;
-        }
-
-        $folder = $deck === 'tarot' ? 'tarot-major' : 'egi-orakulum';
-        $file = $deck === 'tarot' && preg_match('/^(wands|cups|swords|pentacles)-/', $figureId) === 1
-            ? "templates/art-deco/assets/{$folder}/figures/minors/{$figureId}.png"
-            : "templates/art-deco/assets/{$folder}/figures/{$figureId}.png";
-
-        return is_file(public_path($file)) ? $file : null;
+        return CardPackCatalog::figureRelative($deck, $figureId);
     }
 
-    public function backgroundAbsolutePath(string $variant): string
+    public function backgroundAbsolutePath(string $variant, string $deck = 'egi-orakulum'): ?string
     {
-        $tone = in_array($variant, ['shadow', 'negative', 'negatív'], true) ? 'shadow' : 'light';
+        $relative = CardPackCatalog::backgroundRelative($deck, $variant);
 
-        return public_path("templates/art-deco/assets/egi-orakulum/backgrounds/shared-{$tone}.png");
+        return $relative === null ? null : public_path($relative);
     }
 
     /**
@@ -73,8 +66,8 @@ class OgImageService
             $figureId = (string) ($card['figure_id'] ?? '');
             $variant = (string) ($card['variant'] ?? $card['polarity'] ?? 'positive');
             $figurePath = $this->figureAbsolutePath($deck, $figureId);
-            $bgPath = $this->backgroundAbsolutePath($variant);
-            if ($figurePath === null || ! is_file($bgPath)) {
+            $bgPath = $this->backgroundAbsolutePath($variant, $deck);
+            if ($figurePath === null) {
                 imagedestroy($canvas);
 
                 return null;
@@ -107,17 +100,15 @@ class OgImageService
     /**
      * @return \GdImage|null
      */
-    private function composeCard(string $backgroundPath, string $figurePath, int $width, int $height)
+    private function composeCard(?string $backgroundPath, string $figurePath, int $width, int $height)
     {
-        $bg = @imagecreatefrompng($backgroundPath);
         $figure = @imagecreatefrompng($figurePath);
-        if ($bg === false || $figure === false) {
+        if ($figure === false) {
             return null;
         }
 
         $card = imagecreatetruecolor($width, $height);
         if ($card === false) {
-            imagedestroy($bg);
             imagedestroy($figure);
 
             return null;
@@ -125,18 +116,31 @@ class OgImageService
 
         imagealphablending($card, true);
         imagesavealpha($card, true);
-        imagecopyresampled($card, $bg, 0, 0, 0, 0, $width, $height, imagesx($bg), imagesy($bg));
+
+        $bg = ($backgroundPath !== null && is_file($backgroundPath))
+            ? @imagecreatefrompng($backgroundPath)
+            : false;
+
+        if ($bg !== false) {
+            imagecopyresampled($card, $bg, 0, 0, 0, 0, $width, $height, imagesx($bg), imagesy($bg));
+            imagedestroy($bg);
+        } else {
+            $ink = imagecolorallocate($card, 14, 13, 28);
+            imagefilledrectangle($card, 0, 0, $width, $height, $ink);
+        }
 
         $fw = imagesx($figure);
         $fh = imagesy($figure);
-        $scale = min(($width * 0.88) / $fw, ($height * 0.88) / $fh);
+        $fullBleed = $bg === false;
+        $scale = $fullBleed
+            ? max($width / $fw, $height / $fh)
+            : min(($width * 0.88) / $fw, ($height * 0.88) / $fh);
         $dw = (int) round($fw * $scale);
         $dh = (int) round($fh * $scale);
         $dx = (int) round(($width - $dw) / 2);
         $dy = (int) round(($height - $dh) / 2);
         imagecopyresampled($card, $figure, $dx, $dy, 0, 0, $dw, $dh, $fw, $fh);
 
-        imagedestroy($bg);
         imagedestroy($figure);
 
         return $card;

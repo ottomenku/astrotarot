@@ -16,6 +16,7 @@ class PlanAndCreditsTest extends TestCase
         $user = User::factory()->create(['credits' => 10, 'plan' => 'free']);
 
         $this->actingAs($user)
+            ->withSession(['locale' => 'hu'])
             ->get(route('credits.packages'))
             ->assertOk()
             ->assertSee('Premium', false)
@@ -25,6 +26,13 @@ class PlanAndCreditsTest extends TestCase
             ->assertSee('pack_50', false)
             ->assertDontSee('pack_10', false)
             ->assertDontSee('pack_30', false);
+
+        $this->actingAs($user)
+            ->withSession(['locale' => 'en'])
+            ->get(route('credits.packages'))
+            ->assertOk()
+            ->assertSee('$4.99', false)
+            ->assertSee('$7.99', false);
     }
 
     public function test_daily_login_bonus_once_per_day_for_free_users(): void

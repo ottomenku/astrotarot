@@ -38,5 +38,25 @@ class AdminAccessTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.templates.index'))
             ->assertOk();
+
+        $this->actingAs($admin)
+            ->get(route('admin.legal.edit'))
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->get(route('admin.deletion-requests.index'))
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->get(route('admin.packages.index'))
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->get(route('admin.games.index'))
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->get(route('admin.feature-access.edit'))
+            ->assertOk();
     }
 }

@@ -1,0 +1,373 @@
+{
+    "id": "cigany-kartya",
+    "name": {
+        "hu": "Cigánykártya",
+        "en": "Gypsy fortune cards"
+    },
+    "style": "folk-chromolithograph-light",
+    "cardBack": "card-back/card-back.png",
+    "totalCards": 36,
+    "note": "Traditional 36-card illustrated fortune deck. Full-bleed faces, no light/shadow variants.",
+    "figures": [
+        {
+            "id": "ajandek",
+            "hu": "Ajándék",
+            "en": "Gift",
+            "keyword": {"hu": "örömteli fordulat", "en": "joyful turn"},
+            "blurb": {
+                "hu": "Örömteli fordulat, ajándék, kedvező gesztus. Valami jó érkezik, amit nem kellett kikényszeríteni.",
+                "en": "A joyful turn, a gift, a kind gesture. Something good arrives without being forced."
+            }
+        },
+        {
+            "id": "allandossag",
+            "hu": "Állandóság",
+            "en": "Constancy",
+            "keyword": {"hu": "stabilitás", "en": "stability"},
+            "blurb": {
+                "hu": "Stabilitás, változatlanság. Ami történik, tartósabb erőn nyugszik — türelem és kitartás kell hozzá.",
+                "en": "Stability and constancy. What happens rests on a lasting force — patience and endurance are needed."
+            }
+        },
+        {
+            "id": "betegseg",
+            "hu": "Betegség",
+            "en": "Illness",
+            "keyword": {"hu": "akadályozottság", "en": "impairment"},
+            "blurb": {
+                "hu": "Testi vagy lelki gyengeség, rossz lelkiállapot, akadályozottság. Pihenés és óvatosság ideje.",
+                "en": "Bodily or emotional weakness, low spirits, feeling blocked. A time for rest and caution."
+            }
+        },
+        {
+            "id": "biro",
+            "hu": "Bíró",
+            "en": "Judge",
+            "keyword": {"hu": "döntés", "en": "decision"},
+            "blurb": {
+                "hu": "Hivatalos személy, komoly döntés, ítélet. Ami eddig függőben volt, most mérlegre kerül.",
+                "en": "An official person, a serious decision, a verdict. What was pending now comes to the scales."
+            }
+        },
+        {
+            "id": "bosszusag",
+            "hu": "Bosszúság",
+            "en": "Annoyance",
+            "keyword": {"hu": "kellemetlenség", "en": "nuisance"},
+            "blurb": {
+                "hu": "Kellemetlenség, ingerlékenység, apró düh. Nem katasztrófa, de kiveszi a nyugalmat.",
+                "en": "Nuisance, irritability, petty anger. Not a disaster, but it steals your calm."
+            }
+        },
+        {
+            "id": "ellenseg",
+            "hu": "Ellenség",
+            "en": "Enemy",
+            "keyword": {"hu": "vetélytárs", "en": "rival"},
+            "blurb": {
+                "hu": "Rosszakaró, vetélytárs, intrika — vagy a saját árnyoldalad. Figyeld, ki és mi dolgozik ellened.",
+                "en": "An ill-wisher, a rival, intrigue — or your own shadow side. Watch who and what works against you."
+            }
+        },
+        {
+            "id": "feltekenyseg",
+            "hu": "Féltékenység",
+            "en": "Jealousy",
+            "keyword": {"hu": "félelem", "en": "fear"},
+            "blurb": {
+                "hu": "Féltékenység, féltés, félelem a veszteségtől. A gyanú többet árt, mint a valóság.",
+                "en": "Jealousy, possessiveness, fear of loss. Suspicion harms more than the facts."
+            }
+        },
+        {
+            "id": "gondolat",
+            "hu": "Gondolat",
+            "en": "Thought",
+            "keyword": {"hu": "tervezés", "en": "planning"},
+            "blurb": {
+                "hu": "Szőke férfi, vagy szellemi munka, tervezgetés. Most a fejben dől el, mielőtt a kézben.",
+                "en": "A fair-haired man, or mental work and planning. It is decided in the mind before the hand."
+            }
+        },
+        {
+            "id": "gyermek",
+            "hu": "Gyermek",
+            "en": "Child",
+            "keyword": {"hu": "kezdet", "en": "beginning"},
+            "blurb": {
+                "hu": "Gyermek, újrakezdés, vagy szóbeszéd és pletyka. Valami kicsi, de eleven van születőben.",
+                "en": "A child, a new start, or gossip. Something small but alive is coming into being."
+            }
+        },
+        {
+            "id": "halal",
+            "hu": "Halál",
+            "en": "Death",
+            "keyword": {"hu": "sorsfordulat", "en": "turning point"},
+            "blurb": {
+                "hu": "Kedvezőtlen, de nem feltétlenül tragikus sorsfordulat. Ami véget ér, helyet ad a következőnek.",
+                "en": "An unfavourable but not necessarily tragic turning point. What ends makes room for what follows."
+            }
+        },
+        {
+            "id": "hamissag",
+            "hu": "Hamisság",
+            "en": "Falsehood",
+            "keyword": {"hu": "becsapás", "en": "deceit"},
+            "blurb": {
+                "hu": "Becsapás veszélye, valami meghiúsulhat. Ne fogadj el mindent elsőre — kérdezz utána.",
+                "en": "Risk of deceit; something may fall through. Do not take everything at first glance — check."
+            }
+        },
+        {
+            "id": "haz",
+            "hu": "Ház",
+            "en": "House",
+            "keyword": {"hu": "otthon", "en": "home"},
+            "blurb": {
+                "hu": "Otthon, haza, szülői ház. A kérdés gyökere a saját falak között van.",
+                "en": "Home, the family house. The root of the question sits within your own walls."
+            }
+        },
+        {
+            "id": "hazassag",
+            "hu": "Házasság",
+            "en": "Marriage",
+            "keyword": {"hu": "szövetség", "en": "bond"},
+            "blurb": {
+                "hu": "Saját család, házasság, vagy üzleti szövetség. Két élet összekötése, közös felelősség.",
+                "en": "Family, marriage, or a business alliance. Two lives joined, with shared responsibility."
+            }
+        },
+        {
+            "id": "huseg",
+            "hu": "Hűség",
+            "en": "Fidelity",
+            "keyword": {"hu": "kitartás", "en": "loyalty"},
+            "blurb": {
+                "hu": "Őszinteség és kitartás. Van, aki melletted marad — te se add fel, amit megfogadtál.",
+                "en": "Honesty and loyalty. Someone stays with you — do not abandon what you promised."
+            }
+        },
+        {
+            "id": "katonatiszt",
+            "hu": "Katonatiszt",
+            "en": "Officer",
+            "keyword": {"hu": "kötelesség", "en": "duty"},
+            "blurb": {
+                "hu": "Sötét hajú férfi, munkahelyi kötelezettségek, rend és parancs. A feladat most nem kérdez, hanem vár.",
+                "en": "A dark-haired man, workplace duty, order and command. The task does not ask — it waits."
+            }
+        },
+        {
+            "id": "keves-penz",
+            "hu": "Kevés pénz",
+            "en": "Little money",
+            "keyword": {"hu": "szűkösség", "en": "scarcity"},
+            "blurb": {
+                "hu": "Kisebb összeg, filléres gondok. Nem a nagy veszteség, hanem a szűkös hétköznap.",
+                "en": "A smaller sum, petty money worries. Not a great loss, but a tight everyday."
+            }
+        },
+        {
+            "id": "latogatas",
+            "hu": "Látogatás",
+            "en": "Visit",
+            "keyword": {"hu": "vendég", "en": "guest"},
+            "blurb": {
+                "hu": "Vendég, bizonytalanság, esetlegesség. Valaki vagy valami kopogtat — még nem tudni, meddig marad.",
+                "en": "A guest, uncertainty, something incidental. Someone or something knocks — it is not yet clear how long they stay."
+            }
+        },
+        {
+            "id": "lelkesz",
+            "hu": "Lelkész",
+            "en": "Clergyman",
+            "keyword": {"hu": "segítő", "en": "helper"},
+            "blurb": {
+                "hu": "Mély lelki élet, tiszta szándékok, segítő. Van, aki hallgat és irányt mutat, ha kéred.",
+                "en": "A deep inner life, clean intentions, a helper. Someone will listen and point the way if you ask."
+            }
+        },
+        {
+            "id": "level",
+            "hu": "Levél",
+            "en": "Letter",
+            "keyword": {"hu": "irat", "en": "document"},
+            "blurb": {
+                "hu": "Levél, meghívó, hivatalos irat. Írott szó érkezik — olvasd el figyelmesen, mielőtt válaszolsz.",
+                "en": "A letter, an invitation, an official paper. Written word arrives — read it carefully before you answer."
+            }
+        },
+        {
+            "id": "orvendezes",
+            "hu": "Örvendezés",
+            "en": "Rejoicing",
+            "keyword": {"hu": "ünnep", "en": "celebration"},
+            "blurb": {
+                "hu": "Örömünnep, családi esemény, optimizmus. Engedd meg magadnak, hogy örülj, ami megvan.",
+                "en": "A celebration, a family occasion, optimism. Allow yourself to be glad of what you have."
+            }
+        },
+        {
+            "id": "ozvegyasszony",
+            "hu": "Özvegyasszony",
+            "en": "Widow",
+            "keyword": {"hu": "idősebb nő", "en": "older woman"},
+            "blurb": {
+                "hu": "Idősebb hölgy, sokszor a kérdező édesanyja. Tapasztalat, gyász és gondoskodás egy alakban.",
+                "en": "An older woman, often the questioner's mother. Experience, grief and care in one figure."
+            }
+        },
+        {
+            "id": "ozvegy-ferfi",
+            "hu": "Özvegy férfi",
+            "en": "Widower",
+            "keyword": {"hu": "idősebb férfi", "en": "older man"},
+            "blurb": {
+                "hu": "Idősebb úr, sokszor az édesapa. Tekintély, magány és a múlt súlya.",
+                "en": "An older gentleman, often the father. Authority, solitude and the weight of the past."
+            }
+        },
+        {
+            "id": "penz",
+            "hu": "Pénz",
+            "en": "Money",
+            "keyword": {"hu": "nagyobb összeg", "en": "large sum"},
+            "blurb": {
+                "hu": "Nagyobb összeg, anyagi lehetőség. A kérdés pénzre fut ki — bánj vele okosan.",
+                "en": "A larger sum, a material opening. The question comes down to money — handle it wisely."
+            }
+        },
+        {
+            "id": "remeny",
+            "hu": "Remény",
+            "en": "Hope",
+            "keyword": {"hu": "kivárás", "en": "waiting"},
+            "blurb": {
+                "hu": "Reménység, hosszú idejű megvalósulás. Nem azonnal, de az irány jó — tartsd a fonalat.",
+                "en": "Hope, a long unfolding. Not at once, but the direction is right — keep the thread."
+            }
+        },
+        {
+            "id": "szerelem",
+            "hu": "Szerelem",
+            "en": "Love",
+            "keyword": {"hu": "szeretet", "en": "affection"},
+            "blurb": {
+                "hu": "Szerelem, szeretet, öröm. A szív van a középpontban, nem a számítás.",
+                "en": "Love, affection, joy. The heart is at the centre, not calculation."
+            }
+        },
+        {
+            "id": "szerelmes-no",
+            "hu": "Szerelmes nő",
+            "en": "Woman in love",
+            "keyword": {"hu": "szív királynő", "en": "queen of hearts"},
+            "blurb": {
+                "hu": "A szív királynője. Ha nő a kérdező, őt jelenti; ha férfi, a jelenlegi vagy jövendő párját.",
+                "en": "The queen of hearts. If the questioner is a woman, this is her; if a man, his present or future partner."
+            }
+        },
+        {
+            "id": "szerencse",
+            "hu": "Szerencse",
+            "en": "Fortune",
+            "keyword": {"hu": "kedvező fordulat", "en": "lucky turn"},
+            "blurb": {
+                "hu": "Jó szerencse, kedvező fordulat. Nyílik egy ajtó — lépj be, amíg nyitva van.",
+                "en": "Good luck, a favourable turn. A door opens — step through while it is open."
+            }
+        },
+        {
+            "id": "szerencsetlenseg",
+            "hu": "Szerencsétlenség",
+            "en": "Misfortune",
+            "keyword": {"hu": "balszerencse", "en": "bad luck"},
+            "blurb": {
+                "hu": "Sikertelenség, kellemetlenség, balszerencse. Ne erőltesd most a nagy lépést.",
+                "en": "Failure, unpleasantness, bad luck. Do not force a big step now."
+            }
+        },
+        {
+            "id": "szereto",
+            "hu": "Szerető",
+            "en": "Lover",
+            "keyword": {"hu": "szív király", "en": "king of hearts"},
+            "blurb": {
+                "hu": "A szív királya. Ha férfi a kérdező, őt jelenti; ha nő, a jelenlegi vagy jövendőbeli párját.",
+                "en": "The king of hearts. If the questioner is a man, this is him; if a woman, her present or future partner."
+            }
+        },
+        {
+            "id": "szomorusag",
+            "hu": "Szomorúság",
+            "en": "Sadness",
+            "keyword": {"hu": "lehangoltság", "en": "gloom"},
+            "blurb": {
+                "hu": "Szőke nő, vagy rosszkedv, szomorúság, lehangoltság. A bánat átmeneti — ne zárd magadra az ajtót.",
+                "en": "A fair-haired woman, or low mood and sadness. Grief is passing — do not lock the door on yourself."
+            }
+        },
+        {
+            "id": "tolvaj",
+            "hu": "Tolvaj",
+            "en": "Thief",
+            "keyword": {"hu": "károsítás", "en": "harm"},
+            "blurb": {
+                "hu": "Valaki meg akar károsítani, anyagi vagy lelki értelemben. Őrizd, amid van — és amid nem látszik.",
+                "en": "Someone wants to harm you, materially or inwardly. Guard what you have — including what cannot be seen."
+            }
+        },
+        {
+            "id": "utazas",
+            "hu": "Utazás",
+            "en": "Journey",
+            "keyword": {"hu": "gyorsulás", "en": "movement"},
+            "blurb": {
+                "hu": "Utazás, vagy az események gyors bekövetkezése. A helyzet nem marad egy helyben.",
+                "en": "A journey, or events arriving quickly. The situation will not stay in one place."
+            }
+        },
+        {
+            "id": "uzenet",
+            "hu": "Üzenet",
+            "en": "Message",
+            "keyword": {"hu": "hír", "en": "news"},
+            "blurb": {
+                "hu": "Hír, üzenet; egy esemény nagyon gyors bekövetkezése. Figyelj, mert hamar itt lesz.",
+                "en": "News, a message; an event arriving very soon. Pay attention — it will be here quickly."
+            }
+        },
+        {
+            "id": "vagy",
+            "hu": "Vágy",
+            "en": "Desire",
+            "keyword": {"hu": "sóvárgás", "en": "longing"},
+            "blurb": {
+                "hu": "Sötét hajú nő, vágyakozás, sóvárgás. Ami hiányzik, most erősen húz — nézd meg, valóságos-e.",
+                "en": "A dark-haired woman, longing, yearning. What is missing pulls strongly now — see whether it is real."
+            }
+        },
+        {
+            "id": "varatlan-orom",
+            "hu": "Váratlan öröm",
+            "en": "Unexpected joy",
+            "keyword": {"hu": "meglepetés", "en": "surprise"},
+            "blurb": {
+                "hu": "Hirtelen szerencse, nem várt anyagi vagy lelki javak. Fogadd el, ne magyarázd túl.",
+                "en": "Sudden luck, unexpected material or inner gifts. Receive it; do not over-explain it."
+            }
+        },
+        {
+            "id": "veszteseg",
+            "hu": "Veszteség",
+            "en": "Loss",
+            "keyword": {"hu": "kár", "en": "damage"},
+            "blurb": {
+                "hu": "A kérdező vesztesnek érzi magát. Kár, anyagi vagy érzelmi hiány — ne azonosulj vele teljesen.",
+                "en": "The questioner feels like a loser. Damage, material or emotional lack — do not become it entirely."
+            }
+        }
+    ]
+}

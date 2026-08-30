@@ -73,6 +73,9 @@ class AppSettingsTest extends TestCase
         $this->assertSame($settings->defaultSystemPromptHu(), $settings->systemPrompt('hu'));
         $this->assertSame($settings->defaultClarifyPromptEn(), $settings->clarifyPrompt('en'));
 
+        $this->assertSame($settings->defaultTermsHu(), $settings->terms('hu'));
+        $this->assertSame($settings->defaultPrivacyEn(), $settings->privacy('en'));
+
         $settings->putMany([AppSettings::SYSTEM_PROMPT_HU => 'Egyedi magyar rendszerprompt szövege.']);
         $this->assertSame('Egyedi magyar rendszerprompt szövege.', $settings->systemPrompt('hu'));
     }

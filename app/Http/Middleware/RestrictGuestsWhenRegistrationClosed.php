@@ -9,9 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RestrictGuestsWhenRegistrationClosed
 {
-    public function __construct(private readonly AppSettings $settings)
-    {
-    }
+    public function __construct(private readonly AppSettings $settings) {}
 
     /**
      * @param  Closure(Request): Response  $next
@@ -48,6 +46,11 @@ class RestrictGuestsWhenRegistrationClosed
                 'locale.switch',
                 'auth.social.redirect',
                 'auth.social.callback',
+                'legal.terms',
+                'legal.privacy',
+                'legal.contact',
+                'register.legal',
+                'register.legal.store',
                 'reading.share.show',
                 'reading.share.og',
             ]);

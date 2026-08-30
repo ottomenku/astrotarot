@@ -4,14 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Mail\ReadingExportMail;
 use App\Models\ReadingShare;
+use App\Models\User;
 use App\Services\CreditService;
+use App\Services\FeatureAccessService;
 use App\Services\OgImageService;
 use App\Services\ReadingExportService;
+use App\Support\FeatureCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
+use RuntimeException;
 use Throwable;
 
 class ReadingExportController extends Controller
@@ -19,16 +23,23 @@ class ReadingExportController extends Controller
     public function __construct(
         private readonly ReadingExportService $exports,
         private readonly CreditService $credits,
-    ) {
-    }
+        private readonly FeatureAccessService $features,
+    ) {}
 
     public function pdf(Request $request): Response|JsonResponse
     {
-        $user = $request->user();
-        if ($user === null || ! $this->credits->canExportPdf($user)) {
+        $denied = $this->denyJson($request, FeatureCatalog::PDF);
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        try {
+            $balance = $this->charge($request->user(), FeatureCatalog::PDF);
+        } catch (RuntimeException $e) {
             return response()->json([
-                'error' => __('messages.plan_pdf_locked'),
-            ], 403);
+                'error' => $e->getMessage(),
+                'credits' => (int) $request->user()->fresh()->credits,
+            ], 402);
         }
 
         $payload = $this->exports->normalizePayload($request->all());
@@ -37,16 +48,15 @@ class ReadingExportController extends Controller
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="astrotarot-olvasat.pdf"',
+            'X-Credits-Remaining' => (string) $balance,
         ]);
     }
 
     public function email(Request $request): JsonResponse
     {
-        $user = $request->user();
-        if ($user === null || ! $this->credits->canExportPdf($user)) {
-            return response()->json([
-                'error' => __('messages.plan_pdf_locked'),
-            ], 403);
+        $denied = $this->denyJson($request, FeatureCatalog::EMAIL);
+        if ($denied !== null) {
+            return $denied;
         }
         $data = $request->validate([
             'email' => ['nullable', 'email', 'max:255'],
@@ -68,6 +78,15 @@ class ReadingExportController extends Controller
         }
 
         try {
+            $balance = $this->charge($request->user(), FeatureCatalog::EMAIL);
+        } catch (RuntimeException $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'credits' => (int) $request->user()->fresh()->credits,
+            ], 402);
+        }
+
+        try {
             $pdf = $this->exports->makePdf($payload);
             Mail::to($to)->send(new ReadingExportMail($payload, $pdf));
         } catch (Throwable $e) {
@@ -83,6 +102,7 @@ class ReadingExportController extends Controller
         return response()->json([
             'ok' => true,
             'email' => $to,
+            'credits' => $balance,
             'message' => ($payload['locale'] === 'en')
                 ? 'The reading was sent by email.'
                 : 'Az olvasatot elküldtük e-mailben.',
@@ -91,6 +111,20 @@ class ReadingExportController extends Controller
 
     public function share(Request $request): JsonResponse
     {
+        $denied = $this->denyJson($request, FeatureCatalog::SHARE);
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        try {
+            $balance = $this->charge($request->user(), FeatureCatalog::SHARE);
+        } catch (RuntimeException $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'credits' => (int) $request->user()->fresh()->credits,
+            ], 402);
+        }
+
         $payload = $this->exports->normalizePayload($request->all());
         $share = $this->exports->createShare($request->user(), $payload);
         $url = route('reading.share.show', $share->token);
@@ -98,6 +132,7 @@ class ReadingExportController extends Controller
         return response()->json([
             'ok' => true,
             'url' => $url,
+            'credits' => $balance,
             'facebook_url' => 'https://www.facebook.com/sharer/sharer.php?u='.rawurlencode($url),
         ]);
     }
@@ -157,5 +192,33 @@ class ReadingExportController extends Controller
             'Content-Type' => 'image/jpeg',
             'Cache-Control' => 'public, max-age=86400',
         ]);
+    }
+
+    private function denyJson(Request $request, string $key): ?JsonResponse
+    {
+        $user = $request->user();
+        $decision = $this->features->decide($user, $key);
+        if ($decision['allowed']) {
+            return null;
+        }
+
+        return response()->json([
+            'error' => $decision['message'],
+            'credits' => (int) ($user?->credits ?? 0),
+        ], $decision['status']);
+    }
+
+    private function charge(?User $user, string $key): int
+    {
+        if ($user === null) {
+            return 0;
+        }
+
+        $decision = $this->features->decide($user->fresh(), $key);
+        if ($decision['will_charge']) {
+            return $this->credits->spend($user, $decision['cost']);
+        }
+
+        return (int) $user->fresh()->credits;
     }
 }

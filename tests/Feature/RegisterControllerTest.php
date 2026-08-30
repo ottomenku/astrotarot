@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Template;
 use App\Models\User;
+use App\Services\CardDrawProfileService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,6 +19,8 @@ class RegisterControllerTest extends TestCase
             'email' => 'teszt@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'terms' => '1',
+            'privacy' => '1',
         ]);
 
         $response->assertRedirect(route('home'));
@@ -26,13 +30,31 @@ class RegisterControllerTest extends TestCase
             'name' => 'Teszt User',
             'credits' => 10,
         ]);
+        $this->assertNotNull(User::query()->where('email', 'teszt@example.com')->value('terms_accepted_at'));
+        $this->assertNotNull(User::query()->where('email', 'teszt@example.com')->value('privacy_accepted_at'));
         $response->assertSessionHas('credits_welcome', true);
         $response->assertSessionHas('credits_balance', 10);
     }
 
+    public function test_guest_cannot_register_without_legal_acceptance(): void
+    {
+        $this->from(route('home'))
+            ->post(route('register'), [
+                'name' => 'Teszt User',
+                'email' => 'teszt@example.com',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+            ])
+            ->assertRedirect(route('home'))
+            ->assertSessionHasErrors(['terms', 'privacy']);
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['email' => 'teszt@example.com']);
+    }
+
     public function test_guest_home_shows_landing_instead_of_draw(): void
     {
-        \App\Models\Template::factory()->create([
+        Template::factory()->create([
             'slug' => 'art-deco',
             'is_active' => true,
         ]);
@@ -47,7 +69,7 @@ class RegisterControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->mock(\App\Services\CardDrawProfileService::class, function ($mock) {
+        $this->mock(CardDrawProfileService::class, function ($mock) {
             $mock->shouldReceive('forNow')->andReturn([
                 'sun_sign' => 'leo',
                 'element' => 'tűz',
@@ -63,7 +85,7 @@ class RegisterControllerTest extends TestCase
             ]);
         });
 
-        \App\Models\Template::factory()->create([
+        Template::factory()->create([
             'slug' => 'art-deco',
             'is_active' => true,
         ]);
@@ -80,7 +102,7 @@ class RegisterControllerTest extends TestCase
     {
         $user = User::factory()->create(['credits' => 10]);
 
-        $this->mock(\App\Services\CardDrawProfileService::class, function ($mock) {
+        $this->mock(CardDrawProfileService::class, function ($mock) {
             $mock->shouldReceive('forNow')->andReturn([
                 'sun_sign' => 'leo',
                 'element' => 'tűz',
@@ -96,7 +118,7 @@ class RegisterControllerTest extends TestCase
             ]);
         });
 
-        \App\Models\Template::factory()->create([
+        Template::factory()->create([
             'slug' => 'art-deco',
             'is_active' => true,
         ]);

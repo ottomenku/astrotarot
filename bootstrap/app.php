@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsureFeatureAccess;
 use App\Http\Middleware\EnsureSiteOpen;
 use App\Http\Middleware\RedirectToCanonicalHost;
 use App\Http\Middleware\RestrictGuestsWhenRegistrationClosed;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'admin' => EnsureAdmin::class,
+            'feature' => EnsureFeatureAccess::class,
         ]);
 
         $middleware->web(

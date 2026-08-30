@@ -69,6 +69,24 @@ class AdminSettingsTest extends TestCase
         $this->assertSame($settings->defaultSystemPromptHu(), $settings->systemPrompt('hu'));
     }
 
+    public function test_admin_can_update_legal_texts(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $custom = trim(str_repeat('Minta jogi szöveg. ', 4));
+
+        $this->actingAs($admin)
+            ->put(route('admin.legal.update'), [
+                'terms_hu' => $custom,
+                'terms_en' => $custom,
+                'privacy_hu' => $custom,
+                'privacy_en' => $custom,
+            ])
+            ->assertRedirect(route('admin.legal.edit'));
+
+        $this->assertSame($custom, app(AppSettings::class)->terms('hu'));
+        $this->assertSame($custom, app(AppSettings::class)->privacy('en'));
+    }
+
     public function test_guest_cannot_change_admin_settings(): void
     {
         $this->put(route('admin.settings.update'), [

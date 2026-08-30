@@ -31,6 +31,14 @@ class AppSettings
 
     public const REGISTRATION_ENABLED = 'registration_enabled';
 
+    public const TERMS_HU = 'legal_terms_hu';
+
+    public const TERMS_EN = 'legal_terms_en';
+
+    public const PRIVACY_HU = 'legal_privacy_hu';
+
+    public const PRIVACY_EN = 'legal_privacy_en';
+
     public const LLM_ENABLED = 'llm_enabled';
 
     public const LLM_ROUTE = 'llm_route';
@@ -96,6 +104,28 @@ class AppSettings
     public function registrationEnabled(): bool
     {
         return $this->flag(self::REGISTRATION_ENABLED, true);
+    }
+
+    public function terms(string $locale): string
+    {
+        return $this->localizedPrompt(
+            $locale,
+            self::TERMS_EN,
+            self::TERMS_HU,
+            $this->defaultTermsEn(),
+            $this->defaultTermsHu(),
+        );
+    }
+
+    public function privacy(string $locale): string
+    {
+        return $this->localizedPrompt(
+            $locale,
+            self::PRIVACY_EN,
+            self::PRIVACY_HU,
+            $this->defaultPrivacyEn(),
+            $this->defaultPrivacyHu(),
+        );
     }
 
     public function llmEnabled(): bool
@@ -352,6 +382,66 @@ class AppSettings
             'Expand the Celestial Master’s current-sky meaning and the tarot figure’s counsel, then sharpen the answer to the question.',
             'Do not repeat the prior text verbatim; go deeper and stay practical.',
             'No headings or bullet lists.',
+        ]);
+    }
+
+    public function defaultTermsHu(): string
+    {
+        return implode("\n", [
+            'MINTA — Általános Szerződési Feltételek (ÁSZF)',
+            '',
+            'Ez a szöveg mintapélda, és a végleges jogi tartalomra cserélendő.',
+            '',
+            '1. Az AstroTarot szórakoztató, önismereti szolgáltatás. Az olvasatok nem minősülnek orvosi, jogi vagy pénzügyi tanácsadásnak.',
+            '2. A regisztrációval a felhasználó fiókot hoz létre, és a szolgáltatás használatára a mindenkori ÁSZF vonatkozik.',
+            '3. A kreditfelhasználás, a csomagok és a napi bónuszok a fiókbeállítások szerint érvényesek.',
+            '4. Fenntartjuk a jogot a szolgáltatás szüneteltetésére, fejlesztésére és a feltételek frissítésére.',
+            '5. Kérdés esetén az üzemeltető a weboldalon megadott elérhetőségeken kereshető.',
+        ]);
+    }
+
+    public function defaultTermsEn(): string
+    {
+        return implode("\n", [
+            'SAMPLE — Terms and Conditions',
+            '',
+            'This text is a placeholder and must be replaced with the final legal terms.',
+            '',
+            '1. AstroTarot is an entertainment and self-reflection service. Readings are not medical, legal or financial advice.',
+            '2. Registration creates an account governed by these terms as updated from time to time.',
+            '3. Credits, packages and daily bonuses apply according to the account settings.',
+            '4. We may pause, improve or update the service and these terms.',
+            '5. Contact the operator via the details published on the website.',
+        ]);
+    }
+
+    public function defaultPrivacyHu(): string
+    {
+        return implode("\n", [
+            'MINTA — Adatkezelési tájékoztató',
+            '',
+            'Ez a szöveg mintapélda, és a végleges adatkezelési tájékoztatóra cserélendő.',
+            '',
+            '1. Kezelt adatok: név, e-mail cím, jelszóhash vagy közösségi azonosító, kredit- és csomagadatok, kérdések és olvasatok.',
+            '2. Cél: fiók működtetése, bejelentkezés, személyre szabott tarot-olvasat, ügyfélszolgálat.',
+            '3. Jogalap (minta): szerződés teljesítése és a felhasználó hozzájárulása a regisztrációkor.',
+            '4. Tárolás: a szolgáltatás működéséhez szükséges ideig, a fiók törléséig vagy a jogszabályi megőrzésig.',
+            '5. A Beállítások menüben megtekintheted a rólad tárolt adatokat, törölheted a beszélgetéseidet, és törlési kérelmet küldhetsz. A fizetési, számviteli és egyéb jogszabályi megőrzés alá eső adatokat (például kreditigénylések) a törvényi határidőig megtartjuk.',
+        ]);
+    }
+
+    public function defaultPrivacyEn(): string
+    {
+        return implode("\n", [
+            'SAMPLE — Privacy notice',
+            '',
+            'This text is a placeholder and must be replaced with the final privacy notice.',
+            '',
+            '1. Data processed: name, email, password hash or social ID, credit and plan data, questions and readings.',
+            '2. Purpose: account operation, login, personalised tarot readings, support.',
+            '3. Legal basis (sample): performance of a contract and consent given at registration.',
+            '4. Retention: as long as needed to run the service, until account deletion, or as required by law.',
+            '5. In Settings you can view your stored data, delete your conversations, and send a deletion request. Payment, accounting and other legally retained records (such as credit requests) are kept for the statutory period.',
         ]);
     }
 }

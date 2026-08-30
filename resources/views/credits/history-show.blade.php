@@ -15,7 +15,7 @@
                 <span class="brand-name">Astro<span>Tarot</span></span>
             </a>
             <div class="header-actions">
-                <a class="credits-back" href="{{ route('readings.history') }}">{{ __('messages.history_title') }}</a>
+                <a class="credits-back" href="{{ route('readings.history') }}">{{ __('messages.history_title') }}<x-feature-marks feature="readings.history" /></a>
             </div>
         </div>
     </header>
@@ -45,6 +45,7 @@
             @endforeach
         @endif
     </section>
+    @include('templates.art-deco.partials.site-footer')
 </main>
 </body>
 </html>

@@ -12,10 +12,10 @@ class OgImageServiceTest extends TestCase
         $service = app(OgImageService::class);
 
         $this->assertTrue(
-            str_ends_with(str_replace('\\', '/', $service->figureAbsolutePath('oracle', 'venus') ?? ''), 'egi-orakulum/figures/venus.png')
+            str_ends_with(str_replace('\\', '/', $service->figureAbsolutePath('oracle', 'venus') ?? ''), 'card-pack/egi-orakulum/figures/venus.png')
         );
         $this->assertTrue(
-            str_ends_with(str_replace('\\', '/', $service->figureAbsolutePath('tarot', '01-the-magician') ?? ''), 'tarot-major/figures/01-the-magician.png')
+            str_ends_with(str_replace('\\', '/', $service->figureAbsolutePath('tarot', '01-the-magician') ?? ''), 'card-pack/tarot/figures/01-the-magician.png')
         );
         $this->assertTrue(
             str_ends_with(str_replace('\\', '/', $service->figureAbsolutePath('tarot', 'cups-04') ?? ''), 'figures/minors/cups-04.png')

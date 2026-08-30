@@ -81,7 +81,7 @@ class CreditServiceTest extends TestCase
         $this->assertNull($service->package('pack_10'));
         $this->assertNotNull($service->package('pack_50'));
         $this->assertNull($service->plan('gold'));
-        $this->assertSame('premium', $service->plan('premium')['key']);
+        $this->assertSame('premium', $service->plan('premium')?->slug);
     }
 
     public function test_activate_promo_rejects_free_plan(): void

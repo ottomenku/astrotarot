@@ -9,9 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureSiteOpen
 {
-    public function __construct(private readonly AppSettings $settings)
-    {
-    }
+    public function __construct(private readonly AppSettings $settings) {}
 
     /**
      * @param  Closure(Request): Response  $next
@@ -46,6 +44,10 @@ class EnsureSiteOpen
             'login',
             'logout',
             'auth/*',
+            'aszf',
+            'adatkezeles',
+            'kapcsolat',
+            'register/legal',
             'admin',
             'admin/*',
             'locale/*',

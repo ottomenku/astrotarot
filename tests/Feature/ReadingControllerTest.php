@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Game;
 use App\Models\ReadingLog;
 use App\Models\User;
 use App\Services\AppSettings;
@@ -108,9 +109,56 @@ class ReadingControllerTest extends TestCase
         $this->assertSame('Mit tegyek most a kapcsolatommal?', $log->question);
         $this->assertNotEmpty($log->system_prompt);
         $this->assertNotEmpty($log->user_prompt);
-        $this->assertStringContainsString('Lapok:', $log->user_prompt);
-        $this->assertStringContainsString('chart_or_caption:', $log->user_prompt);
-        $this->assertStringContainsString('10–12 mondat', $log->user_prompt);
+        $this->assertStringContainsString('Húzott lapok:', $log->user_prompt);
+        $this->assertStringContainsString('1. sor 1. lap', $log->user_prompt);
+        $this->assertStringContainsString('1. sor 2. lap', $log->user_prompt);
+        $this->assertStringContainsString('asztrológiai adat:', $log->user_prompt);
+        $this->assertStringContainsString('elem: tűz', $log->user_prompt);
+        $this->assertStringContainsString('minőség: szilárd', $log->user_prompt);
+        $this->assertStringContainsString('10–12 mondat', $log->system_prompt);
+    }
+
+    public function test_reading_sends_game_prompt_places_and_moment_scoring(): void
+    {
+        $this->fakeOpenAi('Az Asztro tarot játék szerint a Mars és a Mágus együtt szól.');
+
+        $game = Game::query()->where('slug', 'astro-tarot')->firstOrFail();
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)->postJson(route('reading'), $this->validPayload([
+            'game_id' => $game->id,
+            'astro' => [
+                'sun_sign' => 'leo',
+                'element' => 'tűz',
+                'modality' => 'szilárd',
+                'tone' => 'pozitív',
+                'datetime_utc' => '2026-08-30T17:00:00Z',
+                'scoring' => [
+                    'element_name' => 'tűz',
+                    'element_value' => 11.5,
+                    'modality_name' => 'szilárd',
+                    'modality_value' => 9,
+                    'tone_name' => 'pozitív',
+                    'tone_positive' => 14,
+                    'tone_negative' => 5,
+                    'tone_net' => 9,
+                    'elements' => ['tűz' => 12, 'víz' => 4, 'föld' => 3, 'levegő' => 2],
+                    'modalities' => ['fő' => 3, 'szilárd' => 9, 'változó' => 2],
+                ],
+            ],
+        ]))->assertOk();
+
+        $log = ReadingLog::query()->first();
+        $this->assertSame($game->prompt('hu'), $log->system_prompt);
+        $this->assertStringContainsString('1. sor 1. lap — Égi Orákulum', $log->user_prompt);
+        $this->assertStringContainsString('1. sor 2. lap — Tarot figura', $log->user_prompt);
+        $this->assertStringContainsString('asztrológiai adat:', $log->user_prompt);
+        $this->assertStringContainsString('jelentés:', $log->user_prompt);
+        $this->assertStringContainsString('elem: tűz (11.5)', $log->user_prompt);
+        $this->assertStringContainsString('minőség: szilárd (9)', $log->user_prompt);
+        $this->assertStringContainsString('pozitív / negatív: pozitív (pozitív 14, negatív 5, nettó 9)', $log->user_prompt);
+        $this->assertStringContainsString('elemek: tűz 12, víz 4, föld 3, levegő 2', $log->user_prompt);
+        $this->assertStringNotContainsString('Most írd meg az olvasatot', $log->user_prompt);
     }
 
     public function test_reading_blocked_without_credits(): void

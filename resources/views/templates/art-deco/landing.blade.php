@@ -58,7 +58,7 @@
         </figure>
     </section>
 
-    <footer><span>✦</span> AstroTarot <i>·</i> Égi Orákulum + Tarot <span>✦</span></footer>
+    @include('templates.art-deco.partials.site-footer')
 </main>
 @include('templates.art-deco.partials.auth-modal', [
     'registrationEnabled' => $registrationEnabled ?? true,

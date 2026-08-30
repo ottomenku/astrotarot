@@ -94,6 +94,16 @@
                     <span>{{ __('messages.password_confirm') }}</span>
                     <input type="password" name="password_confirmation" required autocomplete="new-password">
                 </label>
+                <div class="auth-legal">
+                    <label class="auth-check">
+                        <input type="checkbox" name="privacy" value="1" required @checked(old('privacy'))>
+                        <span>{!! __('messages.legal_accept_privacy', ['url' => route('legal.privacy')]) !!}</span>
+                    </label>
+                    <label class="auth-check">
+                        <input type="checkbox" name="terms" value="1" required @checked(old('terms'))>
+                        <span>{!! __('messages.legal_accept_terms', ['url' => route('legal.terms')]) !!}</span>
+                    </label>
+                </div>
                 <button type="submit" class="auth-submit">{{ __('messages.register_submit') }}</button>
             </form>
         @else

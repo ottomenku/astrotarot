@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\CreditRequest;
 use App\Services\CreditService;
+use App\Services\FeatureAccessService;
+use App\Support\FeatureCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,8 +16,8 @@ class CreditPackageController extends Controller
 {
     public function __construct(
         private readonly CreditService $credits,
-    ) {
-    }
+        private readonly FeatureAccessService $features,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -48,6 +50,15 @@ class CreditPackageController extends Controller
             return back()->withErrors(['package_key' => __('messages.credits_package_invalid')]);
         }
 
+        $decision = $this->features->decide($request->user(), FeatureCatalog::CREDITS_REQUEST);
+        if ($decision['will_charge']) {
+            try {
+                $this->credits->spend($request->user(), $decision['cost']);
+            } catch (RuntimeException $e) {
+                return back()->withErrors(['package_key' => $e->getMessage()]);
+            }
+        }
+
         CreditRequest::query()->create([
             'user_id' => $request->user()->id,
             'package_key' => $package['key'],
@@ -62,7 +73,7 @@ class CreditPackageController extends Controller
     public function activatePromo(Request $request): JsonResponse|RedirectResponse
     {
         $data = $request->validate([
-            'plan' => ['required', 'string', 'in:premium,expert'],
+            'plan' => ['required', 'string', 'max:64', 'alpha_dash'],
         ]);
 
         try {
@@ -75,9 +86,10 @@ class CreditPackageController extends Controller
             return back()->withErrors(['plan' => $e->getMessage()]);
         }
 
+        $plan = $this->credits->plan($user->plan);
         $message = __('messages.plan_promo_activated', [
-            'plan' => $data['plan'] === 'expert' ? 'Expert' : 'Premium',
-            'credits' => $data['plan'] === 'expert' ? 100 : 50,
+            'plan' => $plan?->name() ?? $data['plan'],
+            'credits' => (int) ($plan?->credits ?? 0),
         ]);
 
         if ($request->expectsJson()) {

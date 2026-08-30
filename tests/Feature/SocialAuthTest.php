@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\Role;
 use App\Models\Template;
 use App\Models\User;
+use App\Services\AppSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 use Laravel\Socialite\Facades\Socialite;
@@ -56,7 +57,29 @@ class SocialAuthTest extends TestCase
         ]);
 
         $this->get(route('auth.social.callback', 'google'))
-            ->assertRedirect(route('home'));
+            ->assertRedirect(route('register.legal'));
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', [
+            'email' => 'google.user@example.com',
+        ]);
+    }
+
+    public function test_new_social_user_is_created_after_legal_acceptance(): void
+    {
+        $this->mockSocialite('google', [
+            'id' => 'g-123',
+            'name' => 'Google User',
+            'email' => 'google.user@example.com',
+        ]);
+
+        $this->get(route('auth.social.callback', 'google'))
+            ->assertRedirect(route('register.legal'));
+
+        $this->post(route('register.legal.store'), [
+            'terms' => '1',
+            'privacy' => '1',
+        ])->assertRedirect(route('home'));
 
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', [
@@ -65,6 +88,7 @@ class SocialAuthTest extends TestCase
             'provider_id' => 'g-123',
             'role' => Role::User->value,
         ]);
+        $this->assertNotNull(User::query()->where('email', 'google.user@example.com')->value('terms_accepted_at'));
     }
 
     public function test_social_login_links_existing_email_account(): void
@@ -102,8 +126,8 @@ class SocialAuthTest extends TestCase
 
     public function test_new_social_user_is_blocked_when_registration_is_closed(): void
     {
-        app(\App\Services\AppSettings::class)->putMany([
-            \App\Services\AppSettings::REGISTRATION_ENABLED => '0',
+        app(AppSettings::class)->putMany([
+            AppSettings::REGISTRATION_ENABLED => '0',
         ]);
 
         $this->mockSocialite('google', [

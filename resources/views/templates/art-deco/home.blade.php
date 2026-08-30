@@ -12,6 +12,8 @@
     class="app-shell"
     id="astrotarot-app"
     data-asset-base="{{ $assetBase }}"
+    data-pack-base="{{ $packBase ?? asset('card-pack') }}"
+    data-game='@json($gameConfig ?? [])'
     data-locale="{{ app()->getLocale() }}"
     data-locale-switch-url="/locale/__LOCALE__"
     data-reading-url="{{ route('reading', absolute: false) }}"
@@ -19,7 +21,7 @@
     data-export-email-url="{{ auth()->check() ? route('reading.export.email', absolute: false) : '' }}"
     data-share-url="{{ auth()->check() ? route('reading.share.create', absolute: false) : '' }}"
     data-user-email="{{ auth()->check() ? (auth()->user()->email ?? '') : '' }}"
-    data-can-export-pdf="{{ (auth()->check() && auth()->user()->isPremiumOrAbove()) ? '1' : '0' }}"
+    data-feature-access='@json($featureAccess ?? [])'
     data-credits-packages-url="{{ route('credits.packages') }}"
     data-min-question-chars="{{ $minQuestionChars }}"
     data-llm-enabled="{{ !empty($llmEnabled) ? '1' : '0' }}"
@@ -36,19 +38,37 @@
             </a>
             <div class="header-actions">
                 @auth
-                    <a
-                        class="credits-chip"
-                        href="{{ route('credits.packages') }}"
-                        title="{{ __('messages.credits_label') }}"
-                        aria-label="{{ __('messages.credits_balance', ['count' => (int) auth()->user()->credits]) }}"
-                    >
-                        <svg class="credits-chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                            <circle cx="12" cy="12" r="6.4" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".7"/>
-                            <text x="12" y="12.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Georgia, serif" fill="currentColor">✦</text>
-                        </svg>
-                        <span data-credits-balance>{{ (int) auth()->user()->credits }}</span>
-                    </a>
+                    <span class="feature-control">
+                        @if (!empty($canOpenCredits))
+                            <a
+                                class="credits-chip"
+                                href="{{ route('credits.packages') }}"
+                                title="{{ __('messages.credits_label') }}"
+                                aria-label="{{ __('messages.credits_balance', ['count' => (int) auth()->user()->credits]) }}"
+                            >
+                                <svg class="credits-chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                                    <circle cx="12" cy="12" r="6.4" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".7"/>
+                                    <text x="12" y="12.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Georgia, serif" fill="currentColor">✦</text>
+                                </svg>
+                                <span data-credits-balance>{{ (int) auth()->user()->credits }}</span>
+                            </a>
+                        @else
+                            <span
+                                class="credits-chip"
+                                title="{{ __('messages.credits_label') }}"
+                                aria-label="{{ __('messages.credits_balance', ['count' => (int) auth()->user()->credits]) }}"
+                            >
+                                <svg class="credits-chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                                    <circle cx="12" cy="12" r="6.4" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".7"/>
+                                    <text x="12" y="12.6" text-anchor="middle" dominant-baseline="middle" font-size="8.5" font-family="Georgia, serif" fill="currentColor">✦</text>
+                                </svg>
+                                <span data-credits-balance>{{ (int) auth()->user()->credits }}</span>
+                            </span>
+                        @endif
+                        <x-feature-marks feature="credits.packages" />
+                    </span>
                 @endauth
                 <label class="language-select">
                     <span class="sr-only">Language</span>
@@ -80,9 +100,14 @@
                 @if(auth()->user()->isAdmin())
                     <a href="{{ route('admin.ephemeris.index') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>Admin<b>↗</b></a>
                 @endif
-                <a href="{{ route('credits.packages') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>{{ __('messages.credits_menu') }}<b>↗</b></a>
-                @if(auth()->user()->isPremiumOrAbove())
-                    <a href="{{ route('readings.history') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>{{ __('messages.history_menu') }}<b>↗</b></a>
+                @if(!empty($canOpenCredits))
+                    <a href="{{ route('credits.packages') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.credits_menu') }}<x-feature-marks feature="credits.packages" /></span><b>↗</b></a>
+                @endif
+                @if(!empty($canOpenAccount))
+                    <a href="{{ route('account.show') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.account_menu') }}<x-feature-marks feature="account.show" /></span><b>↗</b></a>
+                @endif
+                @if(!empty($canViewHistory))
+                    <a href="{{ route('readings.history') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.history_menu') }}<x-feature-marks feature="readings.history" /></span><b>↗</b></a>
                 @endif
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
@@ -101,14 +126,18 @@
             <p class="credits-welcome-kicker">AstroTarot</p>
             <h2>{{ __('messages.credits_welcome_title') }}</h2>
             <p>{{ __('messages.credits_welcome_body') }}</p>
-            <a class="credits-welcome-link" href="{{ route('credits.packages') }}">{{ __('messages.credits_menu') }}</a>
+            <a class="credits-welcome-link" href="{{ route('credits.packages') }}">{{ __('messages.credits_menu') }}<x-feature-marks feature="credits.packages" /></a>
         </div>
     @endif
 
     <section class="deck-section" data-pick-stage aria-labelledby="deck-heading">
         <div class="compact-question">
-            <h1 id="deck-heading" data-title></h1>
-            <label class="question-field {{ auth()->check() ? '' : 'is-guest-gate' }}">
+            <h1 id="deck-heading" class="game-description" data-game-description>{{ $gameConfig['description'] ?? '' }}</h1>
+            <label
+                class="question-field {{ auth()->check() ? '' : 'is-guest-gate' }}"
+                data-question-wrap
+                @if (empty($gameConfig['has_question'])) hidden @endif
+            >
                 <textarea
                     data-question
                     rows="2"
@@ -122,6 +151,7 @@
             </label>
             <div class="question-meta">
                 <p class="field-hint" data-hint></p>
+                <x-feature-marks feature="reading.initial" />
                 <span class="selection-count" data-counter></span>
             </div>
         </div>
@@ -140,7 +170,7 @@
             <button class="reading-followup-reset" type="button" data-reset>Új húzás</button>
         </div>
 
-        <div class="chosen-grid chosen-grid-two" data-chosen-grid aria-live="polite"></div>
+        <div class="chosen-grid" data-chosen-grid aria-live="polite"></div>
 
         <article class="reading-inline" data-reading-result hidden>
             <p class="reading-inline-kicker" data-reading-kicker></p>
@@ -151,23 +181,33 @@
                 <label class="reading-followup-label" for="reading-followup-input" data-reading-followup-label>Pontosítást kérek…</label>
                 <textarea id="reading-followup-input" class="reading-followup-input" data-reading-followup-input rows="3" maxlength="500" placeholder="Pontosítást kérek…"></textarea>
                 <div class="reading-followup-actions">
-                    <button type="button" class="reading-followup-send" data-reading-followup-send>Elküld</button>
-                    <button type="button" class="reading-followup-expand" data-reading-followup-expand>Bővebb kifejtést kérek</button>
+                    <x-feature-control feature="reading.clarify">
+                        <button type="button" class="reading-followup-send" data-reading-followup-send>Elküld</button>
+                    </x-feature-control>
+                    <x-feature-control feature="reading.expand">
+                        <button type="button" class="reading-followup-expand" data-reading-followup-expand>Bővebb kifejtést kérek</button>
+                    </x-feature-control>
                     <button type="button" class="reading-followup-reset" data-reset>Új húzás</button>
                 </div>
             </div>
             <div class="reading-share" data-reading-share hidden>
                 <p class="reading-share-label" data-reading-share-label>{{ __('messages.share_label') }}</p>
                 <div class="reading-share-actions">
-                    <button type="button" class="reading-share-btn reading-share-icon" data-share-pdf title="{{ __('messages.share_pdf') }}" aria-label="{{ __('messages.share_pdf') }}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm1 7V3.5L18.5 9H15zM8 13h2.5a1.5 1.5 0 0 1 0 3H9v2H8v-5zm1 1v1.5h1.5a.5.5 0 0 0 0-1H9zm4.5 0H14a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-.5a.5.5 0 0 1-.5-.5v-3a.5.5 0 0 1 .5-.5zm0 1v2h.5v-2h-.5zM16 13h3v1h-2v1h1.5v1H17v1h-1v-4z"/></svg>
-                    </button>
-                    <button type="button" class="reading-share-btn reading-share-icon" data-share-email title="{{ __('messages.share_email') }}" aria-label="{{ __('messages.share_email') }}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg>
-                    </button>
-                    <button type="button" class="reading-share-btn reading-share-icon reading-share-fb" data-share-facebook title="{{ __('messages.share_facebook') }}" aria-label="{{ __('messages.share_facebook') }}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M22 12.07C22 6.48 17.52 2 11.93 2S1.86 6.48 1.86 12.07c0 5.02 3.66 9.18 8.44 9.93v-7.03H7.9v-2.9h2.4V9.84c0-2.37 1.41-3.68 3.57-3.68 1.03 0 2.12.18 2.12.18v2.33h-1.2c-1.18 0-1.55.73-1.55 1.48v1.78h2.64l-.42 2.9h-2.22V22c4.78-.75 8.44-4.91 8.44-9.93z"/></svg>
-                    </button>
+                    <x-feature-control class="feature-control-icon" feature="reading.export.pdf">
+                        <button type="button" class="reading-share-btn reading-share-icon" data-share-pdf title="{{ __('messages.share_pdf') }}" aria-label="{{ __('messages.share_pdf') }}">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm1 7V3.5L18.5 9H15zM8 13h2.5a1.5 1.5 0 0 1 0 3H9v2H8v-5zm1 1v1.5h1.5a.5.5 0 0 0 0-1H9zm4.5 0H14a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-.5.5h-.5a.5.5 0 0 1-.5-.5v-3a.5.5 0 0 1 .5-.5zm0 1v2h.5v-2h-.5zM16 13h3v1h-2v1h1.5v1H17v1h-1v-4z"/></svg>
+                        </button>
+                    </x-feature-control>
+                    <x-feature-control class="feature-control-icon" feature="reading.export.email">
+                        <button type="button" class="reading-share-btn reading-share-icon" data-share-email title="{{ __('messages.share_email') }}" aria-label="{{ __('messages.share_email') }}">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg>
+                        </button>
+                    </x-feature-control>
+                    <x-feature-control class="feature-control-icon" feature="reading.share">
+                        <button type="button" class="reading-share-btn reading-share-icon reading-share-fb" data-share-facebook title="{{ __('messages.share_facebook') }}" aria-label="{{ __('messages.share_facebook') }}">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M22 12.07C22 6.48 17.52 2 11.93 2S1.86 6.48 1.86 12.07c0 5.02 3.66 9.18 8.44 9.93v-7.03H7.9v-2.9h2.4V9.84c0-2.37 1.41-3.68 3.57-3.68 1.03 0 2.12.18 2.12.18v2.33h-1.2c-1.18 0-1.55.73-1.55 1.48v1.78h2.64l-.42 2.9h-2.22V22c4.78-.75 8.44-4.91 8.44-9.93z"/></svg>
+                        </button>
+                    </x-feature-control>
                 </div>
             </div>
         </article>
@@ -187,7 +227,7 @@
         ])
     @endguest
 
-    <footer><span>✦</span> AstroTarot <i>·</i> Égi Orákulum + Tarot <span>✦</span></footer>
+    @include('templates.art-deco.partials.site-footer')
 </main>
 
 <script src="{{ $assetBase }}/app.js?v={{ filemtime(public_path('templates/art-deco/app.js')) }}" defer></script>

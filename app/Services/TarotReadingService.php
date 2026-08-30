@@ -18,8 +18,8 @@ class TarotReadingService
     public function __construct(
         private readonly OpenAIClient $openAI,
         private readonly AppSettings $settings,
-    ) {
-    }
+        private readonly FigureMeaningService $meanings,
+    ) {}
 
     /**
      * @param  array{
@@ -30,6 +30,7 @@ class TarotReadingService
      *   mode?: string,
      *   previous_reading?: string|null,
      *   follow_up?: string|null,
+     *   system_prompt?: string|null,
      *   ip?: string|null,
      *   user_id?: int|null
      * }  $payload
@@ -39,7 +40,7 @@ class TarotReadingService
     {
         $locale = ($payload['locale'] ?? 'hu') === 'en' ? 'en' : 'hu';
         $question = trim((string) ($payload['question'] ?? ''));
-        $cards = array_values($payload['cards'] ?? []);
+        $cards = $this->enrichCards(array_values($payload['cards'] ?? []), $locale);
         $astro = is_array($payload['astro'] ?? null) ? $payload['astro'] : [];
         $ip = isset($payload['ip']) ? (string) $payload['ip'] : null;
         $userId = isset($payload['user_id']) ? (int) $payload['user_id'] : null;
@@ -47,9 +48,10 @@ class TarotReadingService
         $previousReading = trim((string) ($payload['previous_reading'] ?? ''));
         $followUp = trim((string) ($payload['follow_up'] ?? ''));
         $requestedModel = $this->openAI->selectedModel();
+        $overridePrompt = trim((string) ($payload['system_prompt'] ?? ''));
 
-        if ($question === '' || count($cards) !== 2) {
-            throw new RuntimeException('A reading requires a question and exactly 2 cards.');
+        if ($question === '' || $cards === [] || count($cards) > 49) {
+            throw new RuntimeException('A reading requires a question and 1–49 cards.');
         }
 
         if ($mode !== self::MODE_INITIAL && $previousReading === '') {
@@ -63,7 +65,7 @@ class TarotReadingService
         $systemPrompt = match ($mode) {
             self::MODE_CLARIFY => $this->settings->clarifyPrompt($locale),
             self::MODE_EXPAND => $this->settings->expandPrompt($locale),
-            default => $this->settings->systemPrompt($locale),
+            default => $overridePrompt !== '' ? $overridePrompt : $this->settings->systemPrompt($locale),
         };
 
         $userPrompt = match ($mode) {
@@ -194,20 +196,10 @@ class TarotReadingService
             return implode("\n", $lines);
         }
 
-        $lines[] = $locale === 'en' ? 'Draw context:' : 'Húzás kontextusa:';
-        $lines[] = json_encode([
-            'sun_sign' => $astro['sun_sign'] ?? null,
-            'element' => $astro['element'] ?? null,
-            'modality' => $astro['modality'] ?? null,
-            'datetime_utc' => $astro['datetime_utc'] ?? null,
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $lines[] = $this->formatScoring($locale, $astro);
         $lines[] = '';
-        $lines[] = $locale === 'en' ? 'Cards:' : 'Lapok:';
+        $lines[] = $locale === 'en' ? 'Drawn cards:' : 'Húzott lapok:';
         $lines[] = $this->formatCards($locale, $cards);
-        $lines[] = '';
-        $lines[] = $locale === 'en'
-            ? 'Write the reading now: Celestial Master facts with meaning → chosen figure name/meaning (“interprets this as…”) → answer to the question. Max 10–12 sentences.'
-            : 'Most írd meg az olvasatot: Égi mester adatai jelentéssel → választott figura neve/jelentése („úgy értelmezi, hogy…”) → válasz a kérdésre. Legfeljebb 10–12 mondat.';
 
         return implode("\n", $lines);
     }
@@ -314,7 +306,9 @@ class TarotReadingService
         $lines[] = $locale === 'en' ? 'Original question:' : 'Eredeti kérdés:';
         $lines[] = $question;
         $lines[] = '';
-        $lines[] = $locale === 'en' ? 'Cards:' : 'Lapok:';
+        $lines[] = $this->formatScoring($locale, $astro);
+        $lines[] = '';
+        $lines[] = $locale === 'en' ? 'Drawn cards:' : 'Húzott lapok:';
         $lines[] = $this->formatCards($locale, $cards);
         $lines[] = '';
         $lines[] = $locale === 'en' ? 'Previous reading:' : 'Korábbi olvasat:';
@@ -347,29 +341,177 @@ class TarotReadingService
      */
     private function formatCards(string $locale, array $cards): string
     {
-        $roles = $locale === 'en'
-            ? ['Your Celestial Master', 'Your Chosen Figure']
-            : ['Választott Égi mestered', 'Választott Figurád'];
-
         $blocks = [];
         foreach ($cards as $index => $card) {
+            $row = max(1, (int) ($card['row'] ?? 1));
+            $place = max(1, (int) ($card['place'] ?? ($index + 1)));
+            $placeLabel = $locale === 'en'
+                ? sprintf('Row %d, card %d', $row, $place)
+                : sprintf('%d. sor %d. lap', $row, $place);
+            $title = trim((string) ($card['slot_title'] ?? ''));
+            $header = $title !== '' ? $placeLabel.' — '.$title : $placeLabel;
+
             $polarity = (string) ($card['polarity'] ?? $card['variant'] ?? 'positive');
             $tone = in_array($polarity, ['shadow', 'negative', 'negatív', 'korlátozó'], true)
                 ? ($locale === 'en' ? 'restrictive / shadow' : 'korlátozó / árnyék')
                 : ($locale === 'en' ? 'supportive / light' : 'támogató / light');
-            $role = (string) ($card['slot_title'] ?? ($roles[$index] ?? ('slot '.($index + 1))));
+            $infoMode = (string) ($card['info_mode'] ?? '');
+            $figure = trim((string) ($card['figure_name'] ?? $card['figure_id'] ?? ''));
+            $figureId = trim((string) ($card['figure_id'] ?? ''));
 
-            $blocks[] = implode("\n", [
-                sprintf('%d) %s', $index + 1, $role),
-                'deck: '.(string) ($card['deck'] ?? ''),
-                'figure: '.(string) ($card['figure_name'] ?? $card['figure_id'] ?? '').' ('.(string) ($card['figure_id'] ?? '').')',
-                'keyword: '.(string) ($card['keyword'] ?? ''),
-                'blurb: '.(string) ($card['blurb'] ?? ''),
-                'polarity: '.$polarity.' ('.$tone.')',
-                'chart_or_caption: '.(string) ($card['astro_caption'] ?? ''),
-            ]);
+            $lines = [
+                $header,
+                ($locale === 'en' ? 'pack: ' : 'pakli: ').(string) ($card['deck'] ?? ''),
+                ($locale === 'en' ? 'figure: ' : 'figura: ').$figure.($figureId !== '' ? ' ('.$figureId.')' : ''),
+            ];
+
+            $keyword = trim((string) ($card['keyword'] ?? ''));
+            if ($keyword !== '') {
+                $lines[] = ($locale === 'en' ? 'keyword: ' : 'kulcsszó: ').$keyword;
+            }
+
+            $blurb = trim((string) ($card['blurb'] ?? ''));
+            if ($blurb !== '' && $infoMode !== 'astro') {
+                $lines[] = ($locale === 'en' ? 'meaning: ' : 'jelentés: ').$blurb;
+            }
+
+            $lines[] = ($locale === 'en' ? 'polarity: ' : 'polaritás: ').$polarity.' ('.$tone.')';
+
+            $astroCaption = trim((string) ($card['astro_caption'] ?? ''));
+            $includeAstro = $infoMode === 'astro'
+                || ($infoMode === '' && $astroCaption !== '' && in_array((string) ($card['deck'] ?? ''), ['oracle', 'egi-orakulum'], true));
+            if ($includeAstro && $astroCaption !== '') {
+                $lines[] = ($locale === 'en' ? 'astro data: ' : 'asztrológiai adat: ').$astroCaption;
+            }
+
+            $blocks[] = implode("\n", $lines);
         }
 
         return implode("\n\n", $blocks);
+    }
+
+    /**
+     * @param  array<string, mixed>  $astro
+     */
+    private function formatScoring(string $locale, array $astro): string
+    {
+        $scoring = is_array($astro['scoring'] ?? null) ? $astro['scoring'] : [];
+        $element = (string) ($scoring['element_name'] ?? $astro['element'] ?? '');
+        $modality = (string) ($scoring['modality_name'] ?? $astro['modality'] ?? '');
+        $tone = (string) ($scoring['tone_name'] ?? $astro['tone'] ?? '');
+        $datetime = (string) ($astro['datetime_utc'] ?? '');
+        $sun = (string) ($astro['sun_sign'] ?? '');
+
+        $lines = [];
+        $lines[] = $locale === 'en' ? 'Moment scoring:' : 'Az adott időpont pontozása:';
+        if ($datetime !== '') {
+            $lines[] = ($locale === 'en' ? 'datetime UTC: ' : 'időpont (UTC): ').$datetime;
+        }
+        if ($sun !== '') {
+            $lines[] = ($locale === 'en' ? 'sun sign: ' : 'napjegy: ').$sun;
+        }
+
+        $elementValue = $scoring['element_value'] ?? null;
+        $elementLine = $locale === 'en' ? 'element: ' : 'elem: ';
+        $elementLine .= $element !== '' ? $element : '—';
+        if ($this->isPresentNumber($elementValue)) {
+            $elementLine .= ' ('.$this->formatScoreNumber($elementValue).')';
+        }
+        $lines[] = $elementLine;
+
+        $modalityValue = $scoring['modality_value'] ?? null;
+        $modalityLine = $locale === 'en' ? 'quality: ' : 'minőség: ';
+        $modalityLine .= $modality !== '' ? $modality : '—';
+        if ($this->isPresentNumber($modalityValue)) {
+            $modalityLine .= ' ('.$this->formatScoreNumber($modalityValue).')';
+        }
+        $lines[] = $modalityLine;
+
+        $tonePositive = $scoring['tone_positive'] ?? null;
+        $toneNegative = $scoring['tone_negative'] ?? null;
+        $toneNet = $scoring['tone_net'] ?? null;
+        $toneLine = $locale === 'en' ? 'positive / negative: ' : 'pozitív / negatív: ';
+        $toneLine .= $tone !== '' ? $tone : '—';
+        $toneBits = [];
+        if ($this->isPresentNumber($tonePositive)) {
+            $toneBits[] = ($locale === 'en' ? 'positive ' : 'pozitív ').$this->formatScoreNumber($tonePositive);
+        }
+        if ($this->isPresentNumber($toneNegative)) {
+            $toneBits[] = ($locale === 'en' ? 'negative ' : 'negatív ').$this->formatScoreNumber($toneNegative);
+        }
+        if ($this->isPresentNumber($toneNet)) {
+            $toneBits[] = ($locale === 'en' ? 'net ' : 'nettó ').$this->formatScoreNumber($toneNet);
+        }
+        if ($toneBits !== []) {
+            $toneLine .= ' ('.implode(', ', $toneBits).')';
+        }
+        $lines[] = $toneLine;
+
+        $elements = is_array($scoring['elements'] ?? null) ? $scoring['elements'] : [];
+        if ($elements !== []) {
+            $lines[] = ($locale === 'en' ? 'elements: ' : 'elemek: ').$this->formatScoreMap($elements);
+        }
+        $modalities = is_array($scoring['modalities'] ?? null) ? $scoring['modalities'] : [];
+        if ($modalities !== []) {
+            $lines[] = ($locale === 'en' ? 'qualities: ' : 'minőségek: ').$this->formatScoreMap($modalities);
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param  array<string, mixed>  $map
+     */
+    private function formatScoreMap(array $map): string
+    {
+        $parts = [];
+        foreach ($map as $name => $value) {
+            $parts[] = $name.' '.$this->formatScoreNumber($value);
+        }
+
+        return implode(', ', $parts);
+    }
+
+    private function formatScoreNumber(mixed $value): string
+    {
+        if (! is_numeric($value)) {
+            return (string) $value;
+        }
+        $number = (float) $value;
+        if (abs($number - round($number)) < 0.001) {
+            return (string) (int) round($number);
+        }
+
+        return rtrim(rtrim(number_format($number, 2, '.', ''), '0'), '.');
+    }
+
+    private function isPresentNumber(mixed $value): bool
+    {
+        return is_numeric($value);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $cards
+     * @return list<array<string, mixed>>
+     */
+    private function enrichCards(array $cards, string $locale): array
+    {
+        foreach ($cards as &$card) {
+            if (($card['info_mode'] ?? '') !== 'meaning') {
+                continue;
+            }
+            if (trim((string) ($card['blurb'] ?? '')) !== '') {
+                continue;
+            }
+            $card['blurb'] = $this->meanings->text(
+                (string) ($card['deck'] ?? ''),
+                (string) ($card['figure_id'] ?? ''),
+                $locale,
+                (string) ($card['figure_name'] ?? ''),
+            );
+        }
+        unset($card);
+
+        return $cards;
     }
 }

@@ -21,8 +21,9 @@
                 <span class="brand-name">Astro<span>Tarot</span></span>
             </a>
             <div class="header-actions">
+                <a class="credits-back" href="{{ route('account.show') }}">{{ __('messages.account_menu') }}<x-feature-marks feature="account.show" /></a>
                 @if ($canViewHistory)
-                    <a class="credits-back" href="{{ route('readings.history') }}">{{ __('messages.history_menu') }}</a>
+                    <a class="credits-back" href="{{ route('readings.history') }}">{{ __('messages.history_menu') }}<x-feature-marks feature="readings.history" /></a>
                 @endif
                 <a class="credits-back" href="{{ route('home') }}">{{ __('messages.credits_back_home') }}</a>
             </div>
@@ -53,36 +54,37 @@
         <div class="credits-plans">
             @foreach ($plans as $plan)
                 @php
-                    $label = $locale === 'en' ? $plan['label_en'] : $plan['label_hu'];
-                    $features = $locale === 'en' ? $plan['features_en'] : $plan['features_hu'];
-                    $isCurrent = $currentPlan === $plan['key'];
-                    $price = $plan['price_huf'];
+                    $label = $plan->name($locale);
+                    $isCurrent = $currentPlan === $plan->slug;
                 @endphp
-                <article class="credits-plan {{ $isCurrent ? 'is-current' : '' }}" data-plan-card="{{ $plan['key'] }}">
-                    <p class="credits-plan-kicker">{{ $label }}</p>
+                <article class="credits-plan {{ $isCurrent ? 'is-current' : '' }}" data-plan-card="{{ $plan->slug }}">
+                    <p class="credits-plan-kicker">
+                        @if ($plan->iconSvg() !== '')
+                            {!! $plan->iconSvg() !!}
+                        @endif
+                        {{ $label }}
+                    </p>
                     <h3>
-                        @if ($price === null)
+                        @if ($plan->isFree())
                             {{ __('messages.plan_price_free') }}
                         @else
-                            {{ number_format($price, 0, ',', ' ') }} Ft<span>/{{ __('messages.plan_per_month') }}</span>
+                            {{ $plan->displayAmount($locale) }}<span>/{{ $plan->periodLabel() }}</span>
                         @endif
                     </h3>
-                    <ul>
-                        @foreach ($features as $feature)
-                            <li>{{ $feature }}</li>
-                        @endforeach
-                    </ul>
+                    <div class="credits-plan-body">{!! $plan->body($locale) !!}</div>
                     @if ($isCurrent)
                         <p class="credits-plan-badge">{{ __('messages.plan_active') }}</p>
-                    @elseif ($plan['key'] === 'free')
+                    @elseif ($plan->isFree())
                         <button type="button" class="credits-plan-btn" disabled>{{ __('messages.plan_default') }}</button>
                     @else
-                        <button
-                            type="button"
-                            class="credits-plan-btn"
-                            data-plan-select="{{ $plan['key'] }}"
-                            data-plan-label="{{ $label }}"
-                        >{{ __('messages.plan_choose') }}</button>
+                        <x-feature-control feature="credits.promo">
+                            <button
+                                type="button"
+                                class="credits-plan-btn"
+                                data-plan-select="{{ $plan->slug }}"
+                                data-plan-label="{{ $label }}"
+                            >{{ __('messages.plan_choose') }}</button>
+                        </x-feature-control>
                     @endif
                 </article>
             @endforeach
@@ -92,6 +94,7 @@
             <p class="credits-astromotto">
                 {{ __('messages.plan_astromotto_access') }}
                 <a href="{{ $astroMottoUrl }}" target="_blank" rel="noopener noreferrer">AstroMotto</a>
+                <x-feature-marks feature="astromotto" />
             </p>
         @endif
 
@@ -112,7 +115,9 @@
                         <span>{{ __('messages.credits_note_label') }}</span>
                         <textarea name="note" rows="2" maxlength="500" placeholder="…"></textarea>
                     </label>
-                    <button type="submit">{{ __('messages.credits_request') }}</button>
+                    <x-feature-control feature="credits.request">
+                        <button type="submit">{{ __('messages.credits_request') }}</button>
+                    </x-feature-control>
                 </form>
             @endforeach
         </div>
@@ -136,7 +141,7 @@
         </div>
     </div>
 
-    <footer><span>✦</span> AstroTarot <i>·</i> Égi Orákulum + Tarot <span>✦</span></footer>
+    @include('templates.art-deco.partials.site-footer')
 </main>
 <script>
 (() => {

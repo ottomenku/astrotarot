@@ -38,6 +38,9 @@ class CardDrawProfileServiceTest extends TestCase
         $this->assertSame('víz', $profile['element']);
         $this->assertSame('szilárd', $profile['modality']);
         $this->assertSame('negatív', $profile['tone']);
+        $this->assertSame(8, $profile['scoring']['element_value']);
+        $this->assertSame(7, $profile['scoring']['modality_value']);
+        $this->assertSame(-2, $profile['scoring']['tone_net']);
         $this->assertSame(['pozitív', 'negatív', 'pozitív'], $profile['tones']);
         $this->assertSame(['positive', 'shadow', 'positive'], $profile['variants']);
         $this->assertSame(['scorpio', 'water', 'fixed'], $profile['slots']);
