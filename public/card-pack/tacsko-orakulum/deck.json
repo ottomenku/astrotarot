@@ -1,0 +1,258 @@
+{
+    "id": "tacsko-orakulum",
+    "name": {
+        "hu": "Tacskó orákulum",
+        "en": "Dachshund oracle"
+    },
+    "style": "dachshund-fullbleed",
+    "polarFigures": false,
+    "cardBack": "card-back/card-back.png",
+    "figures": [
+        {
+            "id": "sun",
+            "kind": "planet",
+            "glyph": "☉",
+            "hu": "Nap",
+            "en": "Sun",
+            "keyword": {
+                "hu": "lényeg",
+                "en": "essence"
+            }
+        },
+        {
+            "id": "moon",
+            "kind": "planet",
+            "glyph": "☽",
+            "hu": "Hold",
+            "en": "Moon",
+            "keyword": {
+                "hu": "érzelem",
+                "en": "feeling"
+            }
+        },
+        {
+            "id": "mercury",
+            "kind": "planet",
+            "glyph": "☿",
+            "hu": "Merkúr",
+            "en": "Mercury",
+            "keyword": {
+                "hu": "gondolat",
+                "en": "thought"
+            }
+        },
+        {
+            "id": "venus",
+            "kind": "planet",
+            "glyph": "♀",
+            "hu": "Vénusz",
+            "en": "Venus",
+            "keyword": {
+                "hu": "vonzalom",
+                "en": "attraction"
+            }
+        },
+        {
+            "id": "mars",
+            "kind": "planet",
+            "glyph": "♂",
+            "hu": "Mars",
+            "en": "Mars",
+            "keyword": {
+                "hu": "akarat",
+                "en": "will"
+            }
+        },
+        {
+            "id": "jupiter",
+            "kind": "planet",
+            "glyph": "♃",
+            "hu": "Jupiter",
+            "en": "Jupiter",
+            "keyword": {
+                "hu": "bővülés",
+                "en": "expansion"
+            }
+        },
+        {
+            "id": "saturn",
+            "kind": "planet",
+            "glyph": "♄",
+            "hu": "Szaturnusz",
+            "en": "Saturn",
+            "keyword": {
+                "hu": "határ",
+                "en": "boundary"
+            }
+        },
+        {
+            "id": "uranus",
+            "kind": "planet",
+            "glyph": "♅",
+            "hu": "Uránusz",
+            "en": "Uranus",
+            "keyword": {
+                "hu": "áttörés",
+                "en": "breakthrough"
+            }
+        },
+        {
+            "id": "neptune",
+            "kind": "planet",
+            "glyph": "♆",
+            "hu": "Neptunusz",
+            "en": "Neptune",
+            "keyword": {
+                "hu": "álom",
+                "en": "dream"
+            }
+        },
+        {
+            "id": "pluto",
+            "kind": "planet",
+            "glyph": "♇",
+            "hu": "Plútó",
+            "en": "Pluto",
+            "keyword": {
+                "hu": "átalakulás",
+                "en": "transformation"
+            }
+        },
+        {
+            "id": "aries",
+            "kind": "zodiac",
+            "glyph": "♈",
+            "hu": "Kos",
+            "en": "Aries",
+            "keyword": {
+                "hu": "kezdés",
+                "en": "initiative"
+            }
+        },
+        {
+            "id": "taurus",
+            "kind": "zodiac",
+            "glyph": "♉",
+            "hu": "Bika",
+            "en": "Taurus",
+            "keyword": {
+                "hu": "stabilitás",
+                "en": "stability"
+            }
+        },
+        {
+            "id": "gemini",
+            "kind": "zodiac",
+            "glyph": "♊",
+            "hu": "Ikrek",
+            "en": "Gemini",
+            "keyword": {
+                "hu": "kapcsolat",
+                "en": "exchange"
+            }
+        },
+        {
+            "id": "cancer",
+            "kind": "zodiac",
+            "glyph": "♋",
+            "hu": "Rák",
+            "en": "Cancer",
+            "keyword": {
+                "hu": "védelem",
+                "en": "nurture"
+            }
+        },
+        {
+            "id": "leo",
+            "kind": "zodiac",
+            "glyph": "♌",
+            "hu": "Oroszlán",
+            "en": "Leo",
+            "keyword": {
+                "hu": "ragyogás",
+                "en": "radiance"
+            }
+        },
+        {
+            "id": "virgo",
+            "kind": "zodiac",
+            "glyph": "♍",
+            "hu": "Szűz",
+            "en": "Virgo",
+            "keyword": {
+                "hu": "rend",
+                "en": "order"
+            }
+        },
+        {
+            "id": "libra",
+            "kind": "zodiac",
+            "glyph": "♎",
+            "hu": "Mérleg",
+            "en": "Libra",
+            "keyword": {
+                "hu": "egyensúly",
+                "en": "balance"
+            }
+        },
+        {
+            "id": "scorpio",
+            "kind": "zodiac",
+            "glyph": "♏",
+            "hu": "Skorpió",
+            "en": "Scorpio",
+            "keyword": {
+                "hu": "mélység",
+                "en": "depth"
+            }
+        },
+        {
+            "id": "sagittarius",
+            "kind": "zodiac",
+            "glyph": "♐",
+            "hu": "Nyilas",
+            "en": "Sagittarius",
+            "keyword": {
+                "hu": "irány",
+                "en": "aim"
+            }
+        },
+        {
+            "id": "capricorn",
+            "kind": "zodiac",
+            "glyph": "♑",
+            "hu": "Bak",
+            "en": "Capricorn",
+            "keyword": {
+                "hu": "építés",
+                "en": "structure"
+            }
+        },
+        {
+            "id": "aquarius",
+            "kind": "zodiac",
+            "glyph": "♒",
+            "hu": "Vízöntő",
+            "en": "Aquarius",
+            "keyword": {
+                "hu": "látomás",
+                "en": "vision"
+            }
+        },
+        {
+            "id": "pisces",
+            "kind": "zodiac",
+            "glyph": "♓",
+            "hu": "Halak",
+            "en": "Pisces",
+            "keyword": {
+                "hu": "összeolvadás",
+                "en": "unity"
+            }
+        }
+    ],
+    "style": "dachshund-fullbleed",
+    "polarFigures": false,
+    "totalCards": 22,
+    "note": "Full-bleed dachshund cards. One figure image per card, no light/shadow variants, no separate background."
+}

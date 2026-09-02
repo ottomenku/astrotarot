@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CardPack;
 use App\Models\Game;
 use App\Models\GameRule;
 use App\Models\User;
@@ -70,6 +71,11 @@ class AdminGamesTest extends TestCase
         $this->assertFalse($game->is_default);
         $this->assertSame(2, $game->rules()->count());
         $this->assertSame('cigany-kartya', $game->rules()->first()->pack_slug);
+        $this->assertSame('tarot', $game->rules()->first()->pack_type);
+        $this->assertSame(
+            CardPack::query()->where('slug', 'cigany-kartya')->value('id'),
+            $game->rules()->first()->default_pack_id
+        );
 
         $this->actingAs($admin)
             ->put(route('admin.games.update', $game), [
@@ -144,5 +150,34 @@ class AdminGamesTest extends TestCase
                 ],
             ])
             ->assertSessionHasErrors();
+    }
+
+    public function test_game_rule_can_use_category_default_pack(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->post(route('admin.games.store'), [
+                'name_hu' => 'Alapért',
+                'name_en' => 'Defaulted',
+                'sort_order' => 9,
+                'is_active' => '1',
+                'rules' => [
+                    [
+                        'pack_type' => 'oracle',
+                        'title_hu' => 'Mester',
+                        'title_en' => 'Master',
+                        'info_mode' => GameRule::INFO_ASTRO,
+                        'row' => 1,
+                        'place' => 1,
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $rule = Game::query()->where('slug', 'alapert')->firstOrFail()->rules()->first();
+        $this->assertSame('oracle', $rule->pack_type);
+        $this->assertNull($rule->default_pack_id);
+        $this->assertSame('egi-orakulum', $rule->pack_slug);
     }
 }

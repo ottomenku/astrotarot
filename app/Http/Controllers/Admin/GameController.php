@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CardPack;
 use App\Models\Game;
 use App\Models\GameRule;
 use App\Support\CardPackCatalog;
@@ -32,7 +33,7 @@ class GameController extends Controller
                 'sort_order' => (int) Game::query()->max('sort_order') + 1,
             ]),
             'rules' => [],
-            'packs' => CardPackCatalog::slugs(),
+            'packs' => $this->figurePacks(),
         ]);
     }
 
@@ -63,13 +64,15 @@ class GameController extends Controller
             'game' => $game,
             'rules' => old('rules', $game->rules->map(fn (GameRule $rule) => [
                 'pack_slug' => $rule->pack_slug,
+                'pack_type' => $rule->pack_type ?: CardPackCatalog::typeForSlug($rule->pack_slug),
+                'default_pack_id' => $rule->default_pack_id,
                 'title_hu' => $rule->title_hu,
                 'title_en' => $rule->title_en,
                 'info_mode' => $rule->info_mode,
                 'row' => $rule->row,
                 'place' => $rule->place,
             ])->all()),
-            'packs' => CardPackCatalog::slugs(),
+            'packs' => $this->figurePacks(),
         ]);
     }
 
@@ -151,7 +154,13 @@ class GameController extends Controller
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:9999'],
             'rules' => ['required', 'array', 'min:1', 'max:49'],
-            'rules.*.pack_slug' => ['required', 'string', Rule::in(CardPackCatalog::slugs())],
+            'rules.*.pack_type' => ['nullable', 'string', Rule::in(CardPack::FIGURE_TYPES)],
+            'rules.*.default_pack_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('card_packs', 'id')->whereIn('type', CardPack::FIGURE_TYPES),
+            ],
+            'rules.*.pack_slug' => ['nullable', 'string', Rule::in(CardPackCatalog::slugs())],
             'rules.*.title_hu' => ['required', 'string', 'max:120'],
             'rules.*.title_en' => ['required', 'string', 'max:120'],
             'rules.*.info_mode' => ['required', 'string', Rule::in(GameRule::INFO_MODES)],
@@ -212,14 +221,7 @@ class GameController extends Controller
     {
         $game->rules()->delete();
         foreach ($rules as $rule) {
-            $game->rules()->create([
-                'pack_slug' => $rule['pack_slug'],
-                'title_hu' => $rule['title_hu'],
-                'title_en' => $rule['title_en'],
-                'info_mode' => $rule['info_mode'],
-                'row' => (int) $rule['row'],
-                'place' => (int) $rule['place'],
-            ]);
+            $game->rules()->create($this->normalizeRule($rule));
         }
     }
 
@@ -246,5 +248,63 @@ class GameController extends Controller
         }
         $file->move($dir, $name);
         $game->update(['icon' => 'games/'.$name]);
+    }
+
+    /**
+     * @return list<array{id: int, slug: string, type: string, name: string}>
+     */
+    private function figurePacks(): array
+    {
+        return CardPack::query()->figure()->ordered()->get()->map(fn (CardPack $pack) => [
+            'id' => $pack->id,
+            'slug' => $pack->slug,
+            'type' => $pack->type,
+            'name' => $pack->name_hu,
+        ])->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $rule
+     * @return array<string, mixed>
+     */
+    private function normalizeRule(array $rule): array
+    {
+        $pack = null;
+        $packId = (int) ($rule['default_pack_id'] ?? 0);
+        $slug = trim((string) ($rule['pack_slug'] ?? ''));
+        $type = trim((string) ($rule['pack_type'] ?? ''));
+
+        $explicit = $packId > 0 || $slug !== '';
+
+        if ($packId > 0) {
+            $pack = CardPack::query()->figure()->find($packId);
+        }
+        if ($pack === null && $slug !== '') {
+            $pack = CardPack::query()->figure()->where('slug', CardPackCatalog::canonicalize($slug))->first();
+        }
+
+        if ($pack !== null && $explicit) {
+            $type = $pack->type;
+            $slug = $pack->slug;
+            $packId = $pack->id;
+        } else {
+            if (! in_array($type, CardPack::FIGURE_TYPES, true)) {
+                $type = CardPackCatalog::typeForSlug($slug) ?: CardPack::TYPE_TAROT;
+            }
+            $fallback = CardPack::defaultFor($type);
+            $slug = $fallback?->slug ?? ($slug !== '' ? $slug : 'tarot');
+            $packId = null;
+        }
+
+        return [
+            'pack_slug' => $slug,
+            'pack_type' => $type,
+            'default_pack_id' => $packId,
+            'title_hu' => $rule['title_hu'],
+            'title_en' => $rule['title_en'],
+            'info_mode' => $rule['info_mode'],
+            'row' => (int) $rule['row'],
+            'place' => (int) $rule['place'],
+        ];
     }
 }

@@ -28,6 +28,12 @@ final class FeatureCatalog
 
     public const ACCOUNT = 'account.show';
 
+    public const PACKS_CHOOSE = 'packs.choose';
+
+    public const PACKS_BACKS = 'packs.backs';
+
+    public const PACKS_BACKGROUNDS = 'packs.backgrounds';
+
     public const LOGIC_AND = 'and';
 
     public const LOGIC_OR = 'or';
@@ -90,7 +96,20 @@ final class FeatureCatalog
                     'account.readings.destroy',
                     'account.readings.destroy-all',
                     'account.deletion-request.store',
+                    'account.packs.update',
                 ],
+            ],
+            self::PACKS_CHOOSE => [
+                'charges' => false,
+                'routes' => ['account.packs.update'],
+            ],
+            self::PACKS_BACKS => [
+                'charges' => false,
+                'routes' => ['account.packs.update'],
+            ],
+            self::PACKS_BACKGROUNDS => [
+                'charges' => false,
+                'routes' => ['account.packs.update'],
             ],
         ];
     }
@@ -128,6 +147,9 @@ final class FeatureCatalog
             self::SHARE,
             self::HISTORY,
             self::ASTROMOTTO,
+            self::PACKS_CHOOSE,
+            self::PACKS_BACKS,
+            self::PACKS_BACKGROUNDS,
         ];
     }
 }

@@ -83,12 +83,14 @@ class ReadingExportService
                 'image_src' => $this->canEmbedImages()
                     ? $this->cardImageSrc(
                         (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot')),
-                        (string) ($card['figure_id'] ?? '')
+                        (string) ($card['figure_id'] ?? ''),
+                        (string) ($card['variant'] ?? $card['polarity'] ?? 'positive')
                     )
                     : null,
                 'image_url' => $this->ogImages->figurePublicUrl(
                     (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot')),
-                    (string) ($card['figure_id'] ?? '')
+                    (string) ($card['figure_id'] ?? ''),
+                    (string) ($card['variant'] ?? $card['polarity'] ?? 'positive')
                 ),
             ];
         }
@@ -166,9 +168,9 @@ class ReadingExportService
         return $this->ogImages->canGenerate();
     }
 
-    private function cardImageSrc(string $deck, string $figureId): ?string
+    private function cardImageSrc(string $deck, string $figureId, ?string $variant = null): ?string
     {
-        $absolute = $this->ogImages->figureAbsolutePath($deck, $figureId);
+        $absolute = $this->ogImages->figureAbsolutePath($deck, $figureId, $variant);
         if ($absolute === null) {
             return null;
         }

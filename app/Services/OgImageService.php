@@ -11,23 +11,23 @@ class OgImageService
         return extension_loaded('gd') && function_exists('imagecreatefrompng');
     }
 
-    public function figureAbsolutePath(string $deck, string $figureId): ?string
+    public function figureAbsolutePath(string $deck, string $figureId, ?string $variant = null): ?string
     {
-        $relative = $this->figureRelativePath($deck, $figureId);
+        $relative = $this->figureRelativePath($deck, $figureId, $variant);
 
         return $relative === null ? null : public_path($relative);
     }
 
-    public function figurePublicUrl(string $deck, string $figureId): ?string
+    public function figurePublicUrl(string $deck, string $figureId, ?string $variant = null): ?string
     {
-        $relative = $this->figureRelativePath($deck, $figureId);
+        $relative = $this->figureRelativePath($deck, $figureId, $variant);
 
         return $relative === null ? null : asset($relative);
     }
 
-    public function figureRelativePath(string $deck, string $figureId): ?string
+    public function figureRelativePath(string $deck, string $figureId, ?string $variant = null): ?string
     {
-        return CardPackCatalog::figureRelative($deck, $figureId);
+        return CardPackCatalog::figureRelative($deck, $figureId, $variant);
     }
 
     public function backgroundAbsolutePath(string $variant, string $deck = 'egi-orakulum'): ?string
@@ -65,7 +65,7 @@ class OgImageService
             $deck = (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot'));
             $figureId = (string) ($card['figure_id'] ?? '');
             $variant = (string) ($card['variant'] ?? $card['polarity'] ?? 'positive');
-            $figurePath = $this->figureAbsolutePath($deck, $figureId);
+            $figurePath = $this->figureAbsolutePath($deck, $figureId, $variant);
             $bgPath = $this->backgroundAbsolutePath($variant, $deck);
             if ($figurePath === null) {
                 imagedestroy($canvas);

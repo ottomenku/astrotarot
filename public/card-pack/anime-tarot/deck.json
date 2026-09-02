@@ -1,0 +1,347 @@
+{
+    "id": "anime-tarot",
+    "name": {
+        "hu": "Anime tarot",
+        "en": "Anime tarot"
+    },
+    "style": "anime-fullbleed",
+    "cardBack": "card-back/card-back.png",
+    "totalCards": 22,
+    "composition": {
+        "majors": 22
+    },
+    "note": "22 major arcana, full-bleed anime. Polarity is in the figure art (id-light.png / id-shadow.png), no separate background.",
+    "figures": [
+        {
+            "id": "00-the-fool",
+            "kind": "major",
+            "roman": "0",
+            "hu": "A Bolond",
+            "en": "The Fool",
+            "keyword": {
+                "hu": "új kezdet",
+                "en": "new beginning"
+            },
+            "blurb": {
+                "hu": "Új kezdet, nyitottság és bátor első lépés. A Bolond a friss út előtt áll, ahol a kíváncsiság fontosabb, mint a bizonyosság. Bízz a lendületben, de nézz a lábad elé is.",
+                "en": "A fresh start, openness, and a brave first step. The Fool stands before a new path where curiosity matters more than certainty. Trust the momentum, yet watch your footing."
+            }
+        },
+        {
+            "id": "01-the-magician",
+            "kind": "major",
+            "roman": "I",
+            "hu": "A Mágus",
+            "en": "The Magician",
+            "keyword": {
+                "hu": "teremtő erő",
+                "en": "creative power"
+            },
+            "blurb": {
+                "hu": "A Mágus tudatos alkotóerőt hoz. Eszközök és szándék egy kézben vannak: most van lehetőség formát adni annak, amit elképzeltél. Cselekvés és fókusz együtt dolgozik.",
+                "en": "The Magician brings conscious creative power. Tools and intention meet in one hand: you can shape what you imagined. Action and focus work together now."
+            }
+        },
+        {
+            "id": "02-the-high-priestess",
+            "kind": "major",
+            "roman": "II",
+            "hu": "A Főpapnő",
+            "en": "The High Priestess",
+            "keyword": {
+                "hu": "intuíció",
+                "en": "intuition"
+            },
+            "blurb": {
+                "hu": "A Főpapnő a csendes tudásra hív. Nem mindent kell kimondani; a válasz belül, az intuícióban érlelődik. Figyelj a jelek és az álmok halkabb hangjára.",
+                "en": "The High Priestess invites quiet knowing. Not everything needs to be spoken; the answer ripens within intuition. Listen to the softer voice of signs and dreams."
+            }
+        },
+        {
+            "id": "03-the-empress",
+            "kind": "major",
+            "roman": "III",
+            "hu": "A Császárnő",
+            "en": "The Empress",
+            "keyword": {
+                "hu": "bőség",
+                "en": "abundance"
+            },
+            "blurb": {
+                "hu": "A Császárnő a növekedés, gondoskodás és érzéki bőség kártyája. Ami érik, azt etetni és védeni kell. Engedd, hogy a teremtés természetes ritmusban kibontakozzon.",
+                "en": "The Empress speaks of growth, care, and sensual abundance. What is ripening needs feeding and protection. Let creation unfold in its natural rhythm."
+            }
+        },
+        {
+            "id": "04-the-emperor",
+            "kind": "major",
+            "roman": "IV",
+            "hu": "A Császár",
+            "en": "The Emperor",
+            "keyword": {
+                "hu": "rend",
+                "en": "order"
+            },
+            "blurb": {
+                "hu": "A Császár struktúrát, határokat és felelősséget hoz. Most a stabil keretek és a világos döntések segítenek. Vezess határozottan, de ne válj merevvé.",
+                "en": "The Emperor brings structure, boundaries, and responsibility. Clear frames and firm decisions help now. Lead with resolve without becoming rigid."
+            }
+        },
+        {
+            "id": "05-the-hierophant",
+            "kind": "major",
+            "roman": "V",
+            "hu": "A Főpap",
+            "en": "The Hierophant",
+            "keyword": {
+                "hu": "hagyomány",
+                "en": "tradition"
+            },
+            "blurb": {
+                "hu": "A Főpap a tanítás, hagyomány és közös értékek felé mutat. Keress megbízható útmutatást, vagy magad legyél a támasz másoknak. A rituálé és a szabály most támasz lehet.",
+                "en": "The Hierophant points to teaching, tradition, and shared values. Seek trustworthy guidance, or become that support for others. Ritual and rule can steady you now."
+            }
+        },
+        {
+            "id": "06-the-lovers",
+            "kind": "major",
+            "roman": "VI",
+            "hu": "A Szeretők",
+            "en": "The Lovers",
+            "keyword": {
+                "hu": "választás",
+                "en": "choice"
+            },
+            "blurb": {
+                "hu": "A Szeretők választásról és igazodásról beszélnek. Kapcsolat, értékek vagy irány közül kell dönteni úgy, hogy a szív és az elme egy irányba nézzen. Az őszinte igen számít.",
+                "en": "The Lovers speak of choice and alignment. Decide among people, values, or paths so heart and mind face the same way. An honest yes matters."
+            }
+        },
+        {
+            "id": "07-the-chariot",
+            "kind": "major",
+            "roman": "VII",
+            "hu": "A Diadalszekér",
+            "en": "The Chariot",
+            "keyword": {
+                "hu": "haladás",
+                "en": "momentum"
+            },
+            "blurb": {
+                "hu": "A Diadalszekér akaraterőt és iránytartást kér. A cél elérhető, ha a belső ellentéteket egy irányba fogod. Haladj határozottan, ne engedd szétszóródni a fókuszt.",
+                "en": "The Chariot asks for willpower and direction. The goal is reachable if you harness inner opposites. Move decisively and keep your focus gathered."
+            }
+        },
+        {
+            "id": "08-strength",
+            "kind": "major",
+            "roman": "VIII",
+            "hu": "Az Erő",
+            "en": "Strength",
+            "keyword": {
+                "hu": "belső erő",
+                "en": "inner strength"
+            },
+            "blurb": {
+                "hu": "Az Erő a szelíd bátorság kártyája. Nem erőszakkal, hanem türelemmel és önuralommal oldódik a feszültség. A magabiztos nyugalom most erősebb, mint a zaj.",
+                "en": "Strength is gentle courage. Tension eases through patience and self-command, not force. Quiet confidence is stronger than noise right now."
+            }
+        },
+        {
+            "id": "09-the-hermit",
+            "kind": "major",
+            "roman": "IX",
+            "hu": "A Remete",
+            "en": "The Hermit",
+            "keyword": {
+                "hu": "bölcsesség",
+                "en": "wisdom"
+            },
+            "blurb": {
+                "hu": "A Remete visszavonulást és belső fényt hoz. Ideje magadba nézni, kérdéseket tisztázni, és nem siettetni a választ. A magány most nem üresség, hanem iránytű.",
+                "en": "The Hermit brings withdrawal and inner light. Look within, clarify questions, and do not rush the answer. Solitude is a compass now, not emptiness."
+            }
+        },
+        {
+            "id": "10-wheel-of-fortune",
+            "kind": "major",
+            "roman": "X",
+            "hu": "A Szerencsekerék",
+            "en": "Wheel of Fortune",
+            "keyword": {
+                "hu": "fordulat",
+                "en": "turning point"
+            },
+            "blurb": {
+                "hu": "A Szerencsekerék fordulatot jelez. Ami beragadt, az mozogni kezd; a ciklusok forognak. Fogadd el a változást, és igazodj a következő szakasz ritmusához.",
+                "en": "Wheel of Fortune signals a turn. What was stuck begins to move; cycles shift. Accept change and attune to the next phase."
+            }
+        },
+        {
+            "id": "11-justice",
+            "kind": "major",
+            "roman": "XI",
+            "hu": "Az Igazság",
+            "en": "Justice",
+            "keyword": {
+                "hu": "egyensúly",
+                "en": "balance"
+            },
+            "blurb": {
+                "hu": "Az Igazság egyensúlyt, tisztázást és felelősséget kér. Ami igazságtalan, az most mérlegre kerül. Légy őszinte a következményekkel és a saját részeddel.",
+                "en": "Justice asks for balance, clarity, and accountability. What is unfair comes onto the scales. Be honest about consequences and your part in them."
+            }
+        },
+        {
+            "id": "12-the-hanged-man",
+            "kind": "major",
+            "roman": "XII",
+            "hu": "Az Akasztott ember",
+            "en": "The Hanged Man",
+            "keyword": {
+                "hu": "elengedés",
+                "en": "surrender"
+            },
+            "blurb": {
+                "hu": "Az Akasztott ember más nézőpontot kínál. Állj meg, engedd el a régi fogást, és nézd meg a helyzetet fejjel lefelé. A szünet most nem veszteség, hanem betekintés.",
+                "en": "The Hanged Man offers another viewpoint. Pause, release the old grip, and see the situation upside down. The pause is insight, not loss."
+            }
+        },
+        {
+            "id": "13-death",
+            "kind": "major",
+            "roman": "XIII",
+            "hu": "A Halál",
+            "en": "Death",
+            "keyword": {
+                "hu": "átalakulás",
+                "en": "transformation"
+            },
+            "blurb": {
+                "hu": "A Halál lezárást és átalakulást hoz. Ami már nem szolgál, azt el kell engedni, hogy új forma születhessen. A változás mély, de nem a vég.",
+                "en": "Death brings ending and transformation. What no longer serves must be released so a new form can be born. The change is deep, not final."
+            }
+        },
+        {
+            "id": "14-temperance",
+            "kind": "major",
+            "roman": "XIV",
+            "hu": "A Mértékletesség",
+            "en": "Temperance",
+            "keyword": {
+                "hu": "harmónia",
+                "en": "harmony"
+            },
+            "blurb": {
+                "hu": "A Mértékletesség az elegyítés és a türelem művészete. Keverd össze az ellentéteket mértékkel. A gyógyulás és a fejlődés fokozatos lépésekben érkezik.",
+                "en": "Temperance is the art of blending and patience. Mix opposites with measure. Healing and growth arrive in gradual steps."
+            }
+        },
+        {
+            "id": "15-the-devil",
+            "kind": "major",
+            "roman": "XV",
+            "hu": "Az Ördög",
+            "en": "The Devil",
+            "keyword": {
+                "hu": "kötődések",
+                "en": "attachments"
+            },
+            "blurb": {
+                "hu": "Az Ördög a kötődéseket és a függődéseket mutatja. Ami csábít, az korlátozhat is. Látod a láncot: ettől kezdve választhatod a szabadabb utat.",
+                "en": "The Devil shows attachments and dependencies. What tempts can also confine. Once you see the chain, you can choose freer ground."
+            }
+        },
+        {
+            "id": "16-the-tower",
+            "kind": "major",
+            "roman": "XVI",
+            "hu": "A Torony",
+            "en": "The Tower",
+            "keyword": {
+                "hu": "megrázkódtatás",
+                "en": "upheaval"
+            },
+            "blurb": {
+                "hu": "A Torony hirtelen leomlást hoz a hamis szerkezetekből. A megrázkódtatás felszabadít, ha elengeded, ami már nem tartható. Az igazság most hangosan érkezik.",
+                "en": "The Tower brings sudden collapse of false structures. Shock frees you if you release what cannot hold. Truth arrives loudly now."
+            }
+        },
+        {
+            "id": "17-the-star",
+            "kind": "major",
+            "roman": "XVII",
+            "hu": "A Csillag",
+            "en": "The Star",
+            "keyword": {
+                "hu": "remény",
+                "en": "hope"
+            },
+            "blurb": {
+                "hu": "A Csillag reményt, gyógyulást és irányt ad a sötét után. Engedd, hogy a bizalom visszaáramoljon. A jövő nem távoli fény: már most vezet.",
+                "en": "The Star brings hope, healing, and guidance after darkness. Let trust return. The future is not distant light: it already leads."
+            }
+        },
+        {
+            "id": "18-the-moon",
+            "kind": "major",
+            "roman": "XVIII",
+            "hu": "A Hold",
+            "en": "The Moon",
+            "keyword": {
+                "hu": "belső világ",
+                "en": "inner world"
+            },
+            "blurb": {
+                "hu": "A Hold a bizonytalanság, álmok és belső hullámok világa. Nem minden látható tisztán. Haladj érzéssel, és ne vedd készpénznek a félelmeket.",
+                "en": "The Moon is uncertainty, dreams, and inner tides. Not everything is clear. Move by feel, and do not take every fear as fact."
+            }
+        },
+        {
+            "id": "19-the-sun",
+            "kind": "major",
+            "roman": "XIX",
+            "hu": "A Nap",
+            "en": "The Sun",
+            "keyword": {
+                "hu": "öröm",
+                "en": "joy"
+            },
+            "blurb": {
+                "hu": "A Nap világosságot, örömöt és megerősítést hoz. Ami eddig homályos volt, az kiderül. Merj láthatóvá válni és ünnepelni a saját erődet.",
+                "en": "The Sun brings clarity, joy, and affirmation. What was obscure comes into light. Dare to be seen and celebrate your strength."
+            }
+        },
+        {
+            "id": "20-judgement",
+            "kind": "major",
+            "roman": "XX",
+            "hu": "Az Ítélet",
+            "en": "Judgement",
+            "keyword": {
+                "hu": "ébredés",
+                "en": "awakening"
+            },
+            "blurb": {
+                "hu": "Az Ítélet ébredést és újrahívást jelez. Ideje válaszolni a mélyebb hívásra, és lezárni a régi fejezetet. A megújulás tudatos döntéssel indul.",
+                "en": "Judgement signals awakening and a renewed call. Answer the deeper summons and close the old chapter. Renewal begins with a conscious yes."
+            }
+        },
+        {
+            "id": "21-the-world",
+            "kind": "major",
+            "roman": "XXI",
+            "hu": "A Világ",
+            "en": "The World",
+            "keyword": {
+                "hu": "beteljesülés",
+                "en": "completion"
+            },
+            "blurb": {
+                "hu": "A Világ a kör bezárása és a beteljesülés. Ami folyamatban volt, az most összeáll. Ünnepeld az egészet, majd lépj tovább egy tágabb térbe.",
+                "en": "The World is completion and fulfillment. What was in process comes together. Celebrate the whole, then step into a wider space."
+            }
+        }
+    ],
+    "polarFigures": true
+}

@@ -57,6 +57,7 @@ class FeatureAccessTest extends TestCase
             ->assertOk()
             ->assertSee(FeatureCatalog::help(FeatureCatalog::READING), false)
             ->assertSee(FeatureCatalog::help(FeatureCatalog::PDF), false)
+            ->assertSee(FeatureCatalog::help(FeatureCatalog::PACKS_CHOOSE), false)
             ->assertSee(__('admin.feature_access.card_name'), false);
 
         $this->actingAs($admin)

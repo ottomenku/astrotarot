@@ -78,6 +78,11 @@ class User extends Authenticatable
         return $this->hasMany(DataDeletionRequest::class);
     }
 
+    public function packPreferences(): HasMany
+    {
+        return $this->hasMany(UserPackPreference::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === Role::Admin;

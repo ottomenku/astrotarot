@@ -65,7 +65,9 @@ class ReadingFrontendContractTest extends TestCase
         $this->assertStringContainsString('gameSlots', $js);
         $this->assertStringContainsString('scoring', $js);
         $this->assertStringContainsString('row:', $js);
-        $this->assertStringContainsString('/card-pack', $js);
+        $this->assertStringContainsString('function packHasPolarFigures(', $js);
+        $this->assertStringContainsString('polarFigures', $js);
+        $this->assertStringContainsString('card_back', $js);
         $this->assertStringContainsString('reading.initial', $js);
         $this->assertStringContainsString('sessionExpired', $js);
         $this->assertStringContainsString('sourcePrefix', $js);

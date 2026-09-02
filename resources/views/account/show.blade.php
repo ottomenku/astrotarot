@@ -78,6 +78,76 @@
             </div>
         </dl>
 
+        <h2 class="credits-section-title">{{ __('messages.account_packs') }}<x-feature-marks feature="packs.choose" /></h2>
+        <p class="credits-lead">{{ __('messages.account_packs_lead') }}</p>
+        @unless ($canChoosePacks || $canChooseBacks || $canChooseBackgrounds)
+            <p class="credits-lead">{{ __('messages.account_packs_locked') }}</p>
+        @endunless
+
+        <form class="account-packs" method="POST" action="{{ route('account.packs.update') }}">
+            @csrf
+
+            @foreach ($figureOptions as $type => $options)
+                <label class="credits-note">
+                    <span>{{ __('messages.account_packs_figure') }} · {{ __('admin.packs.type_'.$type) }}<x-feature-marks feature="packs.choose" /></span>
+                    <select name="figures[{{ $type }}]" @disabled(! $canChoosePacks)>
+                        <option value="">{{ __('messages.account_packs_default') }}</option>
+                        @foreach ($options as $pack)
+                            <option value="{{ $pack->id }}" @selected((int) optional($figurePrefs->get($type))->card_pack_id === (int) $pack->id)>
+                                {{ $pack->name() }}@if ($pack->is_default) · {{ __('messages.account_packs_default') }}@endif
+                            </option>
+                        @endforeach
+                    </select>
+                </label>
+            @endforeach
+
+            <p class="credits-lead" style="margin-top:8px">{{ __('messages.account_packs_skins') }}</p>
+            @foreach ($figureOptions as $options)
+                @foreach ($options as $pack)
+                    <fieldset class="account-pack-skins">
+                        <legend>{{ $pack->name() }}</legend>
+                        <label class="credits-note">
+                            <span>{{ __('messages.account_packs_back') }}<x-feature-marks feature="packs.backs" /></span>
+                            <select name="backs[{{ $pack->id }}]" @disabled(! $canChooseBacks)>
+                                <option value="">{{ __('messages.account_packs_default') }}</option>
+                                @foreach ($backOptions as $back)
+                                    <option value="{{ $back->id }}" @selected((int) optional($backPrefs->get($pack->id))->card_pack_id === (int) $back->id)>
+                                        {{ $back->name() }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="credits-note">
+                            <span>{{ __('messages.account_packs_light') }}<x-feature-marks feature="packs.backgrounds" /></span>
+                            <select name="lights[{{ $pack->id }}]" @disabled(! $canChooseBackgrounds)>
+                                <option value="">{{ __('messages.account_packs_default') }}</option>
+                                @foreach ($lightOptions as $bg)
+                                    <option value="{{ $bg->id }}" @selected((int) optional($lightPrefs->get($pack->id))->card_pack_id === (int) $bg->id)>
+                                        {{ $bg->name() }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="credits-note">
+                            <span>{{ __('messages.account_packs_shadow') }}<x-feature-marks feature="packs.backgrounds" /></span>
+                            <select name="shadows[{{ $pack->id }}]" @disabled(! $canChooseBackgrounds)>
+                                <option value="">{{ __('messages.account_packs_default') }}</option>
+                                @foreach ($shadowOptions as $bg)
+                                    <option value="{{ $bg->id }}" @selected((int) optional($shadowPrefs->get($pack->id))->card_pack_id === (int) $bg->id)>
+                                        {{ $bg->name() }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+                    </fieldset>
+                @endforeach
+            @endforeach
+
+            @if ($canChoosePacks || $canChooseBacks || $canChooseBackgrounds)
+                <button type="submit" class="credits-danger-btn" style="justify-self:start">{{ __('messages.account_packs_save') }}</button>
+            @endif
+        </form>
+
         <h2 class="credits-section-title">{{ __('messages.account_conversations') }}</h2>
         <p class="credits-lead">{{ __('messages.account_conversations_lead') }}</p>
 

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
+use App\Models\User;
 use App\Services\AppSettings;
 use App\Services\CreditService;
 use App\Services\FeatureAccessService;
+use App\Services\PackResolutionService;
 use App\Services\TarotReadingService;
 use App\Support\FeatureCatalog;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +23,7 @@ class ReadingController extends Controller
         AppSettings $settings,
         CreditService $credits,
         FeatureAccessService $features,
+        PackResolutionService $packs,
     ): JsonResponse {
         set_time_limit(max(180, (int) config('services.openai.timeout', 120) + 30));
 
@@ -117,7 +120,7 @@ class ReadingController extends Controller
                 }
             }
 
-            $cards = $this->cardsWithGameRules($game, $data['cards'], $locale);
+            $cards = $this->cardsWithGameRules($game, $data['cards'], $locale, $user, $packs);
 
             $result = $readings->interpret([
                 'question' => $question,
@@ -169,13 +172,13 @@ class ReadingController extends Controller
      * @param  list<array<string, mixed>>  $cards
      * @return list<array<string, mixed>>
      */
-    private function cardsWithGameRules(?Game $game, array $cards, string $locale): array
+    private function cardsWithGameRules(?Game $game, array $cards, string $locale, ?User $user, PackResolutionService $packs): array
     {
         if ($game === null) {
             return array_values($cards);
         }
 
-        $game->loadMissing(['rules' => fn ($query) => $query->ordered()]);
+        $game->loadMissing(['rules' => fn ($query) => $query->ordered()->with('defaultPack')]);
         $rules = $game->rules->values();
 
         foreach ($cards as $index => $card) {
@@ -187,6 +190,12 @@ class ReadingController extends Controller
             $cards[$index]['place'] = (int) $rule->place;
             $cards[$index]['slot_title'] = $rule->title($locale);
             $cards[$index]['info_mode'] = $rule->info_mode;
+            $cards[$index]['deck'] = $packs->allowedDeck(
+                $user,
+                $game,
+                $index,
+                (string) ($card['deck'] ?? ''),
+            );
         }
 
         return array_values($cards);

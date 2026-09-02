@@ -2,11 +2,18 @@
 
 namespace App\Services;
 
+use App\Models\CardPack;
 use App\Models\Game;
 use App\Support\CardPackCatalog;
+use App\Support\FeatureCatalog;
 
 class GameConfigService
 {
+    public function __construct(
+        private readonly PackResolutionService $packs,
+        private readonly FeatureAccessService $features,
+    ) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -15,9 +22,13 @@ class GameConfigService
         $game = Game::query()
             ->active()
             ->where('is_default', true)
-            ->with(['rules' => fn ($query) => $query->ordered()])
+            ->with(['rules' => fn ($query) => $query->ordered()->with('defaultPack')])
             ->first()
-            ?? Game::query()->active()->with(['rules' => fn ($query) => $query->ordered()])->ordered()->first();
+            ?? Game::query()
+                ->active()
+                ->with(['rules' => fn ($query) => $query->ordered()->with('defaultPack')])
+                ->ordered()
+                ->first();
 
         if ($game === null) {
             return $this->empty($locale);
@@ -33,20 +44,33 @@ class GameConfigService
     {
         $locale = $locale === 'en' ? 'en' : ($locale ?? app()->getLocale());
         $locale = $locale === 'en' ? 'en' : 'hu';
+        $user = auth()->user();
 
         $slots = [];
-        $packSlugs = [];
+        $packs = [];
         foreach ($game->rules as $rule) {
-            $packSlugs[] = $rule->pack_slug;
+            $resolved = $this->packs->resolveRule($user, $rule);
+            $slug = $resolved['slug'];
+            $skin = $resolved['skin'];
             $slots[] = [
-                'pack_slug' => $rule->pack_slug,
+                'pack_slug' => $slug,
+                'pack_type' => $resolved['type'],
                 'title' => $rule->title($locale),
                 'title_hu' => $rule->title_hu,
                 'title_en' => $rule->title_en,
                 'info_mode' => $rule->info_mode,
                 'row' => (int) $rule->row,
                 'place' => (int) $rule->place,
-                'full_bleed' => ! CardPackCatalog::hasBackgrounds($rule->pack_slug),
+                'full_bleed' => ! $skin['has_backgrounds'],
+            ];
+            $packs[$slug] = [
+                'slug' => $slug,
+                'type' => $resolved['type'],
+                'has_backgrounds' => $skin['has_backgrounds'],
+                'polar_figures' => CardPackCatalog::hasPolarFigures($slug),
+                'card_back' => $skin['card_back'],
+                'background_light' => $skin['background_light'],
+                'background_shadow' => $skin['background_shadow'],
             ];
         }
 
@@ -54,12 +78,14 @@ class GameConfigService
             return [$a['row'], $a['place']] <=> [$b['row'], $b['place']];
         });
 
-        $packs = [];
-        foreach (array_unique($packSlugs) as $slug) {
-            $packs[$slug] = [
-                'slug' => $slug,
-                'has_backgrounds' => CardPackCatalog::hasBackgrounds($slug),
-            ];
+        $options = [];
+        foreach (CardPack::FIGURE_TYPES as $type) {
+            $options[$type] = $this->packs->figureOptions($type)->map(fn (CardPack $pack) => [
+                'id' => $pack->id,
+                'slug' => $pack->slug,
+                'name' => $pack->name($locale),
+                'preview' => $pack->previewUrl(),
+            ])->values()->all();
         }
 
         return [
@@ -74,6 +100,8 @@ class GameConfigService
             'slots' => $slots,
             'pack_base' => asset(CardPackCatalog::publicPrefix()),
             'packs' => $packs,
+            'pack_options' => $options,
+            'can_choose_packs' => $user !== null && $this->features->can($user, FeatureCatalog::PACKS_CHOOSE),
         ];
     }
 
@@ -94,6 +122,8 @@ class GameConfigService
             'slots' => [],
             'pack_base' => asset(CardPackCatalog::publicPrefix()),
             'packs' => [],
+            'pack_options' => [],
+            'can_choose_packs' => false,
         ];
     }
 }

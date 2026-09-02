@@ -2,6 +2,9 @@
 
 namespace App\Support;
 
+use App\Models\CardPack;
+use Illuminate\Support\Facades\Schema;
+
 class CardPackCatalog
 {
     /** @var array<string, string> */
@@ -31,11 +34,27 @@ class CardPackCatalog
         return self::ALIASES[$key] ?? $key;
     }
 
+    public static function typeForSlug(string $slug): string
+    {
+        $slug = self::canonicalize($slug);
+        $pack = self::figure($slug);
+        if ($pack !== null) {
+            return $pack->type;
+        }
+
+        return $slug === 'egi-orakulum' ? CardPack::TYPE_ORACLE : CardPack::TYPE_TAROT;
+    }
+
     /**
      * @return list<string>
      */
     public static function slugs(): array
     {
+        $fromDb = self::figureSlugsFromDb();
+        if ($fromDb !== []) {
+            return $fromDb;
+        }
+
         $root = self::root();
         if (! is_dir($root)) {
             return [];
@@ -50,9 +69,7 @@ class CardPackCatalog
             if (! is_dir($dir)) {
                 continue;
             }
-            if (! is_dir($dir.DIRECTORY_SEPARATOR.'card-back')
-                || ! is_dir($dir.DIRECTORY_SEPARATOR.'backgrounds')
-                || ! is_dir($dir.DIRECTORY_SEPARATOR.'figures')) {
+            if (! is_dir($dir.DIRECTORY_SEPARATOR.'figures')) {
                 continue;
             }
             $slugs[] = $name;
@@ -65,11 +82,56 @@ class CardPackCatalog
 
     public static function packAbsolute(string $slug): string
     {
+        $pack = self::figure($slug);
+        if ($pack !== null) {
+            $folder = $pack->folderRelative();
+            if ($folder !== null) {
+                return public_path($folder);
+            }
+        }
+
         return self::root().DIRECTORY_SEPARATOR.self::canonicalize($slug);
+    }
+
+    public static function figure(string $slug): ?CardPack
+    {
+        if (! self::packsTableReady()) {
+            return null;
+        }
+
+        return CardPack::query()->figure()->where('slug', self::canonicalize($slug))->first();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function figureSlugsFromDb(): array
+    {
+        if (! self::packsTableReady()) {
+            return [];
+        }
+
+        return array_values(CardPack::query()->figure()->orderBy('slug')->pluck('slug')->all());
+    }
+
+    private static function packsTableReady(): bool
+    {
+        try {
+            return Schema::hasTable('card_packs');
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public static function hasBackgrounds(string $slug): bool
     {
+        $pack = self::figure($slug);
+        if ($pack !== null) {
+            if ($pack->default_background_light_id || $pack->default_background_shadow_id) {
+                return true;
+            }
+        }
+
         $slug = self::canonicalize($slug);
         foreach (['shared-light.png', 'shared-shadow.png'] as $file) {
             if (is_file(self::packAbsolute($slug).DIRECTORY_SEPARATOR.'backgrounds'.DIRECTORY_SEPARATOR.$file)) {
@@ -80,7 +142,22 @@ class CardPackCatalog
         return false;
     }
 
-    public static function figureRelative(string $deck, string $figureId): ?string
+    public static function hasPolarFigures(string $slug): bool
+    {
+        $deck = self::deckJson($slug);
+        if (is_array($deck) && array_key_exists('polarFigures', $deck)) {
+            return (bool) $deck['polarFigures'];
+        }
+
+        $id = trim((string) ($deck['figures'][0]['id'] ?? ''));
+        if ($id === '') {
+            return false;
+        }
+
+        return is_file(self::packAbsolute($slug).DIRECTORY_SEPARATOR.'figures'.DIRECTORY_SEPARATOR.$id.'-light.png');
+    }
+
+    public static function figureRelative(string $deck, string $figureId, ?string $variant = null): ?string
     {
         $slug = self::canonicalize($deck);
         $figureId = trim($figureId);
@@ -88,16 +165,39 @@ class CardPackCatalog
             return null;
         }
 
+        $folder = self::publicPrefix().'/'.$slug;
+        $pack = self::figure($slug);
+        if ($pack !== null) {
+            $folder = $pack->folderRelative() ?? $folder;
+        }
+
+        $tone = null;
+        if ($variant !== null && trim($variant) !== '') {
+            $tone = in_array($variant, ['shadow', 'negative', 'negatív'], true)
+                ? 'shadow'
+                : 'light';
+        }
+
         $candidates = [];
+        if ($tone !== null) {
+            $candidates[] = $folder."/figures/{$figureId}-{$tone}.png";
+            $candidates[] = $folder."/figures/{$tone}/{$figureId}.png";
+        } elseif (self::hasPolarFigures($slug)) {
+            $candidates[] = $folder."/figures/{$figureId}-light.png";
+        }
         if ($slug === 'tarot') {
             if ($figureId === 'significator') {
-                $candidates[] = self::publicPrefix().'/tarot/figures/significator.png';
+                $candidates[] = $folder.'/figures/significator.png';
             }
             if (preg_match('/^(wands|cups|swords|pentacles)-/', $figureId) === 1) {
-                $candidates[] = self::publicPrefix()."/tarot/figures/minors/{$figureId}.png";
+                $candidates[] = $folder."/figures/minors/{$figureId}.png";
             }
         }
-        $candidates[] = self::publicPrefix()."/{$slug}/figures/{$figureId}.png";
+        $candidates[] = $folder."/figures/{$figureId}.png";
+        if ($tone !== null) {
+            $other = $tone === 'shadow' ? 'light' : 'shadow';
+            $candidates[] = $folder."/figures/{$figureId}-{$other}.png";
+        }
 
         foreach ($candidates as $file) {
             if (is_file(public_path($file))) {
@@ -111,7 +211,18 @@ class CardPackCatalog
     public static function backgroundRelative(string $deck, string $variant): ?string
     {
         $slug = self::canonicalize($deck);
-        $tone = in_array($variant, ['shadow', 'negative', 'negatív'], true) ? 'shadow' : 'light';
+        $tone = in_array($variant, ['shadow', 'negative', 'negatív'], true)
+            ? CardPack::POLARITY_SHADOW
+            : CardPack::POLARITY_LIGHT;
+        $pack = self::figure($slug);
+        $related = $tone === CardPack::POLARITY_SHADOW
+            ? $pack?->defaultBackgroundShadow
+            : $pack?->defaultBackgroundLight;
+        $fromPack = $related?->fileRelative();
+        if ($fromPack !== null) {
+            return $fromPack;
+        }
+
         $file = self::publicPrefix()."/{$slug}/backgrounds/shared-{$tone}.png";
 
         return is_file(public_path($file)) ? $file : null;
@@ -120,6 +231,11 @@ class CardPackCatalog
     public static function cardBackRelative(string $slug): string
     {
         $slug = self::canonicalize($slug);
+        $fromPack = self::figure($slug)?->defaultCardBack?->fileRelative();
+        if ($fromPack !== null) {
+            return $fromPack;
+        }
+
         foreach (['card-back/card-back.png', 'card-back/card-back.webp'] as $relative) {
             $file = self::publicPrefix()."/{$slug}/{$relative}";
             if (is_file(public_path($file))) {

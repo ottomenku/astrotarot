@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\CardPackController;
 use App\Http\Controllers\Admin\DataDeletionRequestController;
 use App\Http\Controllers\Admin\EphemerisController;
 use App\Http\Controllers\Admin\FeatureAccessController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\CreditPackageController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\PackPreferenceController;
 use App\Http\Controllers\PromoShareController;
 use App\Http\Controllers\ReadingController;
 use App\Http\Controllers\ReadingExportController;
@@ -88,6 +90,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/account/deletion-request', [AccountController::class, 'storeDeletionRequest'])
         ->middleware(['feature:'.FeatureCatalog::ACCOUNT, 'throttle:5,60'])
         ->name('account.deletion-request.store');
+    Route::post('/account/packs', [PackPreferenceController::class, 'update'])
+        ->middleware('feature:'.FeatureCatalog::ACCOUNT)
+        ->name('account.packs.update');
     Route::get('/my-readings', [ReadingHistoryController::class, 'index'])
         ->middleware('feature:'.FeatureCatalog::HISTORY)
         ->name('readings.history');
@@ -151,6 +156,15 @@ Route::prefix('admin')
         Route::post('/games/{game}/toggle', [GameController::class, 'toggle'])->name('games.toggle');
         Route::post('/games/{game}/default', [GameController::class, 'makeDefault'])->name('games.default');
         Route::delete('/games/{game}', [GameController::class, 'destroy'])->name('games.destroy');
+
+        Route::get('/packs', [CardPackController::class, 'index'])->name('packs.index');
+        Route::get('/packs/create', [CardPackController::class, 'create'])->name('packs.create');
+        Route::post('/packs', [CardPackController::class, 'store'])->name('packs.store');
+        Route::get('/packs/{pack}/edit', [CardPackController::class, 'edit'])->name('packs.edit');
+        Route::put('/packs/{pack}', [CardPackController::class, 'update'])->name('packs.update');
+        Route::post('/packs/{pack}/toggle', [CardPackController::class, 'toggle'])->name('packs.toggle');
+        Route::post('/packs/{pack}/default', [CardPackController::class, 'makeDefault'])->name('packs.default');
+        Route::delete('/packs/{pack}', [CardPackController::class, 'destroy'])->name('packs.destroy');
 
         Route::get('/access', [FeatureAccessController::class, 'edit'])->name('feature-access.edit');
         Route::put('/access', [FeatureAccessController::class, 'update'])->name('feature-access.update');

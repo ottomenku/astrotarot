@@ -8,7 +8,8 @@
         $rules = is_array($rules) ? array_values($rules) : [];
         if ($rules === []) {
             $rules[] = [
-                'pack_slug' => $packs[0] ?? 'egi-orakulum',
+                'pack_type' => 'oracle',
+                'default_pack_id' => '',
                 'title_hu' => '',
                 'title_en' => '',
                 'info_mode' => 'astro',
@@ -145,7 +146,8 @@
         @include('admin.games.partials.rule-row', [
             'index' => '__INDEX__',
             'rule' => [
-                'pack_slug' => $packs[0] ?? 'egi-orakulum',
+                'pack_type' => 'oracle',
+                'default_pack_id' => '',
                 'title_hu' => '',
                 'title_en' => '',
                 'info_mode' => 'meaning',
@@ -165,9 +167,29 @@
 
             const nextIndex = () => list.querySelectorAll('[data-rule-row]').length;
 
+            const filterPacks = (row) => {
+                const type = row.querySelector('[data-pack-type]')?.value;
+                row.querySelectorAll('[data-default-pack] option[data-type]').forEach((option) => {
+                    const match = !type || option.getAttribute('data-type') === type;
+                    option.hidden = !match;
+                    option.disabled = !match;
+                    if (!match && option.selected) option.selected = false;
+                });
+            };
+
+            list.querySelectorAll('[data-rule-row]').forEach(filterPacks);
+            list.addEventListener('change', (event) => {
+                const typeSelect = event.target.closest('[data-pack-type]');
+                if (!typeSelect) return;
+                const row = typeSelect.closest('[data-rule-row]');
+                if (row) filterPacks(row);
+            });
+
             add.addEventListener('click', () => {
                 const html = template.innerHTML.replaceAll('__INDEX__', String(nextIndex()));
                 list.insertAdjacentHTML('beforeend', html);
+                const rows = list.querySelectorAll('[data-rule-row]');
+                filterPacks(rows[rows.length - 1]);
             });
 
             list.addEventListener('click', (event) => {

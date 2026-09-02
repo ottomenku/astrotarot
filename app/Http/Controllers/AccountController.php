@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CardPack;
 use App\Models\DataDeletionRequest;
 use App\Models\ReadingLog;
+use App\Models\UserPackPreference;
+use App\Services\FeatureAccessService;
+use App\Services\PackResolutionService;
 use App\Services\PersonalDataService;
+use App\Support\FeatureCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,7 +17,11 @@ use RuntimeException;
 
 class AccountController extends Controller
 {
-    public function __construct(private readonly PersonalDataService $personalData) {}
+    public function __construct(
+        private readonly PersonalDataService $personalData,
+        private readonly FeatureAccessService $features,
+        private readonly PackResolutionService $packs,
+    ) {}
 
     public function show(Request $request): View
     {
@@ -32,12 +41,34 @@ class AccountController extends Controller
             ->latest('id')
             ->first();
 
+        $prefs = $user->packPreferences()->get();
+        $figurePrefs = $prefs
+            ->where('role', UserPackPreference::ROLE_FIGURE)
+            ->keyBy('pack_type');
+        $skinPrefs = $prefs->groupBy('role');
+
+        $figureOptions = [];
+        foreach (CardPack::FIGURE_TYPES as $type) {
+            $figureOptions[$type] = $this->packs->figureOptions($type);
+        }
+
         return view('account.show', [
             'user' => $user,
             'readings' => $readings,
             'creditRequests' => $creditRequests,
             'pendingDeletion' => $pendingDeletion,
             'assetBase' => asset('templates/art-deco'),
+            'figureOptions' => $figureOptions,
+            'backOptions' => $this->packs->backOptions(),
+            'lightOptions' => $this->packs->backgroundOptions(CardPack::POLARITY_LIGHT),
+            'shadowOptions' => $this->packs->backgroundOptions(CardPack::POLARITY_SHADOW),
+            'figurePrefs' => $figurePrefs,
+            'backPrefs' => $skinPrefs->get(UserPackPreference::ROLE_CARD_BACK, collect())->keyBy('figure_pack_id'),
+            'lightPrefs' => $skinPrefs->get(UserPackPreference::ROLE_BACKGROUND_LIGHT, collect())->keyBy('figure_pack_id'),
+            'shadowPrefs' => $skinPrefs->get(UserPackPreference::ROLE_BACKGROUND_SHADOW, collect())->keyBy('figure_pack_id'),
+            'canChoosePacks' => $this->features->can($user, FeatureCatalog::PACKS_CHOOSE),
+            'canChooseBacks' => $this->features->can($user, FeatureCatalog::PACKS_BACKS),
+            'canChooseBackgrounds' => $this->features->can($user, FeatureCatalog::PACKS_BACKGROUNDS),
         ]);
     }
 

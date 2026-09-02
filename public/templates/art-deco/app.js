@@ -521,7 +521,14 @@
     return tmp.textContent.replace(/\s+/g, ' ').trim();
   }
 
+  function packSkin(deckKey) {
+    const slug = packSlug(deckKey);
+    return (gameConfig.packs && gameConfig.packs[slug]) || {};
+  }
+
   function cardBackSrc(deckKey) {
+    const skin = packSkin(deckKey);
+    if (skin.card_back) return skin.card_back;
     const slug = packSlug(deckKey);
     const deck = decksBySlug[slug];
     const relative = deck?.cardBack || 'card-back/card-back.png';
@@ -530,13 +537,28 @@
 
   function backgroundSrc(deckKey, variant) {
     if (!packHasBackgrounds(deckKey)) return '';
-    const slug = packSlug(deckKey);
+    const skin = packSkin(deckKey);
     const tone = variant === 'shadow' ? 'shadow' : 'light';
+    const resolved = tone === 'shadow' ? skin.background_shadow : skin.background_light;
+    if (resolved) return resolved;
+    const slug = packSlug(deckKey);
     return `${packBase}/${slug}/backgrounds/shared-${tone}.png`;
   }
 
-  function figureSrc(deckKey, figureId) {
+  function packHasPolarFigures(slug) {
+    const key = packSlug(slug);
+    if (gameConfig.packs && gameConfig.packs[key] && typeof gameConfig.packs[key].polar_figures === 'boolean') {
+      return gameConfig.packs[key].polar_figures;
+    }
+    return decksBySlug[key]?.polarFigures === true;
+  }
+
+  function figureSrc(deckKey, figureId, variant) {
     const slug = packSlug(deckKey);
+    if (packHasPolarFigures(slug)) {
+      const tone = variant === 'shadow' ? 'shadow' : 'light';
+      return `${packBase}/${slug}/figures/${figureId}-${tone}.png`;
+    }
     if (slug === 'tarot') {
       if (figureId === 'significator') {
         return `${packBase}/${slug}/figures/significator.png`;
@@ -746,7 +768,7 @@
           <p class="polarity-label ${polarityClass(draw.variant)}">${polarityLabel(draw.variant)}</p>
           <div class="card-art${fullBleed ? ' is-full-bleed' : ''}">
             ${bgTag}
-            <img class="card-figure" src="${figureSrc(draw.deck, draw.figureId)}" alt="" decoding="async">
+            <img class="card-figure" src="${figureSrc(draw.deck, draw.figureId, draw.variant)}" alt="" decoding="async">
             <span class="roman">${roman(index + 1)}</span>
           </div>
           <div class="card-caption">

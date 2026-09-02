@@ -60,6 +60,9 @@ final class PackageBody
             FeatureCatalog::CREDITS_REQUEST => ['hu' => 'Kreditigénylés', 'en' => 'Credit request'],
             FeatureCatalog::CREDITS_PROMO => ['hu' => 'Csomag promóció', 'en' => 'Package promo'],
             FeatureCatalog::ACCOUNT => ['hu' => 'Beállítások', 'en' => 'Settings'],
+            FeatureCatalog::PACKS_CHOOSE => ['hu' => 'Pakli választása', 'en' => 'Choose a pack'],
+            FeatureCatalog::PACKS_BACKS => ['hu' => 'Hátlap választása', 'en' => 'Choose a card back'],
+            FeatureCatalog::PACKS_BACKGROUNDS => ['hu' => 'Háttér választása', 'en' => 'Choose backgrounds'],
         ];
 
         return $defaults[$key][$locale] ?? $key;

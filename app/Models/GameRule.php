@@ -24,6 +24,8 @@ class GameRule extends Model
     protected $fillable = [
         'game_id',
         'pack_slug',
+        'pack_type',
+        'default_pack_id',
         'title_hu',
         'title_en',
         'info_mode',
@@ -42,6 +44,11 @@ class GameRule extends Model
     public function game(): BelongsTo
     {
         return $this->belongsTo(Game::class);
+    }
+
+    public function defaultPack(): BelongsTo
+    {
+        return $this->belongsTo(CardPack::class, 'default_pack_id');
     }
 
     public function title(?string $locale = null): string
