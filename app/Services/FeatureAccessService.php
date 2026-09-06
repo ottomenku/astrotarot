@@ -85,6 +85,16 @@ class FeatureAccessService
             return $denied;
         }
 
+        if ($user->isAdmin()) {
+            return [
+                'allowed' => true,
+                'cost' => 0,
+                'will_charge' => false,
+                'status' => 200,
+                'message' => '',
+            ];
+        }
+
         $rule = $this->rule($key);
         if ($rule === null) {
             return $denied;

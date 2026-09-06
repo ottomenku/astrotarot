@@ -166,6 +166,29 @@ class FeatureAccessTest extends TestCase
             ->assertOk();
     }
 
+    public function test_admin_bypasses_package_and_credit_gates(): void
+    {
+        $admin = User::factory()->admin()->create(['credits' => 0, 'plan' => 'free']);
+
+        $this->actingAs($admin)
+            ->get(route('readings.history'))
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->post(route('reading.export.pdf'), [
+                'question' => 'Mit tegyek most?',
+                'locale' => 'hu',
+                'cards' => [
+                    ['figure_id' => 'mars', 'figure_name' => 'Mars', 'deck' => 'oracle', 'slot_title' => 'Mester'],
+                    ['figure_id' => '01-the-magician', 'figure_name' => 'A Mágus', 'deck' => 'tarot', 'slot_title' => 'Figura'],
+                ],
+                'answers' => [['mode' => 'initial', 'label' => 'Olvasat', 'text' => 'Válasz']],
+            ])
+            ->assertOk();
+
+        $this->assertSame(0, (int) $admin->fresh()->credits);
+    }
+
     public function test_reading_uses_configured_credit_cost(): void
     {
         config([

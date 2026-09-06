@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Template;
 use App\Services\AppSettings;
 use App\Services\CardDrawProfileService;
+use App\Services\CreditService;
 use App\Services\FeatureAccessService;
 use App\Services\GameConfigService;
 use App\Support\CardPackCatalog;
@@ -30,6 +31,10 @@ class HomeController extends Controller
 
         if ($template && view()->exists("templates.{$template->slug}.home")) {
             $user = auth()->user();
+            if ($user?->isAdmin()) {
+                app(CreditService::class)->grantDailyLoginBonus($user);
+                $user->refresh();
+            }
             $snapshot = app(FeatureAccessService::class)->snapshot($user);
 
             return view("templates.{$template->slug}.home", [

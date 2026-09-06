@@ -74,6 +74,25 @@ class CreditServiceTest extends TestCase
         $this->assertTrue($service->hasAstroMottoAccess($expert));
     }
 
+    public function test_admin_gets_monthly_credit_allowance(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'credits' => 12,
+            'plan' => CreditService::PLAN_FREE,
+            'last_daily_credit_at' => null,
+        ]);
+
+        $service = app(CreditService::class);
+        $this->assertSame(1000, $service->grantDailyLoginBonus($admin));
+        $this->assertSame(1000, (int) $admin->fresh()->credits);
+        $this->assertSame(1000, $service->grantDailyLoginBonus($admin->fresh()));
+
+        $admin->forceFill(['credits' => 40])->save();
+        $this->travelTo(now()->addMonth()->startOfMonth()->addDay());
+        $this->assertSame(1000, $service->grantDailyLoginBonus($admin->fresh()));
+        $this->assertSame(1000, (int) $admin->fresh()->credits);
+    }
+
     public function test_unknown_package_and_plan_return_null(): void
     {
         $service = app(CreditService::class);

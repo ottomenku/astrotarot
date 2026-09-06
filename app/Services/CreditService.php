@@ -26,6 +26,8 @@ class CreditService
 
     public const REQUEST_PACK_CREDITS = 50;
 
+    public const ADMIN_MONTHLY_CREDITS = 1000;
+
     public const ASTROMOTTO_URL = 'https://astromotto.hu';
 
     /**
@@ -81,6 +83,9 @@ class CreditService
         return (int) DB::transaction(function () use ($user) {
             /** @var User $locked */
             $locked = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            if ($locked->isAdmin()) {
+                return $this->refillAdminMonthlyCredits($locked);
+            }
             $plan = $locked->plan ?: self::PLAN_FREE;
             $package = $this->plan($plan);
 
@@ -172,6 +177,20 @@ class CreditService
     public function hasAstroMottoAccess(User $user): bool
     {
         return app(FeatureAccessService::class)->can($user, FeatureCatalog::ASTROMOTTO);
+    }
+
+    private function refillAdminMonthlyCredits(User $locked): int
+    {
+        $monthStart = now()->startOfMonth();
+        if ($locked->last_daily_credit_at && $locked->last_daily_credit_at->gte($monthStart)) {
+            return (int) $locked->credits;
+        }
+
+        $locked->credits = max((int) $locked->credits, self::ADMIN_MONTHLY_CREDITS);
+        $locked->last_daily_credit_at = now();
+        $locked->save();
+
+        return (int) $locked->credits;
     }
 
     /**
