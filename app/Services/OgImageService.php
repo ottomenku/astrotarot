@@ -14,8 +14,45 @@ class OgImageService
     public function figureAbsolutePath(string $deck, string $figureId, ?string $variant = null): ?string
     {
         $relative = $this->figureRelativePath($deck, $figureId, $variant);
+        if ($relative === null) {
+            return null;
+        }
 
-        return $relative === null ? null : public_path($relative);
+        $absolute = public_path($relative);
+
+        return is_file($absolute) ? $absolute : null;
+    }
+
+    /**
+     * Small JPEG of the drawn card for PDF embedding.
+     */
+    public function compactCardJpeg(string $deck, string $figureId, ?string $variant = null, int $width = 240, int $height = 360): ?string
+    {
+        if (! $this->canGenerate()) {
+            return null;
+        }
+
+        $figurePath = $this->figureAbsolutePath($deck, $figureId, $variant);
+        if ($figurePath === null) {
+            return null;
+        }
+
+        $composed = $this->composeCard(
+            $this->backgroundAbsolutePath($variant ?? 'positive', $deck),
+            $figurePath,
+            $width,
+            $height
+        );
+        if ($composed === null) {
+            return null;
+        }
+
+        ob_start();
+        imagejpeg($composed, null, 82);
+        $binary = ob_get_clean();
+        imagedestroy($composed);
+
+        return is_string($binary) && $binary !== '' ? $binary : null;
     }
 
     public function figurePublicUrl(string $deck, string $figureId, ?string $variant = null): ?string

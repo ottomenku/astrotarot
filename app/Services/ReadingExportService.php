@@ -80,13 +80,11 @@ class ReadingExportService
                 'variant' => (string) ($card['variant'] ?? 'positive'),
                 'deck' => (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot')),
                 'astro_caption' => (string) ($card['astro_caption'] ?? ''),
-                'image_src' => $this->canEmbedImages()
-                    ? $this->cardImageSrc(
-                        (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot')),
-                        (string) ($card['figure_id'] ?? ''),
-                        (string) ($card['variant'] ?? $card['polarity'] ?? 'positive')
-                    )
-                    : null,
+                'image_src' => $this->cardImageSrc(
+                    (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot')),
+                    (string) ($card['figure_id'] ?? ''),
+                    (string) ($card['variant'] ?? $card['polarity'] ?? 'positive')
+                ),
                 'image_url' => $this->ogImages->figurePublicUrl(
                     (string) ($card['deck'] ?? ($index === 0 ? 'oracle' : 'tarot')),
                     (string) ($card['figure_id'] ?? ''),
@@ -128,12 +126,16 @@ class ReadingExportService
      */
     public function makePdf(array $payload): string
     {
+        $public = realpath(public_path()) ?: public_path();
+        $dompdfRoot = realpath(base_path('vendor/dompdf/dompdf')) ?: base_path('vendor/dompdf/dompdf');
         $options = new Options;
         $options->set('isRemoteEnabled', false);
         $options->set('isHtml5ParserEnabled', true);
         $options->set('defaultFont', 'DejaVu Sans');
+        $options->setChroot([$public, $dompdfRoot]);
 
         $dompdf = new Dompdf($options);
+        $dompdf->setBasePath($public);
         $dompdf->loadHtml($this->renderHtml($payload, true), 'UTF-8');
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
@@ -163,23 +165,13 @@ class ReadingExportService
         };
     }
 
-    private function canEmbedImages(): bool
-    {
-        return $this->ogImages->canGenerate();
-    }
-
     private function cardImageSrc(string $deck, string $figureId, ?string $variant = null): ?string
     {
-        $absolute = $this->ogImages->figureAbsolutePath($deck, $figureId, $variant);
-        if ($absolute === null) {
+        $jpeg = $this->ogImages->compactCardJpeg($deck, $figureId, $variant);
+        if ($jpeg === null) {
             return null;
         }
 
-        $binary = @file_get_contents($absolute);
-        if ($binary === false || $binary === '') {
-            return null;
-        }
-
-        return 'data:image/png;base64,'.base64_encode($binary);
+        return 'data:image/jpeg;base64,'.base64_encode($jpeg);
     }
 }

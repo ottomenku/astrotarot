@@ -87,5 +87,64 @@ class ReadingExportServiceTest extends TestCase
         $this->assertStringContainsString('What should I do?', $html);
         $this->assertStringContainsString('Go deeper.', $html);
         $this->assertSame('Deeper reading', $payload['answers'][0]['label']);
+        if (! extension_loaded('gd')) {
+            $this->assertNull($payload['cards'][0]['image_src']);
+
+            return;
+        }
+        $this->assertNotEmpty($payload['cards'][0]['image_src']);
+        $this->assertNotEmpty($payload['cards'][1]['image_src']);
+        $this->assertStringContainsString('class="card-img"', $html);
+        $this->assertStringStartsWith('data:image/jpeg;base64,', $payload['cards'][0]['image_src']);
+    }
+
+    public function test_pdf_embeds_card_images(): void
+    {
+        if (! extension_loaded('gd')) {
+            $this->markTestSkipped('GD is required to embed card images in PDFs.');
+        }
+        $service = app(ReadingExportService::class);
+        $payload = $service->normalizePayload([
+            'question' => 'Mit tegyek?',
+            'cards' => [
+                ['figure_id' => 'mars', 'deck' => 'oracle', 'figure_name' => 'Mars'],
+                ['figure_id' => '01-the-magician', 'deck' => 'tarot', 'variant' => 'shadow', 'figure_name' => 'A Mágus'],
+            ],
+            'answers' => [['text' => 'Válasz']],
+        ]);
+
+        $pdf = $service->makePdf($payload);
+
+        $this->assertStringStartsWith('%PDF', $pdf);
+        $this->assertTrue(
+            (bool) preg_match('/\/Subtype\s*\/Image/', $pdf),
+            'PDF should embed card images as XObjects'
+        );
+    }
+
+    public function test_pdf_embeds_fullbleed_pack_images(): void
+    {
+        if (! extension_loaded('gd')) {
+            $this->markTestSkipped('GD is required to embed card images in PDFs.');
+        }
+        $service = app(ReadingExportService::class);
+        $payload = $service->normalizePayload([
+            'question' => 'Mit tegyek?',
+            'cards' => [
+                ['figure_id' => 'sun', 'deck' => 'tacsko-orakulum', 'figure_name' => 'Nap'],
+                ['figure_id' => '00-the-fool', 'deck' => 'tacsko-tarot', 'figure_name' => 'A Bolond'],
+            ],
+            'answers' => [['text' => 'Válasz']],
+        ]);
+
+        $this->assertNotEmpty($payload['cards'][0]['image_src']);
+        $this->assertNotEmpty($payload['cards'][1]['image_src']);
+
+        $pdf = $service->makePdf($payload);
+        $this->assertStringStartsWith('%PDF', $pdf);
+        $this->assertTrue(
+            (bool) preg_match('/\/Subtype\s*\/Image/', $pdf),
+            'PDF should embed full-bleed pack images as XObjects'
+        );
     }
 }
