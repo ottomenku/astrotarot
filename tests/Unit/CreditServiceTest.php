@@ -79,7 +79,7 @@ class CreditServiceTest extends TestCase
         $admin = User::factory()->admin()->create([
             'credits' => 12,
             'plan' => CreditService::PLAN_FREE,
-            'last_daily_credit_at' => null,
+            'last_monthly_credit_at' => null,
         ]);
 
         $service = app(CreditService::class);

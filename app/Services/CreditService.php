@@ -182,12 +182,12 @@ class CreditService
     private function refillAdminMonthlyCredits(User $locked): int
     {
         $monthStart = now()->startOfMonth();
-        if ($locked->last_daily_credit_at && $locked->last_daily_credit_at->gte($monthStart)) {
+        if ($locked->last_monthly_credit_at && $locked->last_monthly_credit_at->gte($monthStart)) {
             return (int) $locked->credits;
         }
 
         $locked->credits = max((int) $locked->credits, self::ADMIN_MONTHLY_CREDITS);
-        $locked->last_daily_credit_at = now();
+        $locked->last_monthly_credit_at = now();
         $locked->save();
 
         return (int) $locked->credits;
