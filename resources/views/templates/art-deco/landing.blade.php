@@ -16,6 +16,7 @@
                 <span class="brand-name">Astro<span>Tarot</span></span>
             </a>
             <div class="header-actions">
+                <a class="landing-login-link" href="{{ route('blog.index') }}">{{ __('messages.blog_title') }}</a>
                 <label class="language-select">
                     <span class="sr-only">{{ __('messages.language') }}</span>
                     <select onchange="window.location.href=this.value">

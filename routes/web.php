@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BlogPostController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\CardPackController;
 use App\Http\Controllers\Admin\DataDeletionRequestController;
@@ -19,6 +20,9 @@ use App\Http\Controllers\Auth\LegalAcceptController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Controllers\BlogCommentController;
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BlogLikeController;
 use App\Http\Controllers\CreditPackageController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LegalPageController;
@@ -44,6 +48,9 @@ Route::post('/reading', ReadingController::class)
 Route::get('/aszf', [LegalPageController::class, 'terms'])->name('legal.terms');
 Route::get('/adatkezeles', [LegalPageController::class, 'privacy'])->name('legal.privacy');
 Route::get('/kapcsolat', [LegalPageController::class, 'contact'])->name('legal.contact');
+
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{post}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
@@ -108,6 +115,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/reading/share', [ReadingExportController::class, 'share'])
         ->middleware('throttle:12,1')
         ->name('reading.share.create');
+
+    Route::post('/blog/{post}/like', BlogLikeController::class)
+        ->middleware('throttle:30,1')
+        ->name('blog.like');
+    Route::post('/blog/{post}/comments', [BlogCommentController::class, 'store'])
+        ->middleware('throttle:8,1')
+        ->name('blog.comments.store');
+    Route::delete('/blog/{post}/comments/{comment}', [BlogCommentController::class, 'destroy'])
+        ->middleware('throttle:20,1')
+        ->name('blog.comments.destroy');
 });
 
 Route::get('/share/{token}', [ReadingExportController::class, 'show'])
@@ -165,6 +182,13 @@ Route::prefix('admin')
         Route::post('/packs/{pack}/toggle', [CardPackController::class, 'toggle'])->name('packs.toggle');
         Route::post('/packs/{pack}/default', [CardPackController::class, 'makeDefault'])->name('packs.default');
         Route::delete('/packs/{pack}', [CardPackController::class, 'destroy'])->name('packs.destroy');
+
+        Route::get('/blog', [BlogPostController::class, 'index'])->name('blog.index');
+        Route::get('/blog/create', [BlogPostController::class, 'create'])->name('blog.create');
+        Route::post('/blog', [BlogPostController::class, 'store'])->name('blog.store');
+        Route::get('/blog/{post}/edit', [BlogPostController::class, 'edit'])->name('blog.edit');
+        Route::put('/blog/{post}', [BlogPostController::class, 'update'])->name('blog.update');
+        Route::delete('/blog/{post}', [BlogPostController::class, 'destroy'])->name('blog.destroy');
 
         Route::get('/access', [FeatureAccessController::class, 'edit'])->name('feature-access.edit');
         Route::put('/access', [FeatureAccessController::class, 'update'])->name('feature-access.update');

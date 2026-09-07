@@ -303,6 +303,51 @@ footer.site-footer { position:relative; z-index:2; padding:22px 16px 28px; text-
 .contact-email a { color:var(--gold-pale); font:italic 20px/1.4 Georgia,serif; text-decoration:none; }
 .contact-email a:hover { text-decoration:underline; text-underline-offset:4px; }
 
+.blog-page { max-width:1100px; margin:0 auto; padding:28px 22px 56px; }
+.blog-page h1, .blog-article h1 { margin:0 0 10px; color:var(--gold-pale); font:italic clamp(28px,5vw,40px)/1.15 Georgia,serif; }
+.blog-page .credits-lead { margin:0 0 28px; color:#cfc9d6; font:italic 16px/1.5 Georgia,serif; max-width:40rem; }
+.blog-grid { display:grid; gap:18px; }
+@media (min-width:720px) { .blog-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+@media (min-width:980px) { .blog-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+.blog-card { display:flex; flex-direction:column; border:1px solid rgba(217,184,110,.28); background:rgba(255,255,255,.03); overflow:hidden; }
+.blog-card-media { display:block; aspect-ratio:1200/630; background:#0c0d1b; }
+.blog-card-media img { width:100%; height:100%; object-fit:cover; display:block; }
+.blog-card-body { padding:16px 16px 18px; display:grid; gap:8px; }
+.blog-card-body h2 { margin:0; font:italic 22px/1.2 Georgia,serif; }
+.blog-card-body h2 a { color:var(--gold-pale); text-decoration:none; }
+.blog-card-body h2 a:hover { color:var(--gold); }
+.blog-card-body p { margin:0; color:#b9b4c0; font:14px/1.45 Georgia,serif; }
+.blog-card-meta, .blog-card-stats { color:var(--gold); font:10px Georgia,serif; letter-spacing:1.2px; text-transform:uppercase; }
+.blog-empty { color:#9a94a4; font:italic 16px Georgia,serif; }
+.blog-article { max-width:760px; margin:0 auto; padding:28px 22px 64px; }
+.blog-article .credits-kicker a { color:inherit; text-decoration:none; }
+.blog-article-meta { margin:0 0 22px; color:#9a94a4; font:13px Georgia,serif; }
+.blog-cover { width:100%; height:auto; margin:0 0 22px; border:1px solid rgba(217,184,110,.28); display:block; }
+.blog-excerpt { margin:0 0 22px; color:#cfc9d6; font:italic 18px/1.5 Georgia,serif; }
+.blog-body { color:#d8d2dc; font:16px/1.7 Georgia,serif; }
+.blog-body p, .blog-body ul, .blog-body ol, .blog-body blockquote { margin:0 0 1em; }
+.blog-body h2, .blog-body h3 { color:var(--gold-pale); font:italic 24px/1.25 Georgia,serif; margin:1.4em 0 .5em; }
+.blog-body a { color:var(--gold-pale); }
+.blog-body img { max-width:100%; height:auto; }
+.blog-draft-banner { margin:0 0 12px; color:#f2ddb0; font:13px Georgia,serif; }
+.blog-engage { margin:28px 0; padding:18px 0; border-top:1px solid rgba(217,184,110,.22); border-bottom:1px solid rgba(217,184,110,.22); }
+.blog-engage-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.blog-like-btn { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid rgba(217,184,110,.45); background:rgba(217,184,110,.08); color:var(--gold-pale); font:12px Georgia,serif; letter-spacing:.4px; cursor:pointer; text-decoration:none; }
+.blog-like-btn.is-on { background:#1877F2; border-color:#1877F2; color:#fff; }
+.blog-comments h2 { margin:0 0 16px; color:var(--gold-pale); font:italic 22px Georgia,serif; }
+.blog-comment-form { display:grid; gap:8px; margin-bottom:22px; }
+.blog-comment-form label { color:var(--gold); font:10px Georgia,serif; letter-spacing:1.2px; text-transform:uppercase; }
+.blog-comment-form textarea { width:100%; padding:12px 14px; border:1px solid rgba(217,184,110,.35); background:rgba(8,9,18,.72); color:var(--gold-pale); font:15px/1.45 Georgia,serif; }
+.blog-comment-form button { justify-self:start; padding:10px 16px; border:1px solid rgba(217,184,110,.5); background:rgba(217,184,110,.12); color:var(--gold-pale); font:13px Georgia,serif; cursor:pointer; }
+.blog-comment-login, .blog-flash { color:#cfc9d6; font:14px Georgia,serif; }
+.blog-comment-login a, .blog-error { color:var(--gold-pale); }
+.blog-comment-list { list-style:none; margin:0; padding:0; display:grid; gap:16px; }
+.blog-comment-list li { padding-bottom:14px; border-bottom:1px solid rgba(217,184,110,.14); }
+.blog-comment-meta { margin:0 0 6px; color:var(--gold); font:12px Georgia,serif; }
+.blog-comment-list p { margin:0; color:#d8d2dc; font:15px/1.5 Georgia,serif; }
+.blog-comment-list form button { margin-top:8px; border:0; background:transparent; color:#9a94a4; font:12px Georgia,serif; cursor:pointer; }
+.blog-pager { margin-top:28px; color:var(--gold-pale); }
+
 @media (max-width:639px) {
   .deck-arrow { width:34px; height:40px; font-size:22px; }
   .reading-panel { padding:14px 14px 36px; }

@@ -16,4 +16,17 @@ class HtmlSanitizerTest extends TestCase
         $this->assertStringNotContainsString('script', $html);
         $this->assertStringNotContainsString('onclick', $html);
     }
+
+    public function test_article_body_allows_safe_images_and_strips_scripts(): void
+    {
+        $html = HtmlSanitizer::articleBody(
+            '<p>ok</p><img src="/media/blog-covers/a.jpg" alt="Borító" onclick="x()"><img src="javascript:alert(1)"><script>bad()</script>'
+        );
+
+        $this->assertStringContainsString('<p>ok</p>', $html);
+        $this->assertStringContainsString('<img src="/media/blog-covers/a.jpg" alt="Borító">', $html);
+        $this->assertStringNotContainsString('javascript', $html);
+        $this->assertStringNotContainsString('script', $html);
+        $this->assertStringNotContainsString('onclick', $html);
+    }
 }

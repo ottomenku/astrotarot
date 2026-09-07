@@ -97,6 +97,7 @@
                     <strong data-credits-balance>{{ (int) auth()->user()->credits }}</strong>
                 </p>
                 @php $menuIndex = 1; @endphp
+                <a href="{{ route('blog.index') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>{{ __('messages.blog_title') }}<b>↗</b></a>
                 @if(auth()->user()->isAdmin())
                     <a href="{{ route('admin.ephemeris.index') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>Admin<b>↗</b></a>
                 @endif
@@ -114,7 +115,8 @@
                     <button type="submit"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>{{ __('messages.logout') }}<b>↗</b></button>
                 </form>
             @else
-                <button type="button" data-auth-open><span>01</span>{{ __('messages.login') }}<b>↗</b></button>
+                <a href="{{ route('blog.index') }}"><span>01</span>{{ __('messages.blog_title') }}<b>↗</b></a>
+                <button type="button" data-auth-open><span>02</span>{{ __('messages.login') }}<b>↗</b></button>
             @endauth
         </nav>
         <p>Égi Orákulum + Tarot</p>
