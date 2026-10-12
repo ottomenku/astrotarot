@@ -43,6 +43,22 @@
         .pkg-icon-sun { color:#F0A020; }
         .pkg-icon-crown { color:#D4AF37; }
         .pkg-icon-star { color:#E8C547; }
+        .admin-icon { width:18px; height:18px; display:block; }
+        .admin-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:2rem; height:2rem; padding:0; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:.35rem; text-decoration:none; }
+        .admin-icon-btn.is-blue { color:#1565c0; border-color:#90caf9; background:#e3f2fd; }
+        .admin-icon-btn.is-red { color:#c62828; border-color:#ef9a9a; background:#ffebee; }
+        .admin-icon-btn.is-danger { color:#c62828; }
+        .admin-icon-btn.is-on { color:#2e7d32; border-color:#a5d6a7; background:#e8f5e9; }
+        .admin-actions { display:flex; gap:.35rem; align-items:center; white-space:nowrap; }
+        .admin-actions form { display:inline; margin:0; }
+        .admin-col-icon { width:2.2rem; padding-left:.2rem; padding-right:.2rem; }
+        .admin-role-icon { display:inline-flex; color:var(--muted); }
+        .admin-role-icon .pkg-icon, .admin-role-icon .admin-icon { width:16px; height:16px; }
+        .admin-credit-form { display:flex; align-items:center; gap:.35rem; margin:0; }
+        .admin-credit-form input { width:4.2rem; padding:.25rem .4rem; }
+        .admin-credit-form .admin-icon-btn { width:1.85rem; height:1.85rem; }
+        table.admin-compact th, table.admin-compact td { padding:.45rem .35rem; }
+        tr.is-banned td { color:#8a1f11; background:rgba(245,194,192,.28); }
     </style>
 </head>
 <body>

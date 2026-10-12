@@ -133,6 +133,22 @@ class CreditService
         });
     }
 
+    public function grant(User $user, int $amount): int
+    {
+        if ($amount <= 0) {
+            return (int) $user->credits;
+        }
+
+        return (int) DB::transaction(function () use ($user, $amount) {
+            /** @var User $locked */
+            $locked = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $locked->credits = (int) $locked->credits + $amount;
+            $locked->save();
+
+            return (int) $locked->credits;
+        });
+    }
+
     public function spend(User $user, int $cost): int
     {
         if ($cost <= 0) {

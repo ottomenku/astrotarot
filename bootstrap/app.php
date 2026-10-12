@@ -2,7 +2,9 @@
 
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureFeatureAccess;
+use App\Http\Middleware\EnsurePaidFeatures;
 use App\Http\Middleware\EnsureSiteOpen;
+use App\Http\Middleware\EnsureUserNotBanned;
 use App\Http\Middleware\RedirectToCanonicalHost;
 use App\Http\Middleware\RestrictGuestsWhenRegistrationClosed;
 use App\Http\Middleware\SetLocale;
@@ -22,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureAdmin::class,
             'feature' => EnsureFeatureAccess::class,
+            'paid' => EnsurePaidFeatures::class,
         ]);
 
         $middleware->web(
@@ -30,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ],
             append: [
                 SetLocale::class,
+                EnsureUserNotBanned::class,
                 EnsureSiteOpen::class,
                 RestrictGuestsWhenRegistrationClosed::class,
             ],

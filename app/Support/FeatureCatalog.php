@@ -32,8 +32,6 @@ final class FeatureCatalog
 
     public const PACKS_BACKS = 'packs.backs';
 
-    public const PACKS_BACKGROUNDS = 'packs.backgrounds';
-
     public const LOGIC_AND = 'and';
 
     public const LOGIC_OR = 'or';
@@ -96,6 +94,7 @@ final class FeatureCatalog
                     'account.readings.destroy',
                     'account.readings.destroy-all',
                     'account.deletion-request.store',
+                    'account.password.update',
                     'account.packs.update',
                 ],
             ],
@@ -104,10 +103,6 @@ final class FeatureCatalog
                 'routes' => ['account.packs.update'],
             ],
             self::PACKS_BACKS => [
-                'charges' => false,
-                'routes' => ['account.packs.update'],
-            ],
-            self::PACKS_BACKGROUNDS => [
                 'charges' => false,
                 'routes' => ['account.packs.update'],
             ],
@@ -149,7 +144,6 @@ final class FeatureCatalog
             self::ASTROMOTTO,
             self::PACKS_CHOOSE,
             self::PACKS_BACKS,
-            self::PACKS_BACKGROUNDS,
         ];
     }
 }

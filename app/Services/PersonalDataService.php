@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\BlogComment;
+use App\Models\BlogLike;
+use App\Models\BlogPost;
 use App\Models\DataDeletionRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -48,7 +51,7 @@ class PersonalDataService
         }
 
         DB::transaction(function () use ($request, $admin, $user) {
-            $this->eraseConversations($user);
+            $this->eraseStoredData($user);
             $this->anonymizeUser($user);
 
             $request->update([
@@ -72,6 +75,15 @@ class PersonalDataService
         ]);
     }
 
+    public function eraseStoredData(User $user): void
+    {
+        $this->eraseConversations($user);
+        $user->packPreferences()->delete();
+        BlogComment::query()->where('user_id', $user->id)->delete();
+        BlogLike::query()->where('user_id', $user->id)->delete();
+        BlogPost::query()->where('user_id', $user->id)->update(['user_id' => null]);
+    }
+
     public function anonymizeUser(User $user): void
     {
         if ($user->anonymized_at !== null) {
@@ -89,6 +101,12 @@ class PersonalDataService
             'remember_token' => null,
             'email_verified_at' => null,
             'template_id' => null,
+            'credits' => 0,
+            'plan' => 'free',
+            'last_daily_credit_at' => null,
+            'last_monthly_credit_at' => null,
+            'plan_started_at' => null,
+            'banned_at' => null,
             'anonymized_at' => now(),
         ])->save();
 

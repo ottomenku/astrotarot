@@ -62,7 +62,6 @@ final class PackageBody
             FeatureCatalog::ACCOUNT => ['hu' => 'Beállítások', 'en' => 'Settings'],
             FeatureCatalog::PACKS_CHOOSE => ['hu' => 'Pakli választása', 'en' => 'Choose a pack'],
             FeatureCatalog::PACKS_BACKS => ['hu' => 'Hátlap választása', 'en' => 'Choose a card back'],
-            FeatureCatalog::PACKS_BACKGROUNDS => ['hu' => 'Háttér választása', 'en' => 'Choose backgrounds'],
         ];
 
         return $defaults[$key][$locale] ?? $key;

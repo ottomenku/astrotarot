@@ -20,15 +20,6 @@ class CardPackCatalogTest extends TestCase
         $this->assertContains('cosplay-tarot', $slugs);
         $this->assertContains('tacsko-orakulum', $slugs);
         $this->assertContains('tacsko-tarot', $slugs);
-        $this->assertTrue(CardPackCatalog::hasBackgrounds('egi-orakulum'));
-        $this->assertTrue(CardPackCatalog::hasBackgrounds('tarot'));
-        $this->assertFalse(CardPackCatalog::hasBackgrounds('cigany-kartya'));
-        $this->assertFalse(CardPackCatalog::hasBackgrounds('anime-orakulum'));
-        $this->assertFalse(CardPackCatalog::hasBackgrounds('anime-tarot'));
-        $this->assertFalse(CardPackCatalog::hasBackgrounds('cosplay-orakulum'));
-        $this->assertFalse(CardPackCatalog::hasBackgrounds('cosplay-tarot'));
-        $this->assertFalse(CardPackCatalog::hasBackgrounds('tacsko-orakulum'));
-        $this->assertFalse(CardPackCatalog::hasBackgrounds('tacsko-tarot'));
         $this->assertTrue(CardPackCatalog::hasPolarFigures('anime-orakulum'));
         $this->assertTrue(CardPackCatalog::hasPolarFigures('anime-tarot'));
         $this->assertFalse(CardPackCatalog::hasPolarFigures('cosplay-orakulum'));
@@ -44,7 +35,7 @@ class CardPackCatalogTest extends TestCase
         $this->assertSame('cigany-kartya', CardPackCatalog::canonicalize('cigany'));
     }
 
-    public function test_resolves_figure_and_background_paths(): void
+    public function test_resolves_figure_paths(): void
     {
         $this->assertSame(
             'card-pack/egi-orakulum/figures/venus.png',
@@ -54,7 +45,6 @@ class CardPackCatalogTest extends TestCase
             'card-pack/tarot/figures/minors/cups-04.png',
             CardPackCatalog::figureRelative('tarot', 'cups-04')
         );
-        $this->assertNotNull(CardPackCatalog::backgroundRelative('egi-orakulum', 'shadow'));
         $this->assertSame(
             'card-pack/anime-orakulum/figures/sun-light.png',
             CardPackCatalog::figureRelative('anime-orakulum', 'sun', 'light')
@@ -75,6 +65,5 @@ class CardPackCatalogTest extends TestCase
             'card-pack/tacsko-orakulum/figures/sun.png',
             CardPackCatalog::figureRelative('tacsko-orakulum', 'sun')
         );
-        $this->assertNull(CardPackCatalog::backgroundRelative('cigany-kartya', 'light'));
     }
 }

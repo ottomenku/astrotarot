@@ -6,6 +6,7 @@ use App\Models\FeatureAccess;
 use App\Models\Package;
 use App\Models\Template;
 use App\Models\User;
+use App\Services\AppSettings;
 use App\Services\CardDrawProfileService;
 use App\Support\FeatureCatalog;
 use App\Support\PackageBody;
@@ -293,8 +294,82 @@ class FeatureAccessTest extends TestCase
             ->get(route('home'))
             ->assertOk()
             ->assertSee('pkg-icon-heart', false)
-            ->assertSee('pkg-icon-crown', false)
+            ->assertDontSee('pkg-icon-crown', false)
             ->assertSee('✦1', false)
             ->assertSee('data-share-pdf', false);
+    }
+
+    public function test_feature_mark_uses_the_cheapest_granting_package(): void
+    {
+        $marks = app(\App\Services\FeatureAccessService::class);
+
+        $pdf = $marks->marks(FeatureCatalog::PDF);
+        $this->assertSame(['premium'], array_column($pdf['packages'], 'slug'));
+
+        $motto = $marks->marks(FeatureCatalog::ASTROMOTTO);
+        $this->assertSame(['expert'], array_column($motto['packages'], 'slug'));
+    }
+
+    public function test_disabling_paid_features_opens_every_feature_and_hides_commerce(): void
+    {
+        app(AppSettings::class)->putMany([
+            AppSettings::PAID_FEATURES_ENABLED => '0',
+        ]);
+
+        Template::factory()->create([
+            'name' => 'Art Deco',
+            'slug' => 'art-deco',
+            'is_active' => true,
+        ]);
+
+        $this->mock(CardDrawProfileService::class, function ($mock) {
+            $mock->shouldReceive('forNow')->andReturn([
+                'sun_sign' => 'leo',
+                'element' => 'tűz',
+                'modality' => 'fő',
+                'tone' => 'pozitív',
+                'variant' => 'positive',
+                'tones' => ['pozitív', 'negatív', 'pozitív'],
+                'variants' => ['positive', 'shadow', 'positive'],
+                'slots' => ['leo', 'fire', 'cardinal'],
+                'chart_mode' => 'now',
+                'datetime_utc' => '2026-08-10T12:00:00Z',
+            ]);
+        });
+
+        $free = User::factory()->create(['plan' => 'free', 'credits' => 0]);
+        \App\Models\CreditRequest::query()->create([
+            'user_id' => $free->id,
+            'package_key' => 'credits_50',
+            'credits' => 50,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($free)
+            ->get(route('readings.history'))
+            ->assertOk()
+            ->assertDontSee(__('messages.credits_menu'), false);
+
+        $this->actingAs($free)
+            ->get(route('credits.packages'))
+            ->assertRedirect(route('home'));
+
+        $this->actingAs($free)
+            ->get(route('home'))
+            ->assertOk()
+            ->assertDontSee(__('messages.credits_menu'), false)
+            ->assertDontSee('credits-chip', false)
+            ->assertDontSee('pkg-icon-heart', false)
+            ->assertDontSee('✦1', false);
+
+        $this->actingAs($free)
+            ->get(route('account.show'))
+            ->assertOk()
+            ->assertDontSee(__('messages.account_field_plan'), false)
+            ->assertDontSee(__('messages.account_field_credits'), false)
+            ->assertDontSee(__('messages.account_choose_plan'), false)
+            ->assertDontSee(__('messages.account_buy_credits'), false)
+            ->assertDontSee('credits_50', false)
+            ->assertSee(__('messages.account_packs_lead_open'), false);
     }
 }

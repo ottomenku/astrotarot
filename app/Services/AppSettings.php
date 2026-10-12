@@ -21,12 +21,6 @@ class AppSettings
 
     public const EXPAND_PROMPT_EN = 'expand_prompt_en';
 
-    public const DRAW_MODE = 'draw_mode';
-
-    public const DRAW_MODE_SCORING = 'scoring';
-
-    public const DRAW_MODE_RANDOM_POLARITY = 'random_polarity';
-
     public const SITE_ENABLED = 'site_enabled';
 
     public const REGISTRATION_ENABLED = 'registration_enabled';
@@ -49,32 +43,13 @@ class AppSettings
 
     public const LLM_ROUTE_OPENAI = 'openai';
 
+    public const PAID_FEATURES_ENABLED = 'paid_features_enabled';
+
     /** @var list<string> */
     public const LLM_ROUTES = [
         self::LLM_ROUTE_OLLAMA_SMALL,
         self::LLM_ROUTE_OLLAMA_LARGE,
         self::LLM_ROUTE_OPENAI,
-    ];
-
-    public const SLOT_ALLOCATION = 'slot_allocation';
-
-    public const SLOT_SOURCE_SUN = 'sun_sign';
-
-    public const SLOT_SOURCE_ELEMENT = 'element';
-
-    public const SLOT_SOURCE_MODALITY = 'modality';
-
-    public const SLOT_SOURCE_RANDOM1 = 'random1';
-
-    public const SLOT_SOURCE_FULL_RANDOM = 'full_random';
-
-    /** @var list<string> */
-    public const SLOT_SOURCES = [
-        self::SLOT_SOURCE_SUN,
-        self::SLOT_SOURCE_ELEMENT,
-        self::SLOT_SOURCE_MODALITY,
-        self::SLOT_SOURCE_RANDOM1,
-        self::SLOT_SOURCE_FULL_RANDOM,
     ];
 
     private const CACHE_KEY = 'app.settings.bag';
@@ -86,16 +61,6 @@ class AppSettings
         return max(1, min(280, $value));
     }
 
-    public function drawMode(): string
-    {
-        $mode = (string) $this->get(self::DRAW_MODE, self::DRAW_MODE_SCORING);
-
-        return in_array($mode, [
-            self::DRAW_MODE_SCORING,
-            self::DRAW_MODE_RANDOM_POLARITY,
-        ], true) ? $mode : self::DRAW_MODE_SCORING;
-    }
-
     public function siteEnabled(): bool
     {
         return $this->flag(self::SITE_ENABLED, true);
@@ -104,6 +69,11 @@ class AppSettings
     public function registrationEnabled(): bool
     {
         return $this->flag(self::REGISTRATION_ENABLED, true);
+    }
+
+    public function paidFeaturesEnabled(): bool
+    {
+        return $this->flag(self::PAID_FEATURES_ENABLED, true);
     }
 
     public function terms(string $locale): string
@@ -169,56 +139,6 @@ class AppSettings
         }
 
         return in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true);
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function slotAllocation(): array
-    {
-        $decoded = json_decode((string) $this->get(self::SLOT_ALLOCATION, ''), true);
-        $defaults = [
-            self::SLOT_SOURCE_SUN,
-            self::SLOT_SOURCE_ELEMENT,
-            self::SLOT_SOURCE_MODALITY,
-        ];
-
-        if (! is_array($decoded) || count($decoded) !== 3) {
-            return $defaults;
-        }
-
-        $allocation = [];
-        foreach (array_values($decoded) as $source) {
-            $source = (string) $source;
-            if (! in_array($source, self::SLOT_SOURCES, true)) {
-                return $defaults;
-            }
-            $allocation[] = $source;
-        }
-
-        if (! $this->slotAllocationIsValid($allocation)) {
-            return $defaults;
-        }
-
-        return $allocation;
-    }
-
-    /**
-     * @param  list<string>  $allocation
-     */
-    public function slotAllocationIsValid(array $allocation): bool
-    {
-        if (count($allocation) !== 3) {
-            return false;
-        }
-
-        foreach ($allocation as $source) {
-            if (! in_array($source, self::SLOT_SOURCES, true)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public function systemPrompt(string $locale): string

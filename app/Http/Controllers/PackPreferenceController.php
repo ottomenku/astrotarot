@@ -18,18 +18,11 @@ class PackPreferenceController extends Controller
         $user = $request->user();
         $figureIds = CardPack::query()->figure()->active()->pluck('id')->all();
         $backIds = $packs->backOptions()->pluck('id')->all();
-        $lightIds = $packs->backgroundOptions(CardPack::POLARITY_LIGHT)->pluck('id')->all();
-        $shadowIds = $packs->backgroundOptions(CardPack::POLARITY_SHADOW)->pluck('id')->all();
 
         $data = $request->validate([
             'figures' => ['nullable', 'array'],
             'figures.*' => ['nullable', 'integer', Rule::in($figureIds)],
-            'backs' => ['nullable', 'array'],
-            'backs.*' => ['nullable', 'integer', Rule::in(array_merge([0], $backIds))],
-            'lights' => ['nullable', 'array'],
-            'lights.*' => ['nullable', 'integer', Rule::in(array_merge([0], $lightIds))],
-            'shadows' => ['nullable', 'array'],
-            'shadows.*' => ['nullable', 'integer', Rule::in(array_merge([0], $shadowIds))],
+            'card_back' => ['nullable', 'integer', Rule::in($backIds)],
         ]);
 
         if ($features->can($user, FeatureCatalog::PACKS_CHOOSE)) {
@@ -65,18 +58,7 @@ class PackPreferenceController extends Controller
         }
 
         if ($features->can($user, FeatureCatalog::PACKS_BACKS)) {
-            foreach ($data['backs'] ?? [] as $figureId => $packId) {
-                $this->saveSkin($user, (int) $figureId, $packId, UserPackPreference::ROLE_CARD_BACK, $figureIds);
-            }
-        }
-
-        if ($features->can($user, FeatureCatalog::PACKS_BACKGROUNDS)) {
-            foreach ($data['lights'] ?? [] as $figureId => $packId) {
-                $this->saveSkin($user, (int) $figureId, $packId, UserPackPreference::ROLE_BACKGROUND_LIGHT, $figureIds);
-            }
-            foreach ($data['shadows'] ?? [] as $figureId => $packId) {
-                $this->saveSkin($user, (int) $figureId, $packId, UserPackPreference::ROLE_BACKGROUND_SHADOW, $figureIds);
-            }
+            $this->saveCardBack($user, $data['card_back'] ?? null);
         }
 
         return redirect()
@@ -84,33 +66,23 @@ class PackPreferenceController extends Controller
             ->with('status', __('messages.account_packs_saved'));
     }
 
-    /**
-     * @param  list<int>  $figureIds
-     */
-    private function saveSkin($user, int $figureId, mixed $packId, string $role, array $figureIds): void
+    private function saveCardBack($user, mixed $packId): void
     {
-        if (! in_array($figureId, $figureIds, true)) {
-            return;
-        }
-        if (! $packId) {
-            UserPackPreference::query()
-                ->where('user_id', $user->id)
-                ->where('role', $role)
-                ->where('figure_pack_id', $figureId)
-                ->delete();
+        UserPackPreference::query()
+            ->where('user_id', $user->id)
+            ->where('role', UserPackPreference::ROLE_CARD_BACK)
+            ->delete();
 
+        if (! $packId) {
             return;
         }
-        UserPackPreference::query()->updateOrCreate(
-            [
-                'user_id' => $user->id,
-                'role' => $role,
-                'figure_pack_id' => $figureId,
-            ],
-            [
-                'pack_type' => null,
-                'card_pack_id' => (int) $packId,
-            ]
-        );
+
+        UserPackPreference::query()->create([
+            'user_id' => $user->id,
+            'role' => UserPackPreference::ROLE_CARD_BACK,
+            'figure_pack_id' => null,
+            'pack_type' => null,
+            'card_pack_id' => (int) $packId,
+        ]);
     }
 }

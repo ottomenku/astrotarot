@@ -91,6 +91,12 @@ class SocialAuthController extends Controller
         }
         $user->save();
 
+        if ($user->isBanned()) {
+            return redirect()
+                ->route('login')
+                ->withErrors(['email' => __('auth.banned')]);
+        }
+
         Auth::login($user, true);
         request()->session()->regenerate();
         $this->credits->grantDailyLoginBonus($user);

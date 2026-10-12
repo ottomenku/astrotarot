@@ -61,16 +61,13 @@ class GameConfigService
                 'info_mode' => $rule->info_mode,
                 'row' => (int) $rule->row,
                 'place' => (int) $rule->place,
-                'full_bleed' => ! $skin['has_backgrounds'],
+                'full_bleed' => true,
             ];
             $packs[$slug] = [
                 'slug' => $slug,
                 'type' => $resolved['type'],
-                'has_backgrounds' => $skin['has_backgrounds'],
                 'polar_figures' => CardPackCatalog::hasPolarFigures($slug),
                 'card_back' => $skin['card_back'],
-                'background_light' => $skin['background_light'],
-                'background_shadow' => $skin['background_shadow'],
             ];
         }
 

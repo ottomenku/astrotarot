@@ -8,13 +8,12 @@ use App\Http\Controllers\Admin\EphemerisController;
 use App\Http\Controllers\Admin\FeatureAccessController;
 use App\Http\Controllers\Admin\GameController;
 use App\Http\Controllers\Admin\LegalController;
+use App\Http\Controllers\Admin\MeaningGroupController;
 use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\PromptController;
 use App\Http\Controllers\Admin\ReadingLogController;
 use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\Admin\SlotAllocationController;
 use App\Http\Controllers\Admin\TemplateController;
-use App\Http\Controllers\Admin\TestModeController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LegalAcceptController;
 use App\Http\Controllers\Auth\LoginController;
@@ -74,13 +73,13 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 
 Route::middleware('auth')->group(function () {
     Route::get('/credits', [CreditPackageController::class, 'index'])
-        ->middleware('feature:'.FeatureCatalog::CREDITS_PAGE)
+        ->middleware(['paid', 'feature:'.FeatureCatalog::CREDITS_PAGE])
         ->name('credits.packages');
     Route::post('/credits/request', [CreditPackageController::class, 'request'])
-        ->middleware('feature:'.FeatureCatalog::CREDITS_REQUEST)
+        ->middleware(['paid', 'feature:'.FeatureCatalog::CREDITS_REQUEST])
         ->name('credits.request');
     Route::post('/credits/promo', [CreditPackageController::class, 'activatePromo'])
-        ->middleware('feature:'.FeatureCatalog::CREDITS_PROMO)
+        ->middleware(['paid', 'feature:'.FeatureCatalog::CREDITS_PROMO])
         ->name('credits.promo');
     Route::get('/account', [AccountController::class, 'show'])
         ->middleware('feature:'.FeatureCatalog::ACCOUNT)
@@ -97,6 +96,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/account/deletion-request', [AccountController::class, 'storeDeletionRequest'])
         ->middleware(['feature:'.FeatureCatalog::ACCOUNT, 'throttle:5,60'])
         ->name('account.deletion-request.store');
+    Route::put('/account/password', [AccountController::class, 'updatePassword'])
+        ->middleware(['feature:'.FeatureCatalog::ACCOUNT, 'throttle:6,1'])
+        ->name('account.password.update');
     Route::post('/account/packs', [PackPreferenceController::class, 'update'])
         ->middleware('feature:'.FeatureCatalog::ACCOUNT)
         ->name('account.packs.update');
@@ -145,12 +147,6 @@ Route::prefix('admin')
         Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
-        Route::get('/test-mode', [TestModeController::class, 'edit'])->name('test-mode.edit');
-        Route::put('/test-mode', [TestModeController::class, 'update'])->name('test-mode.update');
-
-        Route::get('/slots', [SlotAllocationController::class, 'edit'])->name('slots.edit');
-        Route::put('/slots', [SlotAllocationController::class, 'update'])->name('slots.update');
-
         Route::get('/prompts', [PromptController::class, 'edit'])->name('prompts.edit');
         Route::put('/prompts', [PromptController::class, 'update'])->name('prompts.update');
         Route::post('/prompts/reset', [PromptController::class, 'reset'])->name('prompts.reset');
@@ -183,6 +179,14 @@ Route::prefix('admin')
         Route::post('/packs/{pack}/default', [CardPackController::class, 'makeDefault'])->name('packs.default');
         Route::delete('/packs/{pack}', [CardPackController::class, 'destroy'])->name('packs.destroy');
 
+        Route::get('/meaning-groups', [MeaningGroupController::class, 'index'])->name('meaning-groups.index');
+        Route::get('/meaning-groups/create', [MeaningGroupController::class, 'create'])->name('meaning-groups.create');
+        Route::post('/meaning-groups', [MeaningGroupController::class, 'store'])->name('meaning-groups.store');
+        Route::get('/meaning-groups/{meaningGroup}/edit', [MeaningGroupController::class, 'edit'])->name('meaning-groups.edit');
+        Route::put('/meaning-groups/{meaningGroup}', [MeaningGroupController::class, 'update'])->name('meaning-groups.update');
+        Route::post('/meaning-groups/{meaningGroup}/copy', [MeaningGroupController::class, 'copy'])->name('meaning-groups.copy');
+        Route::delete('/meaning-groups/{meaningGroup}', [MeaningGroupController::class, 'destroy'])->name('meaning-groups.destroy');
+
         Route::get('/blog', [BlogPostController::class, 'index'])->name('blog.index');
         Route::get('/blog/create', [BlogPostController::class, 'create'])->name('blog.create');
         Route::post('/blog', [BlogPostController::class, 'store'])->name('blog.store');
@@ -194,6 +198,7 @@ Route::prefix('admin')
         Route::put('/access', [FeatureAccessController::class, 'update'])->name('feature-access.update');
 
         Route::get('/readings', [ReadingLogController::class, 'index'])->name('readings.index');
+        Route::get('/readings/{reading}/preview', [ReadingLogController::class, 'preview'])->name('readings.preview');
         Route::get('/readings/{reading}', [ReadingLogController::class, 'show'])->name('readings.show');
 
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -201,6 +206,8 @@ Route::prefix('admin')
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::post('/users/{user}/credits', [UserController::class, 'grantCredits'])->name('users.credits');
+        Route::post('/users/{user}/ban', [UserController::class, 'toggleBan'])->name('users.ban');
 
         Route::get('/deletion-requests', [DataDeletionRequestController::class, 'index'])->name('deletion-requests.index');
         Route::post('/deletion-requests/{deletionRequest}/process', [DataDeletionRequestController::class, 'process'])->name('deletion-requests.process');

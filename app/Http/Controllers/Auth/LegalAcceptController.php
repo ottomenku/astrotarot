@@ -47,6 +47,9 @@ class LegalAcceptController extends Controller
         $request->validate([
             'terms' => ['accepted'],
             'privacy' => ['accepted'],
+        ], [
+            'privacy.accepted' => __('messages.legal_accept_privacy_required'),
+            'terms.accepted' => __('messages.legal_accept_terms_required'),
         ]);
 
         $email = strtolower(trim((string) ($pending['email'] ?? '')));

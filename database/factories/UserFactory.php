@@ -43,4 +43,11 @@ class UserFactory extends Factory
             'role' => $role,
         ]);
     }
+
+    public function banned(): static
+    {
+        return $this->state(fn () => [
+            'banned_at' => now(),
+        ]);
+    }
 }

@@ -20,30 +20,17 @@ class CardPack extends Model
 
     public const TYPE_CARD_BACK = 'card_back';
 
-    public const TYPE_BACKGROUND = 'background';
-
     /** @var list<string> */
     public const TYPES = [
         self::TYPE_TAROT,
         self::TYPE_ORACLE,
         self::TYPE_CARD_BACK,
-        self::TYPE_BACKGROUND,
     ];
 
     /** @var list<string> */
     public const FIGURE_TYPES = [
         self::TYPE_TAROT,
         self::TYPE_ORACLE,
-    ];
-
-    public const POLARITY_LIGHT = 'light';
-
-    public const POLARITY_SHADOW = 'shadow';
-
-    /** @var list<string> */
-    public const POLARITIES = [
-        self::POLARITY_LIGHT,
-        self::POLARITY_SHADOW,
     ];
 
     protected $fillable = [
@@ -53,18 +40,16 @@ class CardPack extends Model
         'description_hu',
         'description_en',
         'type',
-        'polarity',
         'card_count',
         'style',
         'owner',
+        'meaning_group_id',
         'preview_path',
         'asset_path',
         'is_active',
         'is_default',
         'sort_order',
         'default_card_back_id',
-        'default_background_light_id',
-        'default_background_shadow_id',
     ];
 
     protected function casts(): array
@@ -77,19 +62,14 @@ class CardPack extends Model
         ];
     }
 
+    public function meaningGroup(): BelongsTo
+    {
+        return $this->belongsTo(MeaningGroup::class);
+    }
+
     public function defaultCardBack(): BelongsTo
     {
         return $this->belongsTo(self::class, 'default_card_back_id');
-    }
-
-    public function defaultBackgroundLight(): BelongsTo
-    {
-        return $this->belongsTo(self::class, 'default_background_light_id');
-    }
-
-    public function defaultBackgroundShadow(): BelongsTo
-    {
-        return $this->belongsTo(self::class, 'default_background_shadow_id');
     }
 
     public function gameRules(): HasMany
@@ -124,10 +104,6 @@ class CardPack extends Model
         }
 
         if ($this->type === self::TYPE_CARD_BACK) {
-            return $this->fileUrl();
-        }
-
-        if ($this->type === self::TYPE_BACKGROUND) {
             return $this->fileUrl();
         }
 
@@ -170,12 +146,9 @@ class CardPack extends Model
         return 'card-pack/'.$this->slug;
     }
 
-    public static function defaultFor(string $type, ?string $polarity = null): ?self
+    public static function defaultFor(string $type): ?self
     {
         $query = static::query()->active()->ofType($type);
-        if ($type === self::TYPE_BACKGROUND && $polarity !== null) {
-            $query->where('polarity', $polarity);
-        }
 
         return (clone $query)->where('is_default', true)->ordered()->first()
             ?? $query->ordered()->first();
@@ -183,11 +156,10 @@ class CardPack extends Model
 
     public function makeDefault(): void
     {
-        $query = static::query()->where('type', $this->type)->where('id', '!=', $this->id);
-        if ($this->type === self::TYPE_BACKGROUND) {
-            $query->where('polarity', $this->polarity);
-        }
-        $query->update(['is_default' => false]);
+        static::query()
+            ->where('type', $this->type)
+            ->where('id', '!=', $this->id)
+            ->update(['is_default' => false]);
         $this->update(['is_default' => true, 'is_active' => true]);
     }
 

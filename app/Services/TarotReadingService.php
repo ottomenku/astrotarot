@@ -497,6 +497,7 @@ class TarotReadingService
     private function enrichCards(array $cards, string $locale): array
     {
         foreach ($cards as &$card) {
+            $card = $this->meanings->overlayCard($card, $locale);
             if (($card['info_mode'] ?? '') !== 'meaning') {
                 continue;
             }

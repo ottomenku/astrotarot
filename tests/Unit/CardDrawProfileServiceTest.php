@@ -48,132 +48,6 @@ class CardDrawProfileServiceTest extends TestCase
         $this->assertSame('scoring', $profile['draw_mode']);
     }
 
-    public function test_slot_allocation_can_reorder_backgrounds(): void
-    {
-        $settings = app(\App\Services\AppSettings::class);
-        $settings->putMany([
-            \App\Services\AppSettings::SLOT_ALLOCATION => json_encode([
-                'modality',
-                'sun_sign',
-                'element',
-            ]),
-        ]);
-
-        $profile = app(CardDrawProfileService::class)->fromEphemerisResult([
-            'objects' => [
-                ['name' => 'Sun', 'sign' => 'Scorpio', 'degree' => 10, 'kind' => 'planet'],
-            ],
-            'scoring' => [
-                'summary_clean' => [
-                    'elem_dominancia' => ['nev' => 'víz', 'ertek' => 8],
-                    'minoseg_dominancia' => ['nev' => 'szilárd', 'ertek' => 7],
-                    'pozitiv_negativ' => ['nev' => 'pozitív', 'netto_ertek' => 2],
-                ],
-            ],
-        ], 'scoring');
-
-        $this->assertSame(['fixed', 'scorpio', 'water'], $profile['slots']);
-        $this->assertSame(['modality', 'sun_sign', 'element'], $profile['slot_kinds']);
-        $this->assertSame(['szilárd', 'scorpio', 'víz'], $profile['slot_values']);
-    }
-
-    public function test_single_random1_is_not_forced_by_fixed_neighbors(): void
-    {
-        $settings = app(\App\Services\AppSettings::class);
-        $settings->putMany([
-            \App\Services\AppSettings::SLOT_ALLOCATION => json_encode([
-                'random1',
-                'element',
-                'modality',
-            ]),
-        ]);
-
-        $seen = [];
-        for ($i = 0; $i < 40; $i++) {
-            $profile = app(CardDrawProfileService::class)->fromEphemerisResult([
-                'objects' => [
-                    ['name' => 'Sun', 'sign' => 'Leo', 'degree' => 1, 'kind' => 'planet'],
-                ],
-                'scoring' => [
-                    'summary_clean' => [
-                        'elem_dominancia' => ['nev' => 'tűz', 'ertek' => 5],
-                        'minoseg_dominancia' => ['nev' => 'fő', 'ertek' => 4],
-                        'pozitiv_negativ' => ['nev' => 'pozitív', 'netto_ertek' => 1],
-                    ],
-                ],
-            ], 'scoring');
-
-            $seen[$profile['slot_kinds'][0]] = true;
-            $this->assertSame('element', $profile['slot_kinds'][1]);
-            $this->assertSame('modality', $profile['slot_kinds'][2]);
-        }
-
-        $this->assertGreaterThan(
-            1,
-            count($seen),
-            'random1 should sometimes pick kinds other than the leftover sun_sign'
-        );
-    }
-
-    public function test_three_random1_slots_are_a_permutation(): void
-    {
-        $settings = app(\App\Services\AppSettings::class);
-        $settings->putMany([
-            \App\Services\AppSettings::SLOT_ALLOCATION => json_encode([
-                'random1',
-                'random1',
-                'random1',
-            ]),
-        ]);
-
-        $profile = app(CardDrawProfileService::class)->fromEphemerisResult([
-            'objects' => [
-                ['name' => 'Sun', 'sign' => 'Leo', 'degree' => 1, 'kind' => 'planet'],
-            ],
-            'scoring' => [
-                'summary_clean' => [
-                    'elem_dominancia' => ['nev' => 'tűz', 'ertek' => 5],
-                    'minoseg_dominancia' => ['nev' => 'fő', 'ertek' => 4],
-                    'pozitiv_negativ' => ['nev' => 'pozitív', 'netto_ertek' => 1],
-                ],
-            ],
-        ], 'scoring');
-
-        $kinds = $profile['slot_kinds'];
-        sort($kinds);
-        $this->assertSame(['element', 'modality', 'sun_sign'], $kinds);
-    }
-
-    public function test_random_polarity_keeps_scored_backgrounds(): void
-    {
-        $profile = app(CardDrawProfileService::class)->fromEphemerisResult([
-            'objects' => [
-                ['name' => 'Sun', 'sign' => 'Scorpio', 'degree' => 10, 'kind' => 'planet'],
-            ],
-            'scoring' => [
-                'summary_clean' => [
-                    'elem_dominancia' => ['nev' => 'víz', 'ertek' => 8],
-                    'minoseg_dominancia' => ['nev' => 'szilárd', 'ertek' => 7],
-                    'pozitiv_negativ' => ['nev' => 'negatív', 'netto_ertek' => -2],
-                ],
-                'tarot_helyek' => [
-                    'positions' => [
-                        ['besorolas' => 'pozitív'],
-                        ['besorolas' => 'negatív'],
-                        ['besorolas' => 'pozitív'],
-                    ],
-                ],
-            ],
-        ], 'random_polarity');
-
-        $this->assertSame(['scorpio', 'water', 'fixed'], $profile['slots']);
-        $this->assertSame('random_polarity', $profile['draw_mode']);
-        $this->assertCount(3, $profile['variants']);
-        foreach ($profile['variants'] as $variant) {
-            $this->assertContains($variant, ['positive', 'shadow']);
-        }
-    }
-
     public function test_positive_tone_uses_positive_variant(): void
     {
         $profile = app(CardDrawProfileService::class)->fromEphemerisResult([
@@ -215,7 +89,7 @@ class CardDrawProfileServiceTest extends TestCase
 
     public function test_fallback_profile_has_defaults(): void
     {
-        $profile = app(CardDrawProfileService::class)->fallback('scoring');
+        $profile = app(CardDrawProfileService::class)->fallback();
 
         $this->assertSame('leo', $profile['sun_sign']);
         $this->assertSame('tűz', $profile['element']);

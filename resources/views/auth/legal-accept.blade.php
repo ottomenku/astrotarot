@@ -32,11 +32,11 @@
                 @csrf
                 <div class="auth-legal">
                     <label class="auth-check">
-                        <input type="checkbox" name="privacy" value="1" required>
+                        <input type="checkbox" name="privacy" value="1" required data-accept-message="{{ __('messages.legal_accept_privacy_required') }}" oninvalid="this.setCustomValidity(this.dataset.acceptMessage || '')" onchange="this.setCustomValidity('')">
                         <span>{!! __('messages.legal_accept_privacy', ['url' => route('legal.privacy')]) !!}</span>
                     </label>
                     <label class="auth-check">
-                        <input type="checkbox" name="terms" value="1" required>
+                        <input type="checkbox" name="terms" value="1" required data-accept-message="{{ __('messages.legal_accept_terms_required') }}" oninvalid="this.setCustomValidity(this.dataset.acceptMessage || '')" onchange="this.setCustomValidity('')">
                         <span>{!! __('messages.legal_accept_terms', ['url' => route('legal.terms')]) !!}</span>
                     </label>
                 </div>

@@ -35,6 +35,7 @@
             <h1>{{ __('messages.landing_title') }}</h1>
             <p class="landing-lead">{{ __('messages.landing_lead') }}</p>
             <ul class="landing-points">
+                <li>{{ __('messages.landing_point_reading') }}</li>
                 <li>{{ __('messages.landing_point_sky') }}</li>
                 <li>{{ __('messages.landing_point_question') }}</li>
                 <li>{{ __('messages.landing_point_minutes') }}</li>

@@ -10,7 +10,6 @@
                 <a class="btn btn-primary" href="{{ route('admin.packs.create', ['type' => 'tarot']) }}">{{ __('admin.packs.create_tarot') }}</a>
                 <a class="btn" href="{{ route('admin.packs.create', ['type' => 'oracle']) }}">{{ __('admin.packs.create_oracle') }}</a>
                 <a class="btn" href="{{ route('admin.packs.create', ['type' => 'card_back']) }}">{{ __('admin.packs.create_back') }}</a>
-                <a class="btn" href="{{ route('admin.packs.create', ['type' => 'background']) }}">{{ __('admin.packs.create_background') }}</a>
             </span>
         </div>
         <p class="muted">{{ __('admin.packs.hint') }}</p>
@@ -43,7 +42,7 @@
                                     @endif
                                     {{ $pack->name_hu }}
                                 </span>
-                                <div class="muted">{{ $pack->slug }}@if ($pack->polarity) · {{ $pack->polarity }}@endif</div>
+                                <div class="muted">{{ $pack->slug }}</div>
                             </td>
                             <td>{{ $pack->card_count }}</td>
                             <td>{{ $pack->style ?: '—' }}</td>

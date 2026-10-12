@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReadingLog extends Model
 {
@@ -30,6 +31,11 @@ class ReadingLog extends Model
             'astro' => 'array',
             'llm_fallback' => 'boolean',
         ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function sourceLabel(?string $locale = null): string

@@ -30,6 +30,9 @@ class RegisterController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
             'terms' => ['accepted'],
             'privacy' => ['accepted'],
+        ], [
+            'privacy.accepted' => __('messages.legal_accept_privacy_required'),
+            'terms.accepted' => __('messages.legal_accept_terms_required'),
         ]);
 
         $user = User::query()->create([

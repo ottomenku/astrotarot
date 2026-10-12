@@ -24,48 +24,6 @@ class AppSettingsTest extends TestCase
         $this->assertSame(18, $settings->minQuestionChars());
     }
 
-    public function test_unknown_draw_mode_falls_back_to_scoring(): void
-    {
-        $settings = app(AppSettings::class);
-        $settings->putMany([AppSettings::DRAW_MODE => 'not-a-mode']);
-
-        $this->assertSame(AppSettings::DRAW_MODE_SCORING, $settings->drawMode());
-    }
-
-    public function test_invalid_slot_allocation_falls_back_to_defaults(): void
-    {
-        $settings = app(AppSettings::class);
-        $settings->putMany([AppSettings::SLOT_ALLOCATION => 'not-json']);
-
-        $this->assertSame([
-            AppSettings::SLOT_SOURCE_SUN,
-            AppSettings::SLOT_SOURCE_ELEMENT,
-            AppSettings::SLOT_SOURCE_MODALITY,
-        ], $settings->slotAllocation());
-
-        $settings->putMany([
-            AppSettings::SLOT_ALLOCATION => json_encode(['sun_sign', 'bogus', 'element']),
-        ]);
-        $this->assertSame([
-            AppSettings::SLOT_SOURCE_SUN,
-            AppSettings::SLOT_SOURCE_ELEMENT,
-            AppSettings::SLOT_SOURCE_MODALITY,
-        ], $settings->slotAllocation());
-    }
-
-    public function test_valid_slot_allocation_is_kept(): void
-    {
-        $settings = app(AppSettings::class);
-        $allocation = [
-            AppSettings::SLOT_SOURCE_RANDOM1,
-            AppSettings::SLOT_SOURCE_SUN,
-            AppSettings::SLOT_SOURCE_FULL_RANDOM,
-        ];
-        $settings->putMany([AppSettings::SLOT_ALLOCATION => json_encode($allocation)]);
-
-        $this->assertSame($allocation, $settings->slotAllocation());
-    }
-
     public function test_prompt_falls_back_to_default_when_empty(): void
     {
         $settings = app(AppSettings::class);

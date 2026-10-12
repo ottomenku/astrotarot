@@ -38,18 +38,45 @@ class RegisterControllerTest extends TestCase
 
     public function test_guest_cannot_register_without_legal_acceptance(): void
     {
-        $this->from(route('home'))
-            ->post(route('register'), [
-                'name' => 'Teszt User',
-                'email' => 'teszt@example.com',
-                'password' => 'password123',
-                'password_confirmation' => 'password123',
-            ])
+        $payload = [
+            'name' => 'Teszt User',
+            'email' => 'teszt@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ];
+
+        $this->withSession(['locale' => 'hu'])
+            ->from(route('home'))
+            ->post(route('register'), $payload)
             ->assertRedirect(route('home'))
-            ->assertSessionHasErrors(['terms', 'privacy']);
+            ->assertSessionHasErrors([
+                'privacy' => 'Kérjük, olvassa el és fogadja el az adatkezelési tájékoztatót.',
+                'terms' => 'Kérjük, olvassa el és fogadja el az ÁSZF-et.',
+            ]);
+
+        $this->withSession(['locale' => 'en'])
+            ->from(route('home'))
+            ->post(route('register'), $payload)
+            ->assertRedirect(route('home'))
+            ->assertSessionHasErrors([
+                'privacy' => 'Please read and accept the privacy notice.',
+                'terms' => 'Please read and accept the terms and conditions.',
+            ]);
 
         $this->assertGuest();
         $this->assertDatabaseMissing('users', ['email' => 'teszt@example.com']);
+
+        $this->withSession(['locale' => 'hu'])
+            ->get(route('login'))
+            ->assertOk()
+            ->assertSee('data-accept-message="Kérjük, olvassa el és fogadja el az adatkezelési tájékoztatót."', false)
+            ->assertSee('data-accept-message="Kérjük, olvassa el és fogadja el az ÁSZF-et."', false);
+
+        $this->withSession(['locale' => 'en'])
+            ->get(route('login'))
+            ->assertOk()
+            ->assertSee('data-accept-message="Please read and accept the privacy notice."', false)
+            ->assertSee('data-accept-message="Please read and accept the terms and conditions."', false);
     }
 
     public function test_guest_home_shows_landing_instead_of_draw(): void

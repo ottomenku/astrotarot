@@ -34,7 +34,7 @@ class TestModeTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)
-            ->get(route('admin.test-mode.edit'))
+            ->get(route('admin.settings.edit'))
             ->assertOk();
 
         $this->actingAs($admin)
@@ -87,13 +87,14 @@ class TestModeTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)
-            ->put(route('admin.test-mode.update'), [
+            ->put(route('admin.settings.update'), [
+                'min_question_chars' => 10,
                 // site_enabled unchecked
                 'registration_enabled' => '1',
                 'llm_enabled' => '1',
                 'llm_route' => AppSettings::LLM_ROUTE_OPENAI,
             ])
-            ->assertRedirect(route('admin.test-mode.edit'));
+            ->assertRedirect(route('admin.settings.edit'));
 
         $settings = app(AppSettings::class);
         $this->assertFalse($settings->siteEnabled());
@@ -107,20 +108,21 @@ class TestModeTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)
-            ->get(route('admin.test-mode.edit'))
+            ->get(route('admin.settings.edit'))
             ->assertOk()
             ->assertSee(__('admin.test_mode.llm_route'), false)
             ->assertSee('llama3.2', false)
             ->assertSee('qwen2.5:14b', false);
 
         $this->actingAs($admin)
-            ->put(route('admin.test-mode.update'), [
+            ->put(route('admin.settings.update'), [
+                'min_question_chars' => 10,
                 'site_enabled' => '1',
                 'registration_enabled' => '1',
                 'llm_enabled' => '1',
                 'llm_route' => AppSettings::LLM_ROUTE_OLLAMA_SMALL,
             ])
-            ->assertRedirect(route('admin.test-mode.edit'));
+            ->assertRedirect(route('admin.settings.edit'));
 
         $this->assertSame(
             AppSettings::LLM_ROUTE_OLLAMA_SMALL,
@@ -133,17 +135,18 @@ class TestModeTest extends TestCase
         $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)
-            ->get(route('admin.test-mode.edit'))
+            ->get(route('admin.settings.edit'))
             ->assertOk()
             ->assertSee(__('admin.test_mode.registration_enabled'), false);
 
         $this->actingAs($admin)
-            ->put(route('admin.test-mode.update'), [
+            ->put(route('admin.settings.update'), [
+                'min_question_chars' => 10,
                 'site_enabled' => '1',
                 'llm_enabled' => '1',
                 'llm_route' => AppSettings::LLM_ROUTE_OPENAI,
             ])
-            ->assertRedirect(route('admin.test-mode.edit'));
+            ->assertRedirect(route('admin.settings.edit'));
 
         $this->assertFalse(app(AppSettings::class)->registrationEnabled());
     }

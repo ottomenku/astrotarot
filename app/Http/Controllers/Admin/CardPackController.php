@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CardPack;
+use App\Models\MeaningGroup;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -35,6 +36,10 @@ class CardPackController extends Controller
             'sort_order' => (int) CardPack::query()->max('sort_order') + 1,
             'card_count' => $type === CardPack::TYPE_TAROT || $type === CardPack::TYPE_ORACLE ? 0 : 1,
             'owner' => 'AstroTarot',
+            'meaning_group_id' => MeaningGroup::query()
+                ->where('type', $type)
+                ->whereIn('slug', $type === CardPack::TYPE_ORACLE ? ['base-orakulum'] : ['base-tarot'])
+                ->value('id'),
         ])));
     }
 
@@ -114,16 +119,7 @@ class CardPackController extends Controller
         return [
             'pack' => $pack,
             'backs' => CardPack::query()->ofType(CardPack::TYPE_CARD_BACK)->ordered()->get(),
-            'lights' => CardPack::query()
-                ->ofType(CardPack::TYPE_BACKGROUND)
-                ->where('polarity', CardPack::POLARITY_LIGHT)
-                ->ordered()
-                ->get(),
-            'shadows' => CardPack::query()
-                ->ofType(CardPack::TYPE_BACKGROUND)
-                ->where('polarity', CardPack::POLARITY_SHADOW)
-                ->ordered()
-                ->get(),
+            'meaningGroups' => MeaningGroup::query()->orderBy('name_hu')->get(),
         ];
     }
 
@@ -147,12 +143,6 @@ class CardPackController extends Controller
             'description_hu' => ['nullable', 'string', 'max:2000'],
             'description_en' => ['nullable', 'string', 'max:2000'],
             'type' => ['required', 'string', Rule::in(CardPack::TYPES)],
-            'polarity' => [
-                Rule::requiredIf($type === CardPack::TYPE_BACKGROUND),
-                'nullable',
-                'string',
-                Rule::in(array_merge(CardPack::POLARITIES, [''])),
-            ],
             'card_count' => ['nullable', 'integer', 'min:0', 'max:200'],
             'style' => ['nullable', 'string', 'max:120'],
             'owner' => ['nullable', 'string', 'max:120'],
@@ -166,19 +156,13 @@ class CardPackController extends Controller
                 'integer',
                 Rule::exists('card_packs', 'id')->where('type', CardPack::TYPE_CARD_BACK),
             ],
-            'default_background_light_id' => [
+            'meaning_group_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('card_packs', 'id')->where(fn ($q) => $q
-                    ->where('type', CardPack::TYPE_BACKGROUND)
-                    ->where('polarity', CardPack::POLARITY_LIGHT)),
-            ],
-            'default_background_shadow_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('card_packs', 'id')->where(fn ($q) => $q
-                    ->where('type', CardPack::TYPE_BACKGROUND)
-                    ->where('polarity', CardPack::POLARITY_SHADOW)),
+                Rule::exists('meaning_groups', 'id')->when(
+                    in_array($type, CardPack::FIGURE_TYPES, true),
+                    fn ($q) => $q->where('type', $type),
+                ),
             ],
         ]);
 
@@ -197,22 +181,14 @@ class CardPackController extends Controller
         $data['owner'] = trim((string) ($data['owner'] ?? '')) ?: null;
         $data['card_count'] = (int) ($data['card_count'] ?? 0);
 
-        if ($data['type'] !== CardPack::TYPE_BACKGROUND) {
-            $data['polarity'] = null;
-        } else {
-            $data['polarity'] = $data['polarity'] ?: CardPack::POLARITY_LIGHT;
-            $data['default_card_back_id'] = null;
-            $data['default_background_light_id'] = null;
-            $data['default_background_shadow_id'] = null;
-        }
-
         if (! in_array($data['type'], CardPack::FIGURE_TYPES, true)) {
             $data['default_card_back_id'] = null;
-            $data['default_background_light_id'] = null;
-            $data['default_background_shadow_id'] = null;
+            $data['meaning_group_id'] = null;
+        } else {
+            $data['meaning_group_id'] = $data['meaning_group_id'] ?? null;
         }
 
-        if ($data['type'] === CardPack::TYPE_CARD_BACK || $data['type'] === CardPack::TYPE_BACKGROUND) {
+        if ($data['type'] === CardPack::TYPE_CARD_BACK) {
             $data['card_count'] = max(1, $data['card_count']);
         }
 
@@ -227,7 +203,7 @@ class CardPackController extends Controller
         }
 
         if ($pack->isFigure() && $pack->asset_path === null) {
-            foreach (['figures', 'card-back', 'backgrounds'] as $sub) {
+            foreach (['figures', 'card-back'] as $sub) {
                 $path = $dir.DIRECTORY_SEPARATOR.$sub;
                 if (! is_dir($path)) {
                     mkdir($path, 0755, true);
@@ -244,17 +220,12 @@ class CardPackController extends Controller
             $pack->update(['preview_path' => $relative]);
         }
 
-        if ($request->hasFile('asset') && in_array($pack->type, [CardPack::TYPE_CARD_BACK, CardPack::TYPE_BACKGROUND], true)) {
-            $name = $pack->type === CardPack::TYPE_CARD_BACK ? 'card-back' : 'background';
-            if ($pack->type === CardPack::TYPE_CARD_BACK) {
-                $backDir = $dir.DIRECTORY_SEPARATOR.'card-back';
-                if (! is_dir($backDir)) {
-                    mkdir($backDir, 0755, true);
-                }
-                $relative = $this->moveUpload($request->file('asset'), $backDir, 'card-back');
-            } else {
-                $relative = $this->moveUpload($request->file('asset'), $dir, $name);
+        if ($request->hasFile('asset') && $pack->type === CardPack::TYPE_CARD_BACK) {
+            $backDir = $dir.DIRECTORY_SEPARATOR.'card-back';
+            if (! is_dir($backDir)) {
+                mkdir($backDir, 0755, true);
             }
+            $relative = $this->moveUpload($request->file('asset'), $backDir, 'card-back');
             $pack->update([
                 'asset_path' => $relative,
                 'preview_path' => $pack->preview_path ?: $relative,

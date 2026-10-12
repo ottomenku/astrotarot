@@ -16,7 +16,9 @@
             </a>
             <div class="header-actions">
                 <a class="credits-back" href="{{ route('account.show') }}">{{ __('messages.account_menu') }}<x-feature-marks feature="account.show" /></a>
-                <a class="credits-back" href="{{ route('credits.packages') }}">{{ __('messages.credits_menu') }}<x-feature-marks feature="credits.packages" /></a>
+                @if ($paidFeaturesEnabled)
+                    <a class="credits-back" href="{{ route('credits.packages') }}">{{ __('messages.credits_menu') }}<x-feature-marks feature="credits.packages" /></a>
+                @endif
                 <a class="credits-back" href="{{ route('home') }}">{{ __('messages.credits_back_home') }}</a>
             </div>
         </div>

@@ -18,29 +18,34 @@ class AdminSettingsTest extends TestCase
         $this->actingAs($admin)
             ->put(route('admin.settings.update'), [
                 'min_question_chars' => 15,
-                'draw_mode' => AppSettings::DRAW_MODE_RANDOM_POLARITY,
+                'site_enabled' => '1',
+                'registration_enabled' => '1',
+                'llm_enabled' => '1',
+                'llm_route' => AppSettings::LLM_ROUTE_OPENAI,
             ])
             ->assertRedirect(route('admin.settings.edit'));
 
         $settings = app(AppSettings::class);
         $this->assertSame(15, $settings->minQuestionChars());
-        $this->assertSame(AppSettings::DRAW_MODE_RANDOM_POLARITY, $settings->drawMode());
+        $this->assertFalse($settings->paidFeaturesEnabled());
     }
 
-    public function test_admin_can_update_slot_allocation(): void
+    public function test_admin_can_turn_paid_features_back_on(): void
     {
         $admin = User::factory()->admin()->create();
-        $allocation = [
-            AppSettings::SLOT_SOURCE_ELEMENT,
-            AppSettings::SLOT_SOURCE_RANDOM1,
-            AppSettings::SLOT_SOURCE_SUN,
-        ];
 
         $this->actingAs($admin)
-            ->put(route('admin.slots.update'), ['slots' => $allocation])
-            ->assertRedirect(route('admin.slots.edit'));
+            ->put(route('admin.settings.update'), [
+                'min_question_chars' => 10,
+                'site_enabled' => '1',
+                'registration_enabled' => '1',
+                'llm_enabled' => '1',
+                'paid_features_enabled' => '1',
+                'llm_route' => AppSettings::LLM_ROUTE_OPENAI,
+            ])
+            ->assertRedirect(route('admin.settings.edit'));
 
-        $this->assertSame($allocation, app(AppSettings::class)->slotAllocation());
+        $this->assertTrue(app(AppSettings::class)->paidFeaturesEnabled());
     }
 
     public function test_admin_can_update_and_reset_prompts(): void
@@ -91,7 +96,6 @@ class AdminSettingsTest extends TestCase
     {
         $this->put(route('admin.settings.update'), [
             'min_question_chars' => 12,
-            'draw_mode' => AppSettings::DRAW_MODE_SCORING,
         ])->assertRedirect(route('login'));
     }
 }

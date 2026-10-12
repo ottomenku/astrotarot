@@ -2,16 +2,47 @@
 
 namespace App\Services;
 
+use App\Models\CardPack;
 use App\Models\FigureMeaning;
+use App\Models\MeaningEntry;
+use App\Models\MeaningGroup;
 use App\Support\CardPackCatalog;
 use Throwable;
 
 class FigureMeaningService
 {
+    /** @var array<string, MeaningGroup|null> */
+    private array $groupCache = [];
+
     public function __construct(
         private readonly OpenAIClient $openAI,
         private readonly AppSettings $settings,
     ) {}
+
+    /**
+     * @param  array<string, mixed>  $card
+     * @return array<string, mixed>
+     */
+    public function overlayCard(array $card, string $locale): array
+    {
+        $entry = $this->entryForDeck((string) ($card['deck'] ?? ''), (string) ($card['figure_id'] ?? ''));
+        if ($entry === null) {
+            return $card;
+        }
+
+        $meaning = $entry->meaning($locale);
+        $description = $entry->description($locale);
+        if ($meaning !== '') {
+            $card['keyword'] = $meaning;
+        }
+        if ($description !== '') {
+            $card['blurb'] = $description;
+        } elseif ($meaning !== '') {
+            $card['blurb'] = $meaning;
+        }
+
+        return $card;
+    }
 
     public function text(string $pack, string $figureId, string $locale, string $figureName = ''): string
     {
@@ -20,6 +51,17 @@ class FigureMeaningService
         $locale = $locale === 'en' ? 'en' : 'hu';
         if ($slug === '' || $figureId === '') {
             return '';
+        }
+
+        $entry = $this->entryForDeck($slug, $figureId);
+        if ($entry !== null) {
+            $fromGroup = $entry->description($locale);
+            if ($fromGroup === '') {
+                $fromGroup = $entry->meaning($locale);
+            }
+            if ($fromGroup !== '') {
+                return $fromGroup;
+            }
         }
 
         $row = FigureMeaning::query()
@@ -45,6 +87,32 @@ class FigureMeaningService
         }
 
         return $generated;
+    }
+
+    private function entryForDeck(string $pack, string $figureId): ?MeaningEntry
+    {
+        $slug = CardPackCatalog::canonicalize($pack);
+        $figureId = trim($figureId);
+        if ($slug === '' || $figureId === '') {
+            return null;
+        }
+
+        if (! array_key_exists($slug, $this->groupCache)) {
+            $cardPack = CardPack::query()
+                ->with(['meaningGroup.entries'])
+                ->where('slug', $slug)
+                ->first();
+            $this->groupCache[$slug] = $cardPack?->meaningGroup;
+        }
+
+        $group = $this->groupCache[$slug];
+        if ($group === null) {
+            return null;
+        }
+
+        $match = $group->entries->firstWhere('figure_id', $figureId);
+
+        return $match instanceof MeaningEntry ? $match : null;
     }
 
     private function store(string $slug, string $figureId, string $locale, string $text, string $source): void

@@ -48,14 +48,6 @@
                         <option value="tarot" @selected($type === 'tarot')>{{ __('admin.packs.type_tarot') }}</option>
                         <option value="oracle" @selected($type === 'oracle')>{{ __('admin.packs.type_oracle') }}</option>
                         <option value="card_back" @selected($type === 'card_back')>{{ __('admin.packs.type_card_back') }}</option>
-                        <option value="background" @selected($type === 'background')>{{ __('admin.packs.type_background') }}</option>
-                    </select>
-                </div>
-                <div class="field" data-polarity-wrap>
-                    <label for="polarity">{{ __('admin.packs.polarity') }}</label>
-                    <select id="polarity" name="polarity">
-                        <option value="light" @selected(old('polarity', $pack->polarity) === 'light')>{{ __('admin.packs.polarity_light') }}</option>
-                        <option value="shadow" @selected(old('polarity', $pack->polarity) === 'shadow')>{{ __('admin.packs.polarity_shadow') }}</option>
                     </select>
                 </div>
                 <div class="field">
@@ -123,29 +115,25 @@
                 <p class="muted">{{ __('admin.packs.skins_hint') }}</p>
                 <div class="row">
                     <div class="field">
+                        <label for="meaning_group_id">{{ __('admin.packs.meaning_group') }}</label>
+                        <select id="meaning_group_id" name="meaning_group_id" data-meaning-group-field>
+                            <option value="">—</option>
+                            @foreach ($meaningGroups as $group)
+                                <option
+                                    value="{{ $group->id }}"
+                                    data-pack-type="{{ $group->type }}"
+                                    @selected((int) old('meaning_group_id', $pack->meaning_group_id) === $group->id)
+                                >{{ $group->name_hu }}</option>
+                            @endforeach
+                        </select>
+                        <p class="muted">{{ __('admin.packs.meaning_group_hint') }}</p>
+                    </div>
+                    <div class="field">
                         <label for="default_card_back_id">{{ __('admin.packs.default_back') }}</label>
                         <select id="default_card_back_id" name="default_card_back_id">
                             <option value="">—</option>
                             @foreach ($backs as $back)
                                 <option value="{{ $back->id }}" @selected((int) old('default_card_back_id', $pack->default_card_back_id) === $back->id)>{{ $back->name_hu }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label for="default_background_light_id">{{ __('admin.packs.default_light') }}</label>
-                        <select id="default_background_light_id" name="default_background_light_id">
-                            <option value="">—</option>
-                            @foreach ($lights as $light)
-                                <option value="{{ $light->id }}" @selected((int) old('default_background_light_id', $pack->default_background_light_id) === $light->id)>{{ $light->name_hu }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label for="default_background_shadow_id">{{ __('admin.packs.default_shadow') }}</label>
-                        <select id="default_background_shadow_id" name="default_background_shadow_id">
-                            <option value="">—</option>
-                            @foreach ($shadows as $shadow)
-                                <option value="{{ $shadow->id }}" @selected((int) old('default_background_shadow_id', $pack->default_background_shadow_id) === $shadow->id)>{{ $shadow->name_hu }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -169,15 +157,23 @@
     <script>
         (() => {
             const type = document.querySelector('[data-pack-type-field]');
-            const polarity = document.querySelector('[data-polarity-wrap]');
             const asset = document.querySelector('[data-asset-wrap]');
             const skins = document.querySelector('[data-figure-defaults]');
+            const meaning = document.querySelector('[data-meaning-group-field]');
             const sync = () => {
                 const value = type?.value;
                 const figure = value === 'tarot' || value === 'oracle';
-                if (polarity) polarity.hidden = value !== 'background';
                 if (asset) asset.hidden = figure;
                 if (skins) skins.hidden = !figure;
+                if (meaning) {
+                    let keep = false;
+                    meaning.querySelectorAll('option[data-pack-type]').forEach((option) => {
+                        const match = option.getAttribute('data-pack-type') === value;
+                        option.hidden = !match;
+                        if (match && option.selected) keep = true;
+                    });
+                    if (!keep) meaning.value = '';
+                }
             };
             type?.addEventListener('change', sync);
             sync();

@@ -123,25 +123,6 @@ class CardPackCatalog
         }
     }
 
-    public static function hasBackgrounds(string $slug): bool
-    {
-        $pack = self::figure($slug);
-        if ($pack !== null) {
-            if ($pack->default_background_light_id || $pack->default_background_shadow_id) {
-                return true;
-            }
-        }
-
-        $slug = self::canonicalize($slug);
-        foreach (['shared-light.png', 'shared-shadow.png'] as $file) {
-            if (is_file(self::packAbsolute($slug).DIRECTORY_SEPARATOR.'backgrounds'.DIRECTORY_SEPARATOR.$file)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public static function hasPolarFigures(string $slug): bool
     {
         $deck = self::deckJson($slug);
@@ -206,26 +187,6 @@ class CardPackCatalog
         }
 
         return null;
-    }
-
-    public static function backgroundRelative(string $deck, string $variant): ?string
-    {
-        $slug = self::canonicalize($deck);
-        $tone = in_array($variant, ['shadow', 'negative', 'negatív'], true)
-            ? CardPack::POLARITY_SHADOW
-            : CardPack::POLARITY_LIGHT;
-        $pack = self::figure($slug);
-        $related = $tone === CardPack::POLARITY_SHADOW
-            ? $pack?->defaultBackgroundShadow
-            : $pack?->defaultBackgroundLight;
-        $fromPack = $related?->fileRelative();
-        if ($fromPack !== null) {
-            return $fromPack;
-        }
-
-        $file = self::publicPrefix()."/{$slug}/backgrounds/shared-{$tone}.png";
-
-        return is_file(public_path($file)) ? $file : null;
     }
 
     public static function cardBackRelative(string $slug): string

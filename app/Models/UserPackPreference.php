@@ -11,10 +11,6 @@ class UserPackPreference extends Model
 
     public const ROLE_CARD_BACK = 'card_back';
 
-    public const ROLE_BACKGROUND_LIGHT = 'background_light';
-
-    public const ROLE_BACKGROUND_SHADOW = 'background_shadow';
-
     protected $fillable = [
         'user_id',
         'pack_type',

@@ -13,6 +13,16 @@
                 <p>{{ $log->created_at?->format('Y-m-d H:i:s') }}</p>
             </div>
             <div class="field">
+                <label>{{ __('admin.readings.user') }}</label>
+                <p>
+                    @if ($log->user)
+                        {{ $log->user->name }} · {{ $log->user->email }}
+                    @else
+                        {{ __('admin.readings.guest') }}
+                    @endif
+                </p>
+            </div>
+            <div class="field">
                 <label>{{ __('admin.readings.status') }}</label>
                 <p>{{ $log->status }}</p>
             </div>

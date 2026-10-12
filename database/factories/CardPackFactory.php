@@ -22,7 +22,6 @@ class CardPackFactory extends Factory
             'description_hu' => 'Rövid teszt leírás.',
             'description_en' => 'Short test description.',
             'type' => CardPack::TYPE_TAROT,
-            'polarity' => null,
             'card_count' => 22,
             'style' => 'test',
             'owner' => 'AstroTarot',
@@ -48,20 +47,6 @@ class CardPackFactory extends Factory
             'type' => CardPack::TYPE_CARD_BACK,
             'card_count' => 1,
             'asset_path' => 'card-pack/tarot/card-back/card-back.png',
-        ]);
-    }
-
-    public function background(string $polarity = CardPack::POLARITY_LIGHT): static
-    {
-        $file = $polarity === CardPack::POLARITY_SHADOW
-            ? 'card-pack/tarot/backgrounds/shared-shadow.png'
-            : 'card-pack/tarot/backgrounds/shared-light.png';
-
-        return $this->state(fn () => [
-            'type' => CardPack::TYPE_BACKGROUND,
-            'polarity' => $polarity,
-            'card_count' => 1,
-            'asset_path' => $file,
         ]);
     }
 }

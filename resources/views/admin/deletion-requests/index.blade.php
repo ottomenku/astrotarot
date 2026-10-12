@@ -39,7 +39,7 @@
                                     method="POST"
                                     action="{{ route('admin.deletion-requests.process', $item) }}"
                                     style="display:inline"
-                                    onsubmit="return confirm(@json(__('admin.deletion_requests.process_confirm')))"
+                                    data-confirm="{{ __('admin.deletion_requests.process_confirm') }}"
                                 >
                                     @csrf
                                     <button type="submit">{{ __('admin.deletion_requests.process') }}</button>
@@ -48,7 +48,7 @@
                                     method="POST"
                                     action="{{ route('admin.deletion-requests.reject', $item) }}"
                                     style="display:inline"
-                                    onsubmit="return confirm(@json(__('admin.deletion_requests.reject_confirm')))"
+                                    data-confirm="{{ __('admin.deletion_requests.reject_confirm') }}"
                                 >
                                     @csrf
                                     <button type="submit">{{ __('admin.deletion_requests.reject') }}</button>
@@ -70,4 +70,5 @@
             {{ $requests->links() }}
         </div>
     </main>
+    @include('partials.confirm-submit')
 @endsection

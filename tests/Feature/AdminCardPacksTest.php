@@ -99,19 +99,6 @@ class AdminCardPacksTest extends TestCase
         $this->assertFalse($tarot->fresh()->is_default);
     }
 
-    public function test_background_defaults_are_per_polarity(): void
-    {
-        $lightA = CardPack::factory()->background(CardPack::POLARITY_LIGHT)->create(['is_default' => true]);
-        $lightB = CardPack::factory()->background(CardPack::POLARITY_LIGHT)->create(['is_default' => false]);
-        $shadow = CardPack::factory()->background(CardPack::POLARITY_SHADOW)->create(['is_default' => true]);
-
-        $lightB->makeDefault();
-
-        $this->assertTrue($lightB->fresh()->is_default);
-        $this->assertFalse($lightA->fresh()->is_default);
-        $this->assertTrue($shadow->fresh()->is_default);
-    }
-
     public function test_non_admin_cannot_manage_packs(): void
     {
         $user = User::factory()->create();

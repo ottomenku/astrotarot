@@ -37,12 +37,7 @@ class OgImageService
             return null;
         }
 
-        $composed = $this->composeCard(
-            $this->backgroundAbsolutePath($variant ?? 'positive', $deck),
-            $figurePath,
-            $width,
-            $height
-        );
+        $composed = $this->composeCard($figurePath, $width, $height);
         if ($composed === null) {
             return null;
         }
@@ -65,13 +60,6 @@ class OgImageService
     public function figureRelativePath(string $deck, string $figureId, ?string $variant = null): ?string
     {
         return CardPackCatalog::figureRelative($deck, $figureId, $variant);
-    }
-
-    public function backgroundAbsolutePath(string $variant, string $deck = 'egi-orakulum'): ?string
-    {
-        $relative = CardPackCatalog::backgroundRelative($deck, $variant);
-
-        return $relative === null ? null : public_path($relative);
     }
 
     /**
@@ -103,14 +91,13 @@ class OgImageService
             $figureId = (string) ($card['figure_id'] ?? '');
             $variant = (string) ($card['variant'] ?? $card['polarity'] ?? 'positive');
             $figurePath = $this->figureAbsolutePath($deck, $figureId, $variant);
-            $bgPath = $this->backgroundAbsolutePath($variant, $deck);
             if ($figurePath === null) {
                 imagedestroy($canvas);
 
                 return null;
             }
 
-            $composed = $this->composeCard($bgPath, $figurePath, $cardW, $cardH);
+            $composed = $this->composeCard($figurePath, $cardW, $cardH);
             if ($composed === null) {
                 imagedestroy($canvas);
 
@@ -137,7 +124,7 @@ class OgImageService
     /**
      * @return \GdImage|null
      */
-    private function composeCard(?string $backgroundPath, string $figurePath, int $width, int $height)
+    private function composeCard(string $figurePath, int $width, int $height)
     {
         $figure = @imagecreatefrompng($figurePath);
         if ($figure === false) {
@@ -154,24 +141,12 @@ class OgImageService
         imagealphablending($card, true);
         imagesavealpha($card, true);
 
-        $bg = ($backgroundPath !== null && is_file($backgroundPath))
-            ? @imagecreatefrompng($backgroundPath)
-            : false;
-
-        if ($bg !== false) {
-            imagecopyresampled($card, $bg, 0, 0, 0, 0, $width, $height, imagesx($bg), imagesy($bg));
-            imagedestroy($bg);
-        } else {
-            $ink = imagecolorallocate($card, 14, 13, 28);
-            imagefilledrectangle($card, 0, 0, $width, $height, $ink);
-        }
+        $ink = imagecolorallocate($card, 14, 13, 28);
+        imagefilledrectangle($card, 0, 0, $width, $height, $ink);
 
         $fw = imagesx($figure);
         $fh = imagesy($figure);
-        $fullBleed = $bg === false;
-        $scale = $fullBleed
-            ? max($width / $fw, $height / $fh)
-            : min(($width * 0.88) / $fw, ($height * 0.88) / $fh);
+        $scale = max($width / $fw, $height / $fh);
         $dw = (int) round($fw * $scale);
         $dh = (int) round($fh * $scale);
         $dx = (int) round(($width - $dw) / 2);

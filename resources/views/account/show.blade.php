@@ -54,33 +54,77 @@
                     @else
                         {{ __('messages.account_login_email') }}
                     @endif
+                    <div class="account-inline-actions">
+                        @if ($user->usesPasswordLogin())
+                            <details class="account-fold">
+                                <summary class="credits-back">{{ __('messages.account_password_change') }}</summary>
+                                <form method="POST" action="{{ route('account.password.update') }}">
+                                    @csrf
+                                    @method('PUT')
+                                    <label class="credits-note">
+                                        <span>{{ __('messages.account_password_current') }}</span>
+                                        <input type="password" name="current_password" required autocomplete="current-password">
+                                    </label>
+                                    <label class="credits-note">
+                                        <span>{{ __('messages.account_password_new') }}</span>
+                                        <input type="password" name="password" required autocomplete="new-password">
+                                    </label>
+                                    <label class="credits-note">
+                                        <span>{{ __('messages.password_confirm') }}</span>
+                                        <input type="password" name="password_confirmation" required autocomplete="new-password">
+                                    </label>
+                                    <button type="submit" class="credits-back">{{ __('messages.account_password_change') }}</button>
+                                </form>
+                            </details>
+                        @endif
+                        @if ($pendingDeletion)
+                            <p class="credits-lead">{{ __('messages.account_erasure_pending') }}</p>
+                        @else
+                            <details class="account-fold">
+                                <summary class="credits-danger-btn">{{ __('messages.account_delete_account') }}</summary>
+                                <form
+                                    method="POST"
+                                    action="{{ route('account.deletion-request.store') }}"
+                                    data-confirm="{{ __('messages.account_erasure_confirm') }}"
+                                >
+                                    @csrf
+                                    <p class="credits-lead">{{ __('messages.account_erasure_lead') }}</p>
+                                    <label class="credits-note">
+                                        <span>{{ __('messages.account_erasure_note') }}</span>
+                                        <textarea name="note" rows="2" maxlength="500"></textarea>
+                                    </label>
+                                    <button type="submit" class="credits-danger-btn">{{ __('messages.account_erasure_submit') }}</button>
+                                </form>
+                            </details>
+                        @endif
+                    </div>
+                </dd>
+            </div>
+            @if ($paidFeaturesEnabled)
+            <div>
+                <dt>{{ __('messages.account_field_plan') }}</dt>
+                <dd>
+                    <span class="account-inline">
+                        <span>{{ strtoupper($user->planKey()) }}</span>
+                        <a class="credits-back" href="{{ route('credits.packages') }}#plans">{{ __('messages.account_choose_plan') }}</a>
+                    </span>
                 </dd>
             </div>
             <div>
-                <dt>{{ __('messages.account_field_plan') }}</dt>
-                <dd>{{ strtoupper($user->planKey()) }}</dd>
-            </div>
-            <div>
                 <dt>{{ __('messages.account_field_credits') }}</dt>
-                <dd>{{ __('messages.credits_balance', ['count' => (int) $user->credits]) }}</dd>
+                <dd>
+                    <span class="account-inline">
+                        <span>{{ __('messages.credits_balance', ['count' => (int) $user->credits]) }}</span>
+                        <a class="credits-back" href="{{ route('credits.packages') }}#credits">{{ __('messages.account_buy_credits') }}</a>
+                    </span>
+                </dd>
             </div>
-            <div>
-                <dt>{{ __('messages.account_field_created') }}</dt>
-                <dd>{{ $user->created_at?->timezone(config('app.timezone'))->format('Y-m-d H:i') ?? __('messages.account_none') }}</dd>
-            </div>
-            <div>
-                <dt>{{ __('messages.account_field_terms') }}</dt>
-                <dd>{{ $user->terms_accepted_at?->timezone(config('app.timezone'))->format('Y-m-d H:i') ?? __('messages.account_none') }}</dd>
-            </div>
-            <div>
-                <dt>{{ __('messages.account_field_privacy') }}</dt>
-                <dd>{{ $user->privacy_accepted_at?->timezone(config('app.timezone'))->format('Y-m-d H:i') ?? __('messages.account_none') }}</dd>
-            </div>
+            @endif
         </dl>
 
         <h2 class="credits-section-title">{{ __('messages.account_packs') }}<x-feature-marks feature="packs.choose" /></h2>
-        <p class="credits-lead">{{ __('messages.account_packs_lead') }}</p>
-        @unless ($canChoosePacks || $canChooseBacks || $canChooseBackgrounds)
+        <p class="credits-lead">{{ $paidFeaturesEnabled ? __('messages.account_packs_lead') : __('messages.account_packs_lead_open') }}</p>
+        @unless ($canChoosePacks || $canChooseBacks)
             <p class="credits-lead">{{ __('messages.account_packs_locked') }}</p>
         @endunless
 
@@ -102,48 +146,31 @@
             @endforeach
 
             <p class="credits-lead" style="margin-top:8px">{{ __('messages.account_packs_skins') }}</p>
-            @foreach ($figureOptions as $options)
-                @foreach ($options as $pack)
-                    <fieldset class="account-pack-skins">
-                        <legend>{{ $pack->name() }}</legend>
-                        <label class="credits-note">
-                            <span>{{ __('messages.account_packs_back') }}<x-feature-marks feature="packs.backs" /></span>
-                            <select name="backs[{{ $pack->id }}]" @disabled(! $canChooseBacks)>
-                                <option value="">{{ __('messages.account_packs_default') }}</option>
-                                @foreach ($backOptions as $back)
-                                    <option value="{{ $back->id }}" @selected((int) optional($backPrefs->get($pack->id))->card_pack_id === (int) $back->id)>
-                                        {{ $back->name() }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </label>
-                        <label class="credits-note">
-                            <span>{{ __('messages.account_packs_light') }}<x-feature-marks feature="packs.backgrounds" /></span>
-                            <select name="lights[{{ $pack->id }}]" @disabled(! $canChooseBackgrounds)>
-                                <option value="">{{ __('messages.account_packs_default') }}</option>
-                                @foreach ($lightOptions as $bg)
-                                    <option value="{{ $bg->id }}" @selected((int) optional($lightPrefs->get($pack->id))->card_pack_id === (int) $bg->id)>
-                                        {{ $bg->name() }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </label>
-                        <label class="credits-note">
-                            <span>{{ __('messages.account_packs_shadow') }}<x-feature-marks feature="packs.backgrounds" /></span>
-                            <select name="shadows[{{ $pack->id }}]" @disabled(! $canChooseBackgrounds)>
-                                <option value="">{{ __('messages.account_packs_default') }}</option>
-                                @foreach ($shadowOptions as $bg)
-                                    <option value="{{ $bg->id }}" @selected((int) optional($shadowPrefs->get($pack->id))->card_pack_id === (int) $bg->id)>
-                                        {{ $bg->name() }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </label>
-                    </fieldset>
-                @endforeach
-            @endforeach
+            <label class="credits-note">
+                <span>{{ __('messages.account_packs_back') }}<x-feature-marks feature="packs.backs" /></span>
+                <span class="account-back-row">
+                    <select name="card_back" data-back-select @disabled(! $canChooseBacks)>
+                        <option value="" data-preview="">{{ __('messages.account_packs_default') }}</option>
+                        @foreach ($backOptions as $back)
+                            <option
+                                value="{{ $back->id }}"
+                                data-preview="{{ $back->fileUrl() }}"
+                                @selected((int) optional($selectedBack)->id === (int) $back->id)
+                            >
+                                {{ $back->name() }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <img
+                        class="account-back-preview"
+                        data-back-preview
+                        alt="{{ __('messages.account_packs_back_preview') }}"
+                        @if ($selectedBack?->fileUrl()) src="{{ $selectedBack->fileUrl() }}" @else hidden @endif
+                    >
+                </span>
+            </label>
 
-            @if ($canChoosePacks || $canChooseBacks || $canChooseBackgrounds)
+            @if ($canChoosePacks || $canChooseBacks)
                 <button type="submit" class="credits-danger-btn" style="justify-self:start">{{ __('messages.account_packs_save') }}</button>
             @endif
         </form>
@@ -156,7 +183,7 @@
                 method="POST"
                 action="{{ route('account.readings.destroy-all') }}"
                 class="account-toolbar"
-                onsubmit="return confirm(@json(__('messages.account_delete_all_confirm')))"
+                data-confirm="{{ __('messages.account_delete_all_confirm') }}"
             >
                 @csrf
                 @method('DELETE')
@@ -175,7 +202,7 @@
                     <form
                         method="POST"
                         action="{{ route('account.readings.destroy', $log) }}"
-                        onsubmit="return confirm(@json(__('messages.account_delete_confirm')))"
+                        data-confirm="{{ __('messages.account_delete_confirm') }}"
                     >
                         @csrf
                         @method('DELETE')
@@ -189,6 +216,7 @@
 
         <div style="margin-top:18px">{{ $readings->links() }}</div>
 
+        @if ($paidFeaturesEnabled)
         <h2 class="credits-section-title">{{ __('messages.account_retained') }}</h2>
         <p class="credits-lead">{{ __('messages.account_retained_lead') }}</p>
 
@@ -202,29 +230,30 @@
         @empty
             <p class="credits-lead">{{ __('messages.account_retained_empty') }}</p>
         @endforelse
-
-        <h2 class="credits-section-title">{{ __('messages.account_erasure_title') }}</h2>
-        <p class="credits-lead">{{ __('messages.account_erasure_lead') }}</p>
-
-        @if ($pendingDeletion)
-            <div class="credits-flash">{{ __('messages.account_erasure_pending') }}</div>
-        @else
-            <form
-                class="credits-package account-erasure"
-                method="POST"
-                action="{{ route('account.deletion-request.store') }}"
-                onsubmit="return confirm(@json(__('messages.account_erasure_confirm')))"
-            >
-                @csrf
-                <label class="credits-note">
-                    <span>{{ __('messages.account_erasure_note') }}</span>
-                    <textarea name="note" rows="2" maxlength="500"></textarea>
-                </label>
-                <button type="submit" class="credits-danger-btn">{{ __('messages.account_erasure_submit') }}</button>
-            </form>
         @endif
+
     </section>
     @include('templates.art-deco.partials.site-footer')
 </main>
+<script>
+    (function () {
+        var select = document.querySelector('[data-back-select]');
+        var preview = document.querySelector('[data-back-preview]');
+        if (!select || !preview) return;
+        var show = function () {
+            var option = select.options[select.selectedIndex];
+            var src = option ? (option.getAttribute('data-preview') || '') : '';
+            if (!src) {
+                preview.hidden = true;
+                preview.removeAttribute('src');
+                return;
+            }
+            preview.hidden = false;
+            preview.src = src;
+        };
+        select.addEventListener('change', show);
+    })();
+</script>
+@include('partials.confirm-submit')
 </body>
 </html>

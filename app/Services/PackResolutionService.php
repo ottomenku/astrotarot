@@ -32,42 +32,22 @@ class PackResolutionService
     }
 
     /**
-     * @return array{card_back: ?string, background_light: ?string, background_shadow: ?string, has_backgrounds: bool}
+     * @return array{card_back: ?string}
      */
     public function skin(?User $user, CardPack $figure): array
     {
-        $figure->loadMissing(['defaultCardBack', 'defaultBackgroundLight', 'defaultBackgroundShadow']);
+        $figure->loadMissing('defaultCardBack');
         $back = $figure->defaultCardBack;
-        $light = $figure->defaultBackgroundLight;
-        $shadow = $figure->defaultBackgroundShadow;
 
         if ($user !== null && $this->features->can($user, FeatureCatalog::PACKS_BACKS)) {
-            $chosen = $this->chosenSkin($user, $figure, UserPackPreference::ROLE_CARD_BACK);
+            $chosen = $this->chosenCardBack($user);
             if ($chosen !== null) {
                 $back = $chosen;
             }
         }
 
-        if ($user !== null && $this->features->can($user, FeatureCatalog::PACKS_BACKGROUNDS)) {
-            $chosenLight = $this->chosenSkin($user, $figure, UserPackPreference::ROLE_BACKGROUND_LIGHT);
-            $chosenShadow = $this->chosenSkin($user, $figure, UserPackPreference::ROLE_BACKGROUND_SHADOW);
-            if ($chosenLight !== null) {
-                $light = $chosenLight;
-            }
-            if ($chosenShadow !== null) {
-                $shadow = $chosenShadow;
-            }
-        }
-
-        $backUrl = $back?->fileUrl() ?? $this->assetUrl(CardPackCatalog::cardBackRelative($figure->slug));
-        $lightUrl = $light?->fileUrl() ?? $this->assetUrl(CardPackCatalog::backgroundRelative($figure->slug, 'light'));
-        $shadowUrl = $shadow?->fileUrl() ?? $this->assetUrl(CardPackCatalog::backgroundRelative($figure->slug, 'shadow'));
-
         return [
-            'card_back' => $backUrl,
-            'background_light' => $lightUrl,
-            'background_shadow' => $shadowUrl,
-            'has_backgrounds' => $lightUrl !== null || $shadowUrl !== null,
+            'card_back' => $back?->fileUrl() ?? $this->assetUrl(CardPackCatalog::cardBackRelative($figure->slug)),
         ];
     }
 
@@ -84,9 +64,6 @@ class PackResolutionService
             ? $this->skin($user, $pack)
             : [
                 'card_back' => $this->assetUrl(CardPackCatalog::cardBackRelative($slug)),
-                'background_light' => $this->assetUrl(CardPackCatalog::backgroundRelative($slug, 'light')),
-                'background_shadow' => $this->assetUrl(CardPackCatalog::backgroundRelative($slug, 'shadow')),
-                'has_backgrounds' => CardPackCatalog::hasBackgrounds($slug),
             ];
 
         return [
@@ -135,17 +112,22 @@ class PackResolutionService
         return CardPack::query()->active()->ofType(CardPack::TYPE_CARD_BACK)->ordered()->get();
     }
 
-    /**
-     * @return Collection<int, CardPack>
-     */
-    public function backgroundOptions(string $polarity): Collection
+    public function chosenCardBack(User $user): ?CardPack
     {
-        return CardPack::query()
-            ->active()
-            ->ofType(CardPack::TYPE_BACKGROUND)
-            ->where('polarity', $polarity)
-            ->ordered()
-            ->get();
+        $pref = UserPackPreference::query()
+            ->where('user_id', $user->id)
+            ->where('role', UserPackPreference::ROLE_CARD_BACK)
+            ->orderByRaw('case when figure_pack_id is null then 0 else 1 end')
+            ->latest('id')
+            ->with('cardPack')
+            ->first();
+
+        $pack = $pref?->cardPack;
+        if ($pack === null || ! $pack->is_active || $pack->type !== CardPack::TYPE_CARD_BACK) {
+            return null;
+        }
+
+        return $pack;
     }
 
     private function chosenFigure(User $user, string $packType): ?CardPack
@@ -159,35 +141,6 @@ class PackResolutionService
 
         $pack = $pref?->cardPack;
         if ($pack === null || ! $pack->is_active || $pack->type !== $packType) {
-            return null;
-        }
-
-        return $pack;
-    }
-
-    private function chosenSkin(User $user, CardPack $figure, string $role): ?CardPack
-    {
-        $pref = UserPackPreference::query()
-            ->where('user_id', $user->id)
-            ->where('role', $role)
-            ->where('figure_pack_id', $figure->id)
-            ->with('cardPack')
-            ->first();
-
-        $pack = $pref?->cardPack;
-        if ($pack === null || ! $pack->is_active) {
-            return null;
-        }
-
-        if ($role === UserPackPreference::ROLE_CARD_BACK && $pack->type !== CardPack::TYPE_CARD_BACK) {
-            return null;
-        }
-        if ($role === UserPackPreference::ROLE_BACKGROUND_LIGHT
-            && ($pack->type !== CardPack::TYPE_BACKGROUND || $pack->polarity !== CardPack::POLARITY_LIGHT)) {
-            return null;
-        }
-        if ($role === UserPackPreference::ROLE_BACKGROUND_SHADOW
-            && ($pack->type !== CardPack::TYPE_BACKGROUND || $pack->polarity !== CardPack::POLARITY_SHADOW)) {
             return null;
         }
 

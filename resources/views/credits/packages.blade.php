@@ -50,7 +50,7 @@
             <div class="credits-error">{{ $errors->first() }}</div>
         @endif
 
-        <h2 class="credits-section-title">{{ __('messages.plan_section_title') }}</h2>
+        <h2 id="plans" class="credits-section-title">{{ __('messages.plan_section_title') }}</h2>
         <div class="credits-plans">
             @foreach ($plans as $plan)
                 @php
@@ -98,7 +98,7 @@
             </p>
         @endif
 
-        <h2 class="credits-section-title">{{ __('messages.credits_request_section') }}</h2>
+        <h2 id="credits" class="credits-section-title">{{ __('messages.credits_request_section') }}</h2>
         <div class="credits-packages">
             @foreach ($creditPacks as $package)
                 @php

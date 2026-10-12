@@ -47,7 +47,8 @@ class HomeController extends Controller
                 'llmEnabled' => $settings->llmEnabled(),
                 'registrationEnabled' => $settings->registrationEnabled(),
                 'featureAccess' => $snapshot,
-                'canOpenCredits' => (bool) ($snapshot[FeatureCatalog::CREDITS_PAGE]['allowed'] ?? false),
+                'canOpenCredits' => $settings->paidFeaturesEnabled()
+                    && (bool) ($snapshot[FeatureCatalog::CREDITS_PAGE]['allowed'] ?? false),
                 'canOpenAccount' => (bool) ($snapshot[FeatureCatalog::ACCOUNT]['allowed'] ?? false),
                 'canViewHistory' => (bool) ($snapshot[FeatureCatalog::HISTORY]['allowed'] ?? false),
             ]);

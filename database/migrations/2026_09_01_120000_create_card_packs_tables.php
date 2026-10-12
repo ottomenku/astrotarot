@@ -144,7 +144,7 @@ return new class extends Migration
                     'name_en' => $meta['name_en'],
                     'description_hu' => $tone === 'light' ? 'Pozitív (fény) háttér.' : 'Negatív (árnyék) háttér.',
                     'description_en' => $tone === 'light' ? 'Positive (light) background.' : 'Negative (shadow) background.',
-                    'type' => CardPack::TYPE_BACKGROUND,
+                    'type' => 'background',
                     'polarity' => $tone,
                     'card_count' => 1,
                     'style' => null,
@@ -285,7 +285,7 @@ return new class extends Migration
         $keys = [
             FeatureCatalog::PACKS_CHOOSE => 0,
             FeatureCatalog::PACKS_BACKS => 0,
-            FeatureCatalog::PACKS_BACKGROUNDS => 0,
+            'packs.backgrounds' => 0,
         ];
         foreach ($keys as $key => $cost) {
             if (DB::table('feature_access')->where('key', $key)->exists()) {

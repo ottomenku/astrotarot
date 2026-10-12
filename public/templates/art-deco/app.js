@@ -76,8 +76,8 @@
   }
   const packBase = (root.dataset.packBase || gameConfig.pack_base || '/card-pack').replace(/\/$/, '');
   const fallbackSlots = [
-    { pack_slug: 'egi-orakulum', title_hu: 'Égi Orákulum', title_en: 'Celestial Oracle', info_mode: 'astro', row: 1, place: 1, full_bleed: false },
-    { pack_slug: 'tarot', title_hu: 'Tarot figura', title_en: 'Tarot figure', info_mode: 'meaning', row: 1, place: 2, full_bleed: false },
+    { pack_slug: 'egi-orakulum', title_hu: 'Égi Orákulum', title_en: 'Celestial Oracle', info_mode: 'astro', row: 1, place: 1, full_bleed: true },
+    { pack_slug: 'tarot', title_hu: 'Tarot figura', title_en: 'Tarot figure', info_mode: 'meaning', row: 1, place: 2, full_bleed: true },
   ];
   const gameSlots = (Array.isArray(gameConfig.slots) && gameConfig.slots.length)
     ? gameConfig.slots
@@ -319,15 +319,6 @@
     return packSlug(slotDef(currentSlotIndex())?.pack_slug || gameSlots[0]?.pack_slug || 'egi-orakulum');
   }
 
-  function packHasBackgrounds(slug) {
-    const key = packSlug(slug);
-    if (gameConfig.packs && gameConfig.packs[key] && typeof gameConfig.packs[key].has_backgrounds === 'boolean') {
-      return gameConfig.packs[key].has_backgrounds;
-    }
-    const slot = gameSlots.find((item) => packSlug(item.pack_slug) === key);
-    return slot ? slot.full_bleed !== true : true;
-  }
-
   function roman(n) {
     const map = [
       [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
@@ -535,16 +526,6 @@
     return `${packBase}/${slug}/${relative}`;
   }
 
-  function backgroundSrc(deckKey, variant) {
-    if (!packHasBackgrounds(deckKey)) return '';
-    const skin = packSkin(deckKey);
-    const tone = variant === 'shadow' ? 'shadow' : 'light';
-    const resolved = tone === 'shadow' ? skin.background_shadow : skin.background_light;
-    if (resolved) return resolved;
-    const slug = packSlug(deckKey);
-    return `${packBase}/${slug}/backgrounds/shared-${tone}.png`;
-  }
-
   function packHasPolarFigures(slug) {
     const key = packSlug(slug);
     if (gameConfig.packs && gameConfig.packs[key] && typeof gameConfig.packs[key].polar_figures === 'boolean') {
@@ -744,7 +725,6 @@
         const article = document.createElement('article');
         article.className = `chosen-card${draw ? ' has-card' : ' is-placeholder'}`;
         const deckKey = packSlug(draw?.deck || slot.pack_slug);
-        const fullBleed = slot.full_bleed === true || !packHasBackgrounds(deckKey);
 
         if (!draw) {
           article.innerHTML = `
@@ -759,15 +739,10 @@
           </div>
         `;
         } else {
-          const bg = backgroundSrc(deckKey, draw.variant);
-          const bgTag = (!fullBleed && bg)
-            ? `<img class="card-background" src="${bg}" alt="" decoding="async">`
-            : '';
           article.innerHTML = `
           <h3 class="slot-title">${escapeHtml(slotTitle(index))}</h3>
           <p class="polarity-label ${polarityClass(draw.variant)}">${polarityLabel(draw.variant)}</p>
-          <div class="card-art${fullBleed ? ' is-full-bleed' : ''}">
-            ${bgTag}
+          <div class="card-art is-full-bleed">
             <img class="card-figure" src="${figureSrc(draw.deck, draw.figureId, draw.variant)}" alt="" decoding="async">
             <span class="roman">${roman(index + 1)}</span>
           </div>
@@ -837,7 +812,7 @@
       deck: deckKey,
       backIndex,
       figureId: figure.id,
-      backgroundId: packHasBackgrounds(deckKey) ? 'shared' : 'none',
+      backgroundId: 'none',
       variant: randomVariant(),
     });
 

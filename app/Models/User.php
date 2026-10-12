@@ -32,6 +32,7 @@ class User extends Authenticatable
         'template_id',
         'terms_accepted_at',
         'privacy_accepted_at',
+        'banned_at',
     ];
 
     protected $hidden = [
@@ -52,6 +53,7 @@ class User extends Authenticatable
             'terms_accepted_at' => 'datetime',
             'privacy_accepted_at' => 'datetime',
             'anonymized_at' => 'datetime',
+            'banned_at' => 'datetime',
         ];
     }
 
@@ -90,9 +92,23 @@ class User extends Authenticatable
         return $this->role === Role::Admin;
     }
 
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
+    }
+
     public function planKey(): string
     {
         return $this->plan ?: 'free';
+    }
+
+    public function usesPasswordLogin(): bool
+    {
+        if (in_array($this->provider, ['google', 'facebook'], true)) {
+            return false;
+        }
+
+        return filled($this->password);
     }
 
     public function isPremiumOrAbove(): bool

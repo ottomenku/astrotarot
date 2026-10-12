@@ -70,7 +70,6 @@ class CardDrawProfileService
     public function __construct(
         private readonly EphemerisService $ephemeris,
         private readonly EphemerisChartContext $chartContext,
-        private readonly AppSettings $settings,
     ) {}
 
     /**
@@ -91,8 +90,6 @@ class CardDrawProfileService
      */
     public function forNow(): array
     {
-        $mode = $this->settings->drawMode();
-
         try {
             $chart = $this->chartContext->resolve();
             $result = $this->ephemeris->calculate([
@@ -102,7 +99,7 @@ class CardDrawProfileService
                 'sidereal' => $chart['sidereal'],
             ]);
 
-            $profile = $this->fromEphemerisResult($result, $mode);
+            $profile = $this->fromEphemerisResult($result);
             $profile['chart_mode'] = $chart['mode'];
             $profile['datetime_utc'] = $chart['datetime_utc'];
             $profile['chart'] = $this->chartSnapshot($result);
@@ -111,7 +108,7 @@ class CardDrawProfileService
         } catch (Throwable $e) {
             Log::warning('Card draw profile fallback used', ['error' => $e->getMessage()]);
 
-            return $this->fallback($mode);
+            return $this->fallback();
         }
     }
 
@@ -129,10 +126,8 @@ class CardDrawProfileService
      *     draw_mode: string
      * }
      */
-    public function fromEphemerisResult(array $result, ?string $mode = null): array
+    public function fromEphemerisResult(array $result): array
     {
-        $mode = $this->normalizeMode($mode ?? $this->settings->drawMode());
-
         $sun = collect($result['objects'] ?? [])->firstWhere('name', 'Sun');
         $sunSign = $this->normalizeSign(is_array($sun) ? (string) ($sun['sign'] ?? '') : '') ?? 'leo';
 
@@ -151,16 +146,11 @@ class CardDrawProfileService
             $tone = 'pozitív';
         }
 
-        if ($mode === AppSettings::DRAW_MODE_RANDOM_POLARITY) {
-            [$tones, $variants] = $this->randomWeightedSlotTones();
-            $tone = $tones[0] ?? 'pozitív';
-        } else {
-            [$tones, $variants] = $this->slotTonesAndVariants($result, $tone);
-        }
+        [$tones, $variants] = $this->slotTonesAndVariants($result, $tone);
 
         $variant = $variants[0] ?? ($tone === 'negatív' ? 'shadow' : 'positive');
 
-        return $this->withSlotAllocation([
+        return $this->withFixedSlots([
             'sun_sign' => $sunSign,
             'element' => $element,
             'modality' => $modality,
@@ -168,7 +158,7 @@ class CardDrawProfileService
             'variant' => $variant,
             'tones' => $tones,
             'variants' => $variants,
-            'draw_mode' => $mode,
+            'draw_mode' => 'scoring',
             'scoring' => $this->scoringSnapshot($clean, $element, $modality, $tone),
         ]);
     }
@@ -188,28 +178,21 @@ class CardDrawProfileService
      *     datetime_utc?: string
      * }
      */
-    public function fallback(?string $mode = null): array
+    public function fallback(): array
     {
-        $mode = $this->normalizeMode($mode ?? $this->settings->drawMode());
+        $tones = ['pozitív', 'pozitív', 'pozitív'];
+        $variants = ['positive', 'positive', 'positive'];
+        $tone = 'pozitív';
 
-        if ($mode === AppSettings::DRAW_MODE_RANDOM_POLARITY) {
-            [$tones, $variants] = $this->randomWeightedSlotTones();
-        } else {
-            $tones = ['pozitív', 'pozitív', 'pozitív'];
-            $variants = ['positive', 'positive', 'positive'];
-        }
-
-        $tone = $tones[0] ?? 'pozitív';
-
-        return $this->withSlotAllocation([
+        return $this->withFixedSlots([
             'sun_sign' => 'leo',
             'element' => 'tűz',
             'modality' => 'fő',
             'tone' => $tone,
-            'variant' => $variants[0] ?? 'positive',
+            'variant' => 'positive',
             'tones' => $tones,
             'variants' => $variants,
-            'draw_mode' => $mode,
+            'draw_mode' => 'scoring',
             'chart_mode' => 'now',
             'datetime_utc' => now('UTC')->format('Y-m-d\TH:i:s\Z'),
             'chart' => [
@@ -315,7 +298,7 @@ class CardDrawProfileService
      * @param  array<string, mixed>  $profile
      * @return array<string, mixed>
      */
-    private function withSlotAllocation(array $profile): array
+    private function withFixedSlots(array $profile): array
     {
         $sunSign = (string) ($profile['sun_sign'] ?? 'leo');
         $element = (string) ($profile['element'] ?? 'tűz');
@@ -330,62 +313,14 @@ class CardDrawProfileService
             $profile['modality'] = $modality;
         }
 
-        $pool = [
-            AppSettings::SLOT_SOURCE_SUN => [
-                'id' => $sunSign,
-                'value' => $sunSign,
-            ],
-            AppSettings::SLOT_SOURCE_ELEMENT => [
-                'id' => self::ELEMENT_BACKGROUNDS[$element],
-                'value' => $element,
-            ],
-            AppSettings::SLOT_SOURCE_MODALITY => [
-                'id' => self::MODALITY_BACKGROUNDS[$modality],
-                'value' => $modality,
-            ],
+        $profile['slots'] = [
+            $sunSign,
+            self::ELEMENT_BACKGROUNDS[$element],
+            self::MODALITY_BACKGROUNDS[$modality],
         ];
-
-        $sources = $this->settings->slotAllocation();
-        $kindOptions = array_keys($pool);
-
-        // random1 slots share a shuffled pool so each gets a distinct kind,
-        // without being forced by fixed (napjegy/elem/minőség) admin choices.
-        $random1Count = count(array_filter(
-            $sources,
-            static fn (string $source): bool => $source === AppSettings::SLOT_SOURCE_RANDOM1
-        ));
-        $random1Queue = $kindOptions;
-        shuffle($random1Queue);
-        if ($random1Count < count($random1Queue)) {
-            $random1Queue = array_slice($random1Queue, 0, $random1Count);
-        }
-
-        $slots = [];
-        $kinds = [];
-        $values = [];
-
-        foreach ($sources as $source) {
-            if (isset($pool[$source])) {
-                $kind = $source;
-            } elseif ($source === AppSettings::SLOT_SOURCE_RANDOM1) {
-                $kind = array_shift($random1Queue);
-                if ($kind === null) {
-                    $kind = $this->pick($kindOptions);
-                }
-            } else {
-                // full_random: independent pick, repeats allowed
-                $kind = $this->pick($kindOptions);
-            }
-
-            $slots[] = $pool[$kind]['id'];
-            $kinds[] = $kind;
-            $values[] = $pool[$kind]['value'];
-        }
-
-        $profile['slots'] = $slots;
-        $profile['slot_sources'] = $sources;
-        $profile['slot_kinds'] = $kinds;
-        $profile['slot_values'] = $values;
+        $profile['slot_sources'] = ['sun_sign', 'element', 'modality'];
+        $profile['slot_kinds'] = ['sun_sign', 'element', 'modality'];
+        $profile['slot_values'] = [$sunSign, $element, $modality];
 
         return $profile;
     }
@@ -414,43 +349,6 @@ class CardDrawProfileService
         }
 
         return [$tones, $variants];
-    }
-
-    /**
-     * Random polarity with 60% positive / 40% negative per slot.
-     *
-     * @return array{0: list<string>, 1: list<string>}
-     */
-    private function randomWeightedSlotTones(): array
-    {
-        $tones = [];
-        $variants = [];
-
-        for ($slot = 0; $slot < 3; $slot++) {
-            $besorolas = mt_rand(1, 100) <= 60 ? 'pozitív' : 'negatív';
-            $tones[] = $besorolas;
-            $variants[] = $besorolas === 'negatív' ? 'shadow' : 'positive';
-        }
-
-        return [$tones, $variants];
-    }
-
-    /**
-     * @template T
-     * @param  list<T>  $items
-     * @return T
-     */
-    private function pick(array $items): mixed
-    {
-        return $items[array_rand($items)];
-    }
-
-    private function normalizeMode(string $mode): string
-    {
-        return in_array($mode, [
-            AppSettings::DRAW_MODE_SCORING,
-            AppSettings::DRAW_MODE_RANDOM_POLARITY,
-        ], true) ? $mode : AppSettings::DRAW_MODE_SCORING;
     }
 
     private function normalizeSign(string $sign): ?string

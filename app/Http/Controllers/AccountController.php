@@ -12,6 +12,7 @@ use App\Services\PersonalDataService;
 use App\Support\FeatureCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 use RuntimeException;
 
@@ -45,7 +46,6 @@ class AccountController extends Controller
         $figurePrefs = $prefs
             ->where('role', UserPackPreference::ROLE_FIGURE)
             ->keyBy('pack_type');
-        $skinPrefs = $prefs->groupBy('role');
 
         $figureOptions = [];
         foreach (CardPack::FIGURE_TYPES as $type) {
@@ -60,15 +60,10 @@ class AccountController extends Controller
             'assetBase' => asset('templates/art-deco'),
             'figureOptions' => $figureOptions,
             'backOptions' => $this->packs->backOptions(),
-            'lightOptions' => $this->packs->backgroundOptions(CardPack::POLARITY_LIGHT),
-            'shadowOptions' => $this->packs->backgroundOptions(CardPack::POLARITY_SHADOW),
+            'selectedBack' => $this->packs->chosenCardBack($user),
             'figurePrefs' => $figurePrefs,
-            'backPrefs' => $skinPrefs->get(UserPackPreference::ROLE_CARD_BACK, collect())->keyBy('figure_pack_id'),
-            'lightPrefs' => $skinPrefs->get(UserPackPreference::ROLE_BACKGROUND_LIGHT, collect())->keyBy('figure_pack_id'),
-            'shadowPrefs' => $skinPrefs->get(UserPackPreference::ROLE_BACKGROUND_SHADOW, collect())->keyBy('figure_pack_id'),
             'canChoosePacks' => $this->features->can($user, FeatureCatalog::PACKS_CHOOSE),
             'canChooseBacks' => $this->features->can($user, FeatureCatalog::PACKS_BACKS),
-            'canChooseBackgrounds' => $this->features->can($user, FeatureCatalog::PACKS_BACKGROUNDS),
         ]);
     }
 
@@ -121,5 +116,25 @@ class AccountController extends Controller
         return redirect()
             ->route('account.show')
             ->with('status', __('messages.account_erasure_sent'));
+    }
+
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user->usesPasswordLogin(), 403);
+
+        $data = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ], [
+            'current_password.current_password' => __('messages.account_password_current_invalid'),
+        ]);
+
+        $user->password = $data['password'];
+        $user->save();
+
+        return redirect()
+            ->route('account.show')
+            ->with('status', __('messages.account_password_updated'));
     }
 }

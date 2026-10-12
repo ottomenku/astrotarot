@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Template;
 use App\Models\User;
+use App\Services\CreditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,12 +15,13 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
+    public function __construct(private readonly CreditService $credits) {}
+
     public function index(Request $request): View
     {
         $q = trim((string) $request->query('q', ''));
 
         $users = User::query()
-            ->with('template')
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($inner) use ($q) {
                     $inner->where('email', 'like', "%{$q}%")
@@ -79,6 +81,40 @@ class UserController extends Controller
         return redirect()
             ->route('admin.users.edit', $user)
             ->with('status', __('admin.users.saved'));
+    }
+
+    public function grantCredits(Request $request, User $user): RedirectResponse
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'integer', 'min:1', 'max:100000'],
+        ]);
+
+        $this->credits->grant($user, (int) $data['amount']);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('status', __('admin.users.credits_granted', [
+                'name' => $user->name,
+                'amount' => (int) $data['amount'],
+            ]));
+    }
+
+    public function toggleBan(Request $request, User $user): RedirectResponse
+    {
+        if ($user->id === $request->user()?->id) {
+            return redirect()
+                ->route('admin.users.index')
+                ->withErrors(['user' => __('admin.users.ban_self')]);
+        }
+
+        $user->banned_at = $user->isBanned() ? null : now();
+        $user->save();
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('status', $user->isBanned()
+                ? __('admin.users.banned', ['name' => $user->name])
+                : __('admin.users.unbanned', ['name' => $user->name]));
     }
 
     /**

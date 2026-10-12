@@ -49,16 +49,16 @@ class PackPreferenceTest extends TestCase
             ->get(route('account.show'))
             ->assertOk()
             ->assertSee(__('messages.account_packs_save'), false)
-            ->assertDontSee(__('messages.account_packs_locked'), false);
+            ->assertSee(__('messages.account_packs_back_preview'), false)
+            ->assertSee('name="card_back"', false)
+            ->assertDontSee('name="backs[', false);
 
         $this->actingAs($user)
             ->post(route('account.packs.update'), [
                 'figures' => [
                     CardPack::TYPE_TAROT => $cigany->id,
                 ],
-                'backs' => [
-                    $cigany->id => $back->id,
-                ],
+                'card_back' => $back->id,
             ])
             ->assertRedirect(route('account.show'))
             ->assertSessionHas('status', __('messages.account_packs_saved'));
@@ -72,18 +72,23 @@ class PackPreferenceTest extends TestCase
         $this->assertDatabaseHas('user_pack_preferences', [
             'user_id' => $user->id,
             'role' => UserPackPreference::ROLE_CARD_BACK,
-            'figure_pack_id' => $cigany->id,
+            'figure_pack_id' => null,
             'card_pack_id' => $back->id,
         ]);
+
+        $this->actingAs($user);
+        $packs = app(PackResolutionService::class);
+        $tarot = CardPack::query()->where('slug', 'tarot')->firstOrFail();
+        $oracle = CardPack::query()->where('slug', 'egi-orakulum')->firstOrFail();
+        $this->assertSame($back->fileUrl(), $packs->skin($user, $tarot)['card_back']);
+        $this->assertSame($back->fileUrl(), $packs->skin($user, $oracle)['card_back']);
 
         $this->actingAs($user)
             ->post(route('account.packs.update'), [
                 'figures' => [
                     CardPack::TYPE_TAROT => '',
                 ],
-                'backs' => [
-                    $cigany->id => '',
-                ],
+                'card_back' => '',
             ])
             ->assertRedirect(route('account.show'));
 

@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+use App\Support\AdminIcons;
+use App\Support\PackageIcons;
+
 enum Role: string
 {
     case User = 'user';
@@ -30,5 +33,15 @@ enum Role: string
     public function isAdmin(): bool
     {
         return $this === self::Admin;
+    }
+
+    public function iconSvg(): string
+    {
+        return match ($this) {
+            self::User => AdminIcons::user(),
+            self::Pro => PackageIcons::svg(PackageIcons::SUN),
+            self::Expert => PackageIcons::svg(PackageIcons::CROWN),
+            self::Admin => PackageIcons::svg(PackageIcons::STAR),
+        };
     }
 }

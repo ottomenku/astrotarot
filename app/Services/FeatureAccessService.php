@@ -15,6 +15,8 @@ class FeatureAccessService
     /** @var Collection<string, FeatureAccess>|null */
     private ?Collection $cache = null;
 
+    public function __construct(private readonly AppSettings $settings) {}
+
     public function refresh(): void
     {
         $this->cache = null;
@@ -83,6 +85,16 @@ class FeatureAccessService
             $denied['status'] = 401;
 
             return $denied;
+        }
+
+        if (! $this->settings->paidFeaturesEnabled()) {
+            return [
+                'allowed' => true,
+                'cost' => 0,
+                'will_charge' => false,
+                'status' => 200,
+                'message' => '',
+            ];
         }
 
         if ($user->isAdmin()) {
@@ -169,18 +181,36 @@ class FeatureAccessService
      */
     public function marks(string $key): array
     {
+        if (! $this->settings->paidFeaturesEnabled()) {
+            return [
+                'packages' => [],
+                'credit_cost' => 0,
+            ];
+        }
+
         $rule = $this->rule($key);
         $packages = [];
-        if ($rule !== null) {
-            foreach ($rule->packages as $package) {
-                $icon = $package->iconKey();
-                if ($icon === PackageIcons::NONE) {
-                    continue;
-                }
+        if ($rule !== null && $rule->packages->isNotEmpty()) {
+            $lowest = $rule->packages->sort(function (Package $left, Package $right): int {
+                return [
+                    (int) $left->price_huf,
+                    (float) $left->price_usd,
+                    (int) $left->sort_order,
+                    (int) $left->id,
+                ] <=> [
+                    (int) $right->price_huf,
+                    (float) $right->price_usd,
+                    (int) $right->sort_order,
+                    (int) $right->id,
+                ];
+            })->first();
+
+            $icon = $lowest->iconKey();
+            if ($icon !== PackageIcons::NONE) {
                 $packages[] = [
-                    'slug' => $package->slug,
+                    'slug' => $lowest->slug,
                     'icon' => $icon,
-                    'name' => $package->name(),
+                    'name' => $lowest->name(),
                 ];
             }
         }

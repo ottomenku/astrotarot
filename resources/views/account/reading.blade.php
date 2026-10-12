@@ -47,7 +47,7 @@
             method="POST"
             action="{{ route('account.readings.destroy', $log) }}"
             class="account-toolbar"
-            onsubmit="return confirm(@json(__('messages.account_delete_confirm')))"
+            data-confirm="{{ __('messages.account_delete_confirm') }}"
         >
             @csrf
             @method('DELETE')
@@ -56,5 +56,6 @@
     </section>
     @include('templates.art-deco.partials.site-footer')
 </main>
+@include('partials.confirm-submit')
 </body>
 </html>

@@ -8,8 +8,10 @@ use App\Models\ReadingLog;
 use App\Models\ReadingShare;
 use App\Models\Template;
 use App\Models\User;
+use App\Models\UserPackPreference;
 use App\Services\CardDrawProfileService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AccountPrivacyTest extends TestCase
@@ -49,13 +51,29 @@ class AccountPrivacyTest extends TestCase
             ->assertSee('Saját kérdésem', false)
             ->assertDontSee('Idegen kérdés', false)
             ->assertSee('credits_50', false)
-            ->assertSee(__('messages.account_erasure_submit'), false);
+            ->assertSee(__('messages.account_delete_account'), false)
+            ->assertSee(__('messages.account_password_change'), false)
+            ->assertSee(__('messages.account_choose_plan'), false)
+            ->assertSee(__('messages.account_buy_credits'), false)
+            ->assertSee(route('credits.packages').'#plans', false)
+            ->assertSee(route('credits.packages').'#credits', false)
+            ->assertDontSee('Regisztráció', false)
+            ->assertDontSee('Registered', false)
+            ->assertDontSee('ÁSZF elfogadva', false)
+            ->assertDontSee('Adatkezelés elfogadva', false)
+            ->assertDontSee('Terms accepted', false)
+            ->assertDontSee('Privacy notice accepted', false)
+            ->assertSee(__('messages.account_erasure_submit'), false)
+            ->assertSee('data-confirm="'.e(__('messages.account_delete_confirm')).'"', false)
+            ->assertSee('data-confirm="'.e(__('messages.account_delete_all_confirm')).'"', false)
+            ->assertSee('data-confirm="'.e(__('messages.account_erasure_confirm')).'"', false);
 
         $this->actingAs($user)
             ->get(route('account.readings.show', $own))
             ->assertOk()
             ->assertSee('Saját kérdésem', false)
-            ->assertSee('Saját válasz', false);
+            ->assertSee('Saját válasz', false)
+            ->assertSee('data-confirm="'.e(__('messages.account_delete_confirm')).'"', false);
     }
 
     public function test_user_cannot_open_another_users_reading_in_settings(): void
@@ -148,6 +166,18 @@ class AccountPrivacyTest extends TestCase
             'credits' => 50,
             'status' => 'pending',
         ]);
+        UserPackPreference::query()->create([
+            'user_id' => $user->id,
+            'role' => UserPackPreference::ROLE_FIGURE,
+            'pack_type' => 'tarot',
+            'card_pack_id' => \App\Models\CardPack::query()->where('slug', 'tarot')->value('id'),
+        ]);
+        $post = \App\Models\BlogPost::factory()->create(['user_id' => $user->id]);
+        \App\Models\BlogComment::query()->create([
+            'blog_post_id' => $post->id,
+            'user_id' => $user->id,
+            'body' => 'Személyes hozzászólás',
+        ]);
 
         $this->actingAs($user)
             ->post(route('account.deletion-request.store'))
@@ -158,7 +188,9 @@ class AccountPrivacyTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.deletion-requests.index'))
             ->assertOk()
-            ->assertSee('keepme@example.com', false);
+            ->assertSee('keepme@example.com', false)
+            ->assertSee('data-confirm="'.e(__('admin.deletion_requests.process_confirm')).'"', false)
+            ->assertSee('data-confirm="'.e(__('admin.deletion_requests.reject_confirm')).'"', false);
 
         $this->actingAs($admin)
             ->post(route('admin.deletion-requests.process', $deletion))
@@ -168,8 +200,8 @@ class AccountPrivacyTest extends TestCase
         $this->assertNotNull($user->anonymized_at);
         $this->assertSame('Törölt fiók', $user->name);
         $this->assertNotSame('keepme@example.com', $user->email);
-        $this->assertSame('premium', $user->plan);
-        $this->assertSame(40, (int) $user->credits);
+        $this->assertSame('free', $user->plan);
+        $this->assertSame(0, (int) $user->credits);
         $this->assertSame(0, $user->readingLogs()->count());
         $this->assertSame(0, $user->readingShares()->count());
         $this->assertDatabaseHas('credit_requests', [
@@ -177,6 +209,9 @@ class AccountPrivacyTest extends TestCase
             'user_id' => $user->id,
             'credits' => 50,
         ]);
+        $this->assertDatabaseMissing('user_pack_preferences', ['user_id' => $user->id]);
+        $this->assertDatabaseMissing('blog_comments', ['user_id' => $user->id]);
+        $this->assertDatabaseHas('blog_posts', ['id' => $post->id, 'user_id' => null]);
         $this->assertSame(DataDeletionRequest::STATUS_PROCESSED, $deletion->fresh()->status);
         $this->assertDatabaseMissing('users', ['email' => 'keepme@example.com']);
     }
@@ -224,6 +259,60 @@ class AccountPrivacyTest extends TestCase
             ->assertOk()
             ->assertSee(route('account.show'), false)
             ->assertSee(__('messages.account_menu'), false);
+    }
+
+    public function test_password_user_can_change_password(): void
+    {
+        $user = User::factory()->create(['password' => 'password123']);
+
+        $this->actingAs($user)
+            ->put(route('account.password.update'), [
+                'current_password' => 'password123',
+                'password' => 'newpassword1',
+                'password_confirmation' => 'newpassword1',
+            ])
+            ->assertRedirect(route('account.show'))
+            ->assertSessionHas('status', __('messages.account_password_updated'));
+
+        $this->assertTrue(Hash::check('newpassword1', $user->fresh()->password));
+    }
+
+    public function test_wrong_current_password_is_rejected(): void
+    {
+        $user = User::factory()->create(['password' => 'password123']);
+
+        $this->actingAs($user)
+            ->from(route('account.show'))
+            ->put(route('account.password.update'), [
+                'current_password' => 'wrong-password',
+                'password' => 'newpassword1',
+                'password_confirmation' => 'newpassword1',
+            ])
+            ->assertRedirect(route('account.show'))
+            ->assertSessionHasErrors('current_password');
+    }
+
+    public function test_social_user_has_no_password_change(): void
+    {
+        $user = User::factory()->create([
+            'provider' => 'google',
+            'provider_id' => 'g-1',
+            'password' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('account.show'))
+            ->assertOk()
+            ->assertDontSee(__('messages.account_password_change'), false)
+            ->assertSee(__('messages.account_delete_account'), false);
+
+        $this->actingAs($user)
+            ->put(route('account.password.update'), [
+                'current_password' => 'password',
+                'password' => 'newpassword1',
+                'password_confirmation' => 'newpassword1',
+            ])
+            ->assertForbidden();
     }
 
     private function makeReading(User $user, string $question, string $response): ReadingLog

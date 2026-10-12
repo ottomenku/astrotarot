@@ -40,6 +40,17 @@ class LoginController extends Controller
                 ->withErrors(['email' => __('auth.failed')]);
         }
 
+        $user = $request->user();
+        if ($user?->isBanned()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['email' => __('auth.banned')]);
+        }
+
         $request->session()->regenerate();
 
         $user = $request->user();

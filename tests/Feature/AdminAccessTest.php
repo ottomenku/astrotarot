@@ -66,5 +66,9 @@ class AdminAccessTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.blog.index'))
             ->assertOk();
+
+        $this->actingAs($admin)
+            ->get(route('admin.meaning-groups.index'))
+            ->assertOk();
     }
 }

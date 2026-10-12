@@ -38,6 +38,7 @@
             </a>
             <div class="header-actions">
                 @auth
+                    @if ($paidFeaturesEnabled)
                     <span class="feature-control">
                         @if (!empty($canOpenCredits))
                             <a
@@ -69,6 +70,7 @@
                         @endif
                         <x-feature-marks feature="credits.packages" />
                     </span>
+                    @endif
                 @endauth
                 <label class="language-select">
                     <span class="sr-only">Language</span>
@@ -101,7 +103,7 @@
                 @if(auth()->user()->isAdmin())
                     <a href="{{ route('admin.ephemeris.index') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span>Admin<b>↗</b></a>
                 @endif
-                @if(!empty($canOpenCredits))
+                @if(!empty($canOpenCredits) && $paidFeaturesEnabled)
                     <a href="{{ route('credits.packages') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.credits_menu') }}<x-feature-marks feature="credits.packages" /></span><b>↗</b></a>
                 @endif
                 @if(!empty($canOpenAccount))
@@ -122,7 +124,7 @@
         <p>Égi Orákulum + Tarot</p>
     </aside>
 
-    @if (session('credits_welcome'))
+    @if (session('credits_welcome') && $paidFeaturesEnabled)
         <div class="credits-welcome" data-credits-welcome role="status">
             <button type="button" class="credits-welcome-close" data-credits-welcome-close aria-label="Bezárás">×</button>
             <p class="credits-welcome-kicker">AstroTarot</p>
