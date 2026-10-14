@@ -1232,7 +1232,6 @@
   }
 
   async function requestReading({ mode = 'initial', followUp = '' } = {}) {
-    if (mode !== 'initial' && requireAuth()) return;
     if (!readingUrl || selected.length !== SLOT_COUNT) return;
 
     const feature = featureState(readingFeatureKey(mode));
@@ -1312,7 +1311,6 @@
           throw new Error(t().sessionExpired);
         }
         if (response.status === 401) {
-          if (mode !== 'initial') requireAuth();
           throw new Error(jsonErrorMessage(data, t().messageNeedAuth));
         }
         if (response.status === 402) {
@@ -1452,11 +1450,6 @@
       setAuthModalOpen(true);
     }
 
-    const openFollowupGate = (event) => {
-      if (!isAuthenticated) requireAuth(event);
-    };
-    els.readingFollowupInput?.addEventListener('pointerdown', openFollowupGate);
-    els.readingFollowupInput?.addEventListener('focus', openFollowupGate);
     els.readingFollowupSend?.addEventListener('click', () => {
       requestReading({
         mode: 'clarify',

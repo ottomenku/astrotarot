@@ -34,12 +34,6 @@ class ReadingController extends Controller
         }
 
         $user = $request->user();
-        $requestedMode = (string) $request->input('mode', TarotReadingService::MODE_INITIAL);
-        if ($user === null && $requestedMode !== TarotReadingService::MODE_INITIAL) {
-            return response()->json([
-                'error' => __('messages.credits_auth_required'),
-            ], 401);
-        }
 
         $minChars = $settings->minQuestionChars();
         $game = Game::query()->find($request->input('game_id'));

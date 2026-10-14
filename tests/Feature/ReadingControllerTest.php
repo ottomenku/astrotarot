@@ -59,7 +59,7 @@ class ReadingControllerTest extends TestCase
         ], $overrides);
     }
 
-    public function test_guest_can_request_the_first_reading_but_not_a_follow_up(): void
+    public function test_guest_can_request_the_first_reading_and_follow_ups(): void
     {
         $this->fakeOpenAi('Vendég olvasat.');
 
@@ -71,12 +71,14 @@ class ReadingControllerTest extends TestCase
             'mode' => 'clarify',
             'follow_up' => 'Mit jelent ez pontosan?',
             'previous_reading' => 'Vendég olvasat.',
-        ]))->assertUnauthorized();
+        ]))->assertOk()
+            ->assertJsonPath('reading', 'Vendég olvasat.');
 
         $this->postJson(route('reading'), $this->validPayload([
             'mode' => 'expand',
             'previous_reading' => 'Vendég olvasat.',
-        ]))->assertUnauthorized();
+        ]))->assertOk()
+            ->assertJsonPath('reading', 'Vendég olvasat.');
     }
 
     public function test_reading_requires_question_and_two_cards(): void

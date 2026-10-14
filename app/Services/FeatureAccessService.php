@@ -81,7 +81,7 @@ class FeatureAccessService
         ];
 
         if ($user === null) {
-            if ($key === FeatureCatalog::READING) {
+            if (in_array($key, [FeatureCatalog::READING, FeatureCatalog::CLARIFY, FeatureCatalog::EXPAND], true)) {
                 return [
                     'allowed' => true,
                     'cost' => 0,
