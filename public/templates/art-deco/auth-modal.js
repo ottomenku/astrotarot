@@ -44,6 +44,17 @@
   modal.querySelectorAll('[data-auth-close]').forEach((node) => {
     node.addEventListener('click', () => setOpen(false));
   });
+  modal.querySelectorAll('[data-auth-guest]').forEach((node) => {
+    node.addEventListener('click', () => {
+      try { sessionStorage.setItem('astrotarot-guest', '1'); } catch (error) {}
+      if (modal.dataset.authHome) {
+        window.location.href = node.dataset.authGuestUrl || modal.dataset.authHome;
+        return;
+      }
+      setOpen(false);
+      window.dispatchEvent(new CustomEvent('astrotarot:guest'));
+    });
+  });
   modal.querySelectorAll('[data-auth-tab]').forEach((button) => {
     button.addEventListener('click', () => switchTab(button.dataset.authTab));
   });

@@ -56,6 +56,7 @@ class RestrictGuestsWhenRegistrationClosed
                 'blog.comments.destroy',
                 'register.legal',
                 'register.legal.store',
+                'reading',
                 'reading.share.show',
                 'reading.share.og',
             ]);

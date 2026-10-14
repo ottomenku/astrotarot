@@ -44,6 +44,8 @@ class SocialAuthTest extends TestCase
             ->assertSee('data-auth-home', false)
             ->assertSee('app-shell', false)
             ->assertSee(__('messages.auth_modal_title'), false)
+            ->assertSee(__('messages.auth_modal_lead'), false)
+            ->assertSee(__('messages.login_guest'), false)
             ->assertSee(__('messages.login_google'), false)
             ->assertSee(__('messages.login_facebook'), false);
     }

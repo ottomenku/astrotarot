@@ -41,7 +41,7 @@ Route::get('/promo', PromoShareController::class)->name('promo.share');
 Route::get('/locale/{locale}', LocaleController::class)->name('locale.switch');
 
 Route::post('/reading', ReadingController::class)
-    ->middleware(['auth', 'throttle:8,1'])
+    ->middleware(['throttle:8,1'])
     ->name('reading');
 
 Route::get('/aszf', [LegalPageController::class, 'terms'])->name('legal.terms');

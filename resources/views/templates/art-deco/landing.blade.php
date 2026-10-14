@@ -16,7 +16,6 @@
                 <span class="brand-name">Astro<span>Tarot</span></span>
             </a>
             <div class="header-actions">
-                <a class="landing-login-link" href="{{ route('blog.index') }}">{{ __('messages.blog_title') }}</a>
                 <label class="language-select">
                     <span class="sr-only">{{ __('messages.language') }}</span>
                     <select onchange="window.location.href=this.value">
@@ -41,23 +40,20 @@
                 <li>{{ __('messages.landing_point_minutes') }}</li>
             </ul>
             <div class="landing-actions">
-                @if ($registrationEnabled)
-                    <button class="landing-cta landing-cta-primary" type="button" data-auth-open="register">{{ __('messages.landing_cta_register') }}</button>
-                @endif
-                <button class="landing-cta {{ $registrationEnabled ? 'landing-cta-secondary' : 'landing-cta-primary' }}" type="button" data-auth-open="login">{{ __('messages.landing_cta_login') }}</button>
+                <a class="landing-cta landing-cta-primary" href="{{ route('home', ['draw' => 1]) }}">{{ __('messages.landing_cta_try') }}</a>
             </div>
             @unless ($registrationEnabled)
                 <p class="landing-closed">{{ __('messages.landing_cta_closed') }}</p>
             @endunless
         </div>
-        <figure class="landing-figure">
+        <a class="landing-figure" href="{{ route('home', ['draw' => 1]) }}">
             <img
                 src="{{ $assetBase }}/landing-tarot.jpg"
                 alt="{{ __('messages.landing_image_alt') }}"
                 width="1200"
                 height="900"
             >
-        </figure>
+        </a>
     </section>
 
     @include('templates.art-deco.partials.site-footer')

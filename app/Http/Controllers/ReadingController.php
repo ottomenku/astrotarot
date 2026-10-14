@@ -34,7 +34,8 @@ class ReadingController extends Controller
         }
 
         $user = $request->user();
-        if ($user === null) {
+        $requestedMode = (string) $request->input('mode', TarotReadingService::MODE_INITIAL);
+        if ($user === null && $requestedMode !== TarotReadingService::MODE_INITIAL) {
             return response()->json([
                 'error' => __('messages.credits_auth_required'),
             ], 401);
@@ -84,7 +85,7 @@ class ReadingController extends Controller
         if (! $decision['allowed']) {
             return response()->json([
                 'error' => $decision['message'],
-                'credits' => (int) $user->credits,
+                'credits' => (int) ($user?->credits ?? 0),
             ], $decision['status']);
         }
 
@@ -132,7 +133,7 @@ class ReadingController extends Controller
                 'follow_up' => $data['follow_up'] ?? null,
                 'system_prompt' => $systemPrompt,
                 'ip' => $request->ip(),
-                'user_id' => $user->id,
+                'user_id' => $user?->id,
             ]);
         } catch (RuntimeException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -147,16 +148,18 @@ class ReadingController extends Controller
         $text = $result['text'];
         $source = $result['source'];
 
-        $balance = (int) $user->credits;
-        $charge = $features->decide($user->fresh(), $featureKey);
-        if ($charge['will_charge']) {
-            try {
-                $balance = $credits->spend($user->fresh(), $charge['cost']);
-            } catch (RuntimeException $e) {
-                return response()->json([
-                    'error' => $e->getMessage(),
-                    'credits' => (int) $user->fresh()->credits,
-                ], 402);
+        $balance = (int) ($user?->credits ?? 0);
+        if ($user !== null) {
+            $charge = $features->decide($user->fresh(), $featureKey);
+            if ($charge['will_charge']) {
+                try {
+                    $balance = $credits->spend($user->fresh(), $charge['cost']);
+                } catch (RuntimeException $e) {
+                    return response()->json([
+                        'error' => $e->getMessage(),
+                        'credits' => (int) $user->fresh()->credits,
+                    ], 402);
+                }
             }
         }
 

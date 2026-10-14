@@ -27,8 +27,9 @@ class LandingRegistrationTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee(__('messages.landing_title'), false)
+            ->assertSee(__('messages.landing_cta_try'), false)
             ->assertSee(__('messages.landing_cta_closed'), false)
-            ->assertDontSee(__('messages.landing_cta_register'), false);
+            ->assertDontSee('Belépek', false);
 
         $this->get(route('promo.share'))->assertRedirect(route('home'));
 

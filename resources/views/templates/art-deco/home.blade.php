@@ -136,22 +136,81 @@
 
     <section class="deck-section" data-pick-stage aria-labelledby="deck-heading">
         <div class="compact-question">
-            <h1 id="deck-heading" class="game-description" data-game-description>{{ $gameConfig['description'] ?? '' }}</h1>
+            @php
+                $spreadChoices = $gameConfig['choices'] ?? [];
+                $spreadCount = count($gameConfig['slots'] ?? []);
+                $spreadName = $gameConfig['name'] ?? '';
+            @endphp
+            <div class="spread-bar">
+                <h1 id="deck-heading" class="game-description" data-game-description>
+                    <span class="spread-kicker" data-spread-kicker>{{ __('messages.spread_current') }}</span>
+                    <span class="spread-summary" data-spread-summary>{{ __('messages.spread_summary', ['name' => $spreadName, 'count' => $spreadCount]) }}</span>
+                </h1>
+                <button class="spread-change" type="button" data-spread-open>{{ __('messages.spread_change') }}</button>
+            </div>
+            <form class="spread-panel" data-spread-panel method="get" action="{{ route('home') }}" hidden>
+                <input type="hidden" name="spread" value="1">
+                @guest
+                    <input type="hidden" name="draw" value="1">
+                @endguest
+                <label>
+                    <span data-copy="spreadGame">{{ __('messages.spread_game') }}</span>
+                    <select name="game" data-spread-game>
+                        @foreach ($spreadChoices['games'] ?? [] as $choice)
+                            <option
+                                value="{{ $choice['id'] }}"
+                                data-types="{{ implode(',', $choice['types'] ?? []) }}"
+                                data-name-hu="{{ $choice['name_hu'] }}"
+                                data-name-en="{{ $choice['name_en'] }}"
+                                @selected((int) ($spreadChoices['selected_game'] ?? 0) === (int) $choice['id'])
+                            >{{ app()->getLocale() === 'en' ? $choice['name_en'] : $choice['name_hu'] }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                @foreach (\App\Models\CardPack::FIGURE_TYPES as $packType)
+                    <label data-pack-type="{{ $packType }}">
+                        <span><span data-copy="spreadPack">{{ __('messages.spread_pack') }}</span> · {{ __('admin.packs.type_'.$packType) }}</span>
+                        <select name="pack_{{ $packType }}">
+                            <option value="" data-name-hu="{{ __('messages.spread_default', [], 'hu') }}" data-name-en="{{ __('messages.spread_default', [], 'en') }}">{{ __('messages.spread_default') }}</option>
+                            @foreach ($gameConfig['pack_options'][$packType] ?? [] as $pack)
+                                <option
+                                    value="{{ $pack['slug'] }}"
+                                    data-name-hu="{{ $pack['name_hu'] ?? $pack['name'] }}"
+                                    data-name-en="{{ $pack['name_en'] ?? $pack['name'] }}"
+                                    @selected(($spreadChoices['selected_packs'][$packType] ?? '') === $pack['slug'])
+                                >{{ $pack['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                @endforeach
+                <label>
+                    <span data-copy="spreadBack">{{ __('messages.spread_back') }}</span>
+                    <select name="back" data-spread-back>
+                        <option value="" data-preview="" data-name-hu="{{ __('messages.spread_default', [], 'hu') }}" data-name-en="{{ __('messages.spread_default', [], 'en') }}">{{ __('messages.spread_default') }}</option>
+                        @foreach ($spreadChoices['backs'] ?? [] as $back)
+                            <option
+                                value="{{ $back['id'] }}"
+                                data-preview="{{ $back['preview'] }}"
+                                data-name-hu="{{ $back['name_hu'] }}"
+                                data-name-en="{{ $back['name_en'] }}"
+                                @selected((int) ($spreadChoices['selected_back'] ?? 0) === (int) $back['id'])
+                            >{{ app()->getLocale() === 'en' ? $back['name_en'] : $back['name_hu'] }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <img class="spread-back-preview" data-spread-back-preview alt="" hidden>
+                <div class="spread-panel-actions">
+                    <button type="submit" data-copy="spreadApply">{{ __('messages.spread_apply') }}</button>
+                    <button type="button" data-spread-close data-copy="spreadClose">{{ __('messages.spread_close') }}</button>
+                </div>
+            </form>
             <label
-                class="question-field {{ auth()->check() ? '' : 'is-guest-gate' }}"
+                class="question-field"
                 data-question-wrap
                 @if (empty($gameConfig['has_question'])) hidden @endif
             >
-                <textarea
-                    data-question
-                    rows="2"
-                    maxlength="280"
-                    @unless(auth()->check())
-                        readonly
-                        data-guest-gate
-                    @endunless
-                ></textarea>
-                <span @unless(auth()->check()) hidden @endunless>0/280</span>
+                <textarea data-question rows="2" maxlength="280"></textarea>
+                <span>0/280</span>
             </label>
             <div class="question-meta">
                 <p class="field-hint" data-hint></p>

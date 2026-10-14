@@ -19,6 +19,9 @@
   const minQuestionChars = Math.max(1, Number.parseInt(root.dataset.minQuestionChars || '10', 10) || 10);
   const llmEnabled = root.dataset.llmEnabled !== '0';
   const isAuthenticated = root.dataset.authenticated === '1';
+  const guestStorageKey = 'astrotarot-guest';
+  let continueAsGuest = false;
+  try { continueAsGuest = sessionStorage.getItem(guestStorageKey) === '1'; } catch (error) {}
   const openAuthOnLoad = root.dataset.openAuth === '1';
   let creditsBalance = Number.parseInt(root.dataset.credits || '0', 10) || 0;
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -96,6 +99,15 @@
       reading: 'Választott lapjaid',
       waiting: 'Rád vár',
       reset: 'Új húzás',
+      spreadKicker: 'A jelenleg kiválasztott kirakás:',
+      spreadSummary: ':name — :count lapot kell húzni',
+      spreadChange: 'Változtatás',
+      spreadGame: 'Játék',
+      spreadPack: 'Pakli',
+      spreadBack: 'Hátlap',
+      spreadApply: 'Alkalmaz',
+      spreadDefault: 'Alapértelmezett',
+      spreadClose: 'Bezárás',
       incomplete: 'Válaszd ki a lapokat, és írd be a kérdésed',
       messageTitle: 'A lapok üzenete',
       messageKicker: 'AstroTarot értelmezés',
@@ -149,6 +161,15 @@
       reading: 'Your chosen cards',
       waiting: 'Waiting for you',
       reset: 'New reading',
+      spreadKicker: 'Current spread:',
+      spreadSummary: ':name — draw :count cards',
+      spreadChange: 'Change',
+      spreadGame: 'Game',
+      spreadPack: 'Deck',
+      spreadBack: 'Card back',
+      spreadApply: 'Apply',
+      spreadDefault: 'Default',
+      spreadClose: 'Close',
       incomplete: 'Choose the cards and enter your question',
       messageTitle: 'The message of your cards',
       messageKicker: 'AstroTarot reading',
@@ -233,6 +254,13 @@
     language: root.querySelector('[data-language]'),
     title: root.querySelector('[data-title]'),
     gameDescription: root.querySelector('[data-game-description]'),
+    spreadKicker: root.querySelector('[data-spread-kicker]'),
+    spreadSummary: root.querySelector('[data-spread-summary]'),
+    spreadOpen: root.querySelector('[data-spread-open]'),
+    spreadPanel: root.querySelector('[data-spread-panel]'),
+    spreadGame: root.querySelector('[data-spread-game]'),
+    spreadBack: root.querySelector('[data-spread-back]'),
+    spreadBackPreview: root.querySelector('[data-spread-back-preview]'),
     questionWrap: root.querySelector('[data-question-wrap]'),
     question: root.querySelector('[data-question]'),
     counter: root.querySelector('[data-counter]'),
@@ -583,8 +611,24 @@
     });
   }
 
-  function requireAuth(event) {
+  function markGuestContinue() {
+    continueAsGuest = true;
+    try { sessionStorage.setItem(guestStorageKey, '1'); } catch (error) {}
+    unlockGuestQuestion();
+  }
+
+  function unlockGuestQuestion() {
+    if (!continueAsGuest || isAuthenticated || !els.question) return;
+    els.question.readOnly = false;
+    els.question.removeAttribute('readonly');
+    els.questionWrap?.classList.remove('is-guest-gate');
+    if (els.question.nextElementSibling) els.question.nextElementSibling.hidden = false;
+    els.question.placeholder = t().placeholder;
+  }
+
+  function requireAuth(event, options = {}) {
     if (isAuthenticated) return false;
+    if (options.allowGuest && continueAsGuest) return false;
     event?.preventDefault?.();
     event?.stopPropagation?.();
     els.question?.blur();
@@ -604,14 +648,30 @@
     const heading = gameDescription();
     const hint = gameSlots.map((_, index) => slotTitle(index)).filter(Boolean).join(' → ') || text.hint;
     if (els.menuButton) els.menuButton.setAttribute('aria-label', text.navLabel);
-    if (els.gameDescription) {
-      els.gameDescription.textContent = heading;
-      els.gameDescription.hidden = heading.trim() === '';
+    const spreadName = language === 'en'
+      ? (gameConfig.name_en || gameConfig.name || '')
+      : (gameConfig.name_hu || gameConfig.name || '');
+    if (els.spreadKicker) els.spreadKicker.textContent = text.spreadKicker;
+    if (els.spreadSummary) {
+      els.spreadSummary.textContent = text.spreadSummary
+        .replace(':name', spreadName)
+        .replace(':count', String(SLOT_COUNT));
     }
+    if (els.spreadOpen) els.spreadOpen.textContent = text.spreadChange;
+    root.querySelectorAll('[data-copy]').forEach((node) => {
+      const key = node.dataset.copy || '';
+      if (text[key]) node.textContent = text[key];
+    });
+    root.querySelectorAll('[data-name-hu]').forEach((option) => {
+      option.textContent = language === 'en'
+        ? (option.dataset.nameEn || option.textContent)
+        : (option.dataset.nameHu || option.textContent);
+    });
+    if (els.gameDescription) els.gameDescription.hidden = spreadName.trim() === '' && !els.spreadKicker;
     if (els.title && els.title !== els.gameDescription) els.title.textContent = heading;
     if (els.questionWrap) els.questionWrap.hidden = !hasQuestion;
     if (els.question) {
-      els.question.placeholder = isAuthenticated ? text.placeholder : text.guestPrompt;
+      els.question.placeholder = text.placeholder;
     }
     if (els.hint) els.hint.innerHTML = `<span>☾</span>${hint}`;
     els.resetButtons?.forEach((button) => {
@@ -787,7 +847,6 @@
   }
 
   function toggleBack(backIndex) {
-    if (requireAuth()) return;
     if (selected.length >= SLOT_COUNT) return;
     const deckKey = currentPackSlug();
     if (selected.some((item) => packSlug(item.deck) === deckKey && item.backIndex === backIndex)) {
@@ -1163,7 +1222,7 @@
   }
 
   async function requestReading({ mode = 'initial', followUp = '' } = {}) {
-    if (requireAuth()) return;
+    if (mode !== 'initial' && requireAuth()) return;
     if (!readingUrl || selected.length !== SLOT_COUNT) return;
 
     const feature = featureState(readingFeatureKey(mode));
@@ -1243,7 +1302,7 @@
           throw new Error(t().sessionExpired);
         }
         if (response.status === 401) {
-          requireAuth();
+          if (mode !== 'initial') requireAuth();
           throw new Error(jsonErrorMessage(data, t().messageNeedAuth));
         }
         if (response.status === 402) {
@@ -1296,6 +1355,43 @@
   }
 
   function bindUiEvents() {
+    function syncSpreadPacks() {
+      const types = (els.spreadGame?.selectedOptions?.[0]?.dataset.types || '').split(',').filter(Boolean);
+      root.querySelectorAll('[data-pack-type]').forEach((row) => {
+        const visible = types.length === 0 || types.includes(row.dataset.packType || '');
+        row.hidden = !visible;
+        row.querySelectorAll('select').forEach((select) => {
+          select.disabled = !visible;
+        });
+      });
+    }
+
+    function syncSpreadBack() {
+      if (!els.spreadBack || !els.spreadBackPreview) return;
+      const option = els.spreadBack.selectedOptions?.[0];
+      const src = option?.dataset.preview || '';
+      if (!src) {
+        els.spreadBackPreview.hidden = true;
+        els.spreadBackPreview.removeAttribute('src');
+        return;
+      }
+      els.spreadBackPreview.hidden = false;
+      els.spreadBackPreview.src = src;
+    }
+
+    els.spreadOpen?.addEventListener('click', () => {
+      if (!els.spreadPanel) return;
+      els.spreadPanel.hidden = !els.spreadPanel.hidden;
+      if (!els.spreadPanel.hidden) syncSpreadPacks();
+    });
+    els.spreadPanel?.querySelector('[data-spread-close]')?.addEventListener('click', () => {
+      if (els.spreadPanel) els.spreadPanel.hidden = true;
+    });
+    els.spreadGame?.addEventListener('change', syncSpreadPacks);
+    els.spreadBack?.addEventListener('change', syncSpreadBack);
+    syncSpreadPacks();
+    syncSpreadBack();
+
     els.menuButton?.addEventListener('click', () => setMenuOpen(true));
     els.menuClose?.addEventListener('click', () => setMenuOpen(false));
     els.menuBackdrop?.addEventListener('click', () => setMenuOpen(false));
@@ -1303,6 +1399,7 @@
       if (event.key === 'Escape') {
         setMenuOpen(false);
         setAuthModalOpen(false);
+        if (els.spreadPanel) els.spreadPanel.hidden = true;
         hideCreditsWelcome();
         hideToast();
       }
@@ -1311,15 +1408,16 @@
     els.readingToast?.querySelector('[data-reading-toast-close]')?.addEventListener('click', hideToast);
     root.querySelector('[data-credits-welcome-close]')?.addEventListener('click', hideCreditsWelcome);
 
-    if (!isAuthenticated && els.question) {
-      const openGate = (event) => {
-        requireAuth(event);
-      };
-      els.question.addEventListener('focus', openGate);
-      els.question.addEventListener('pointerdown', openGate);
-      els.question.addEventListener('click', openGate);
-      els.question.addEventListener('keydown', openGate);
-    }
+    root.querySelectorAll('[data-auth-guest]').forEach((node) => {
+      node.addEventListener('click', () => {
+        markGuestContinue();
+        setAuthModalOpen(false);
+      });
+    });
+    window.addEventListener('astrotarot:guest', () => {
+      markGuestContinue();
+      setAuthModalOpen(false);
+    });
 
     root.querySelectorAll('[data-auth-open]').forEach((node) => {
       node.addEventListener('click', () => {
@@ -1342,6 +1440,11 @@
       setAuthModalOpen(true);
     }
 
+    const openFollowupGate = (event) => {
+      if (!isAuthenticated) requireAuth(event);
+    };
+    els.readingFollowupInput?.addEventListener('pointerdown', openFollowupGate);
+    els.readingFollowupInput?.addEventListener('focus', openFollowupGate);
     els.readingFollowupSend?.addEventListener('click', () => {
       requestReading({
         mode: 'clarify',
@@ -1376,11 +1479,6 @@
     });
 
     els.question?.addEventListener('input', () => {
-      if (!isAuthenticated) {
-        els.question.value = '';
-        requireAuth();
-        return;
-      }
       els.question.value = els.question.value.slice(0, 280);
       if (els.question.nextElementSibling) {
         els.question.nextElementSibling.textContent = `${els.question.value.length}/280`;
@@ -1392,7 +1490,10 @@
     });
 
     els.resetButtons?.forEach((button) => {
-      button.addEventListener('click', reset);
+      button.addEventListener('click', (event) => {
+        if (requireAuth(event)) return;
+        reset();
+      });
     });
   }
 
@@ -1400,6 +1501,7 @@
     if (els.language) els.language.value = language;
     applyCopy();
     bindUiEvents();
+    if (!isAuthenticated) markGuestContinue();
 
     try {
       const slugs = [...new Set(gameSlots.map((slot) => packSlug(slot.pack_slug)))];

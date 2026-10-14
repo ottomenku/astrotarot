@@ -29,6 +29,7 @@
         @endif
 
         <div class="auth-social">
+            <button type="button" class="auth-social-btn auth-guest-btn" data-auth-guest data-auth-guest-url="{{ route('home', ['draw' => 1]) }}">{{ __('messages.login_guest') }}</button>
             <a
                 class="auth-social-btn auth-social-google {{ $googleReady ? '' : 'is-disabled' }}"
                 href="{{ $googleReady ? route('auth.social.redirect', 'google') : '#' }}"

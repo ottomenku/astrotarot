@@ -81,6 +81,16 @@ class FeatureAccessService
         ];
 
         if ($user === null) {
+            if ($key === FeatureCatalog::READING) {
+                return [
+                    'allowed' => true,
+                    'cost' => 0,
+                    'will_charge' => false,
+                    'status' => 200,
+                    'message' => '',
+                ];
+            }
+
             $denied['message'] = __('messages.credits_auth_required');
             $denied['status'] = 401;
 

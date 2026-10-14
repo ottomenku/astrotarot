@@ -83,6 +83,15 @@ class PackResolutionService
         }
 
         $resolved = $this->resolveRule($user, $rule);
+        $sessionPacks = session('spread.packs', []);
+        $sessionSlug = is_array($sessionPacks) ? trim((string) ($sessionPacks[$resolved['type']] ?? '')) : '';
+        if ($sessionSlug !== '') {
+            $sessionPack = CardPack::query()->active()->figure()->where('slug', $sessionSlug)->first();
+            if ($sessionPack !== null && $sessionPack->type === $resolved['type']) {
+                return $sessionPack->slug;
+            }
+        }
+
         $slug = CardPackCatalog::canonicalize($deck);
         if (! $this->features->can($user, FeatureCatalog::PACKS_CHOOSE)) {
             return $resolved['slug'];
