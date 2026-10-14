@@ -21,6 +21,7 @@
   const isAuthenticated = root.dataset.authenticated === '1';
   const guestStorageKey = 'astrotarot-guest';
   let continueAsGuest = false;
+  let pendingGuestAction = null;
   try { continueAsGuest = sessionStorage.getItem(guestStorageKey) === '1'; } catch (error) {}
   const openAuthOnLoad = root.dataset.openAuth === '1';
   let creditsBalance = Number.parseInt(root.dataset.credits || '0', 10) || 0;
@@ -632,8 +633,17 @@
     event?.preventDefault?.();
     event?.stopPropagation?.();
     els.question?.blur();
+    pendingGuestAction = typeof options.onGuest === 'function' ? options.onGuest : null;
     setAuthModalOpen(true);
     return true;
+  }
+
+  function finishGuestContinue() {
+    markGuestContinue();
+    const action = pendingGuestAction;
+    pendingGuestAction = null;
+    setAuthModalOpen(false);
+    action?.();
   }
 
   function gameDescription() {
@@ -1398,6 +1408,7 @@
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
         setMenuOpen(false);
+        pendingGuestAction = null;
         setAuthModalOpen(false);
         if (els.spreadPanel) els.spreadPanel.hidden = true;
         hideCreditsWelcome();
@@ -1410,13 +1421,11 @@
 
     root.querySelectorAll('[data-auth-guest]').forEach((node) => {
       node.addEventListener('click', () => {
-        markGuestContinue();
-        setAuthModalOpen(false);
+        finishGuestContinue();
       });
     });
     window.addEventListener('astrotarot:guest', () => {
-      markGuestContinue();
-      setAuthModalOpen(false);
+      finishGuestContinue();
     });
 
     root.querySelectorAll('[data-auth-open]').forEach((node) => {
@@ -1426,7 +1435,10 @@
       });
     });
     root.querySelectorAll('[data-auth-close]').forEach((node) => {
-      node.addEventListener('click', () => setAuthModalOpen(false));
+      node.addEventListener('click', () => {
+        pendingGuestAction = null;
+        setAuthModalOpen(false);
+      });
     });
     els.authModal?.querySelectorAll('[data-auth-tab]').forEach((button) => {
       button.addEventListener('click', () => switchAuthTab(button.dataset.authTab));
@@ -1491,7 +1503,7 @@
 
     els.resetButtons?.forEach((button) => {
       button.addEventListener('click', (event) => {
-        if (requireAuth(event)) return;
+        if (requireAuth(event, { onGuest: () => reset() })) return;
         reset();
       });
     });
