@@ -80,8 +80,8 @@
   }
   const packBase = (root.dataset.packBase || gameConfig.pack_base || '/card-pack').replace(/\/$/, '');
   const fallbackSlots = [
-    { pack_slug: 'egi-orakulum', title_hu: 'Égi Orákulum', title_en: 'Celestial Oracle', info_mode: 'astro', row: 1, place: 1, full_bleed: true },
-    { pack_slug: 'tarot', title_hu: 'Tarot figura', title_en: 'Tarot figure', info_mode: 'meaning', row: 1, place: 2, full_bleed: true },
+    { pack_slug: 'egi-orakulum', title_hu: 'Égi Orákulum', title_en: 'Celestial Oracle', info_mode: 'astro', row: 1, place: 1, draw_order: 1, full_bleed: true },
+    { pack_slug: 'tarot', title_hu: 'Tarot figura', title_en: 'Tarot figure', info_mode: 'meaning', row: 1, place: 2, draw_order: 2, full_bleed: true },
   ];
   const gameSlots = (Array.isArray(gameConfig.slots) && gameConfig.slots.length)
     ? gameConfig.slots
@@ -103,7 +103,7 @@
       spreadKicker: 'A jelenleg kiválasztott kirakás:',
       spreadSummary: ':name — :count lapot kell húzni',
       spreadChange: 'Változtatás',
-      spreadGame: 'Játék',
+      spreadGame: 'Kirakás',
       spreadPack: 'Pakli',
       spreadBack: 'Hátlap',
       spreadApply: 'Alkalmaz',
@@ -114,6 +114,8 @@
       messageKicker: 'AstroTarot értelmezés',
       messageLoading: 'Az LLM gondolkodik…',
       messageNeedQuestion: 'Írj legalább {n} karakteres kérdést, mielőtt lapot választasz.',
+      drawNeedQuestion: 'Írj legalább {n} karakteres kérdést, mielőtt lapot választasz!',
+      drawPick: 'Válaszd ki {article} {ordinal} lapot ami: {place}',
       messageError: 'Az értelmezés most nem sikerült. Próbáld újra egy pillanat múlva.',
       sessionExpired: 'A munkamenet lejárt. Frissítsd az oldalt, majd próbáld újra.',
       messageLlmDisabled: 'Az LLM értelmezés jelenleg ki van kapcsolva.',
@@ -165,7 +167,7 @@
       spreadKicker: 'Current spread:',
       spreadSummary: ':name — draw :count cards',
       spreadChange: 'Change',
-      spreadGame: 'Game',
+      spreadGame: 'Spread',
       spreadPack: 'Deck',
       spreadBack: 'Card back',
       spreadApply: 'Apply',
@@ -176,6 +178,8 @@
       messageKicker: 'AstroTarot reading',
       messageLoading: 'The LLM is thinking…',
       messageNeedQuestion: 'Write a question of at least {n} characters before choosing a card.',
+      drawNeedQuestion: 'Write a question of at least {n} characters before choosing a card!',
+      drawPick: 'Choose the {ordinal} card, which is: {place}',
       messageError: 'The reading could not be created. Please try again in a moment.',
       sessionExpired: 'Your session expired. Please refresh the page and try again.',
       messageLlmDisabled: 'LLM readings are currently turned off.',
@@ -273,6 +277,8 @@
     resetButtons: root.querySelectorAll('[data-reset]'),
     slider: root.querySelector('[data-deck-slider]'),
     chosen: root.querySelector('[data-chosen-grid]'),
+    drawReveal: root.querySelector('[data-draw-reveal]'),
+    drawRevealImage: root.querySelector('[data-draw-reveal-image]'),
     readingResult: root.querySelector('[data-reading-result]'),
     readingKicker: root.querySelector('[data-reading-kicker]'),
     readingTitle: root.querySelector('[data-reading-title]'),
@@ -294,10 +300,15 @@
   };
 
   let language = initialLocale;
-  /** @type {Record<string, {id?:string, figures:any[], cardBack?:string, backgrounds?: any}|null>} */
+  /** @type {Record<string, {id?:string, figures:any[], cardBack?:string}|null>} */
   const decksBySlug = {};
-  /** @type {{deck:string, backIndex:number, figureId:string, backgroundId:string, variant:string}[]} */
+  /** @type {{deck:string, backIndex:number, figureId:string, variant:string}[]} */
   let selected = [];
+  let revealing = false;
+  let revealTimer = null;
+  let settleTimer = null;
+  let drawToken = 0;
+  let flyer = null;
   let readingRequest = null;
   let lastReadingKey = '';
   let questionTimer = null;
@@ -340,8 +351,89 @@
     return slot.title_hu || slot.title || slot.title_en || '';
   }
 
+  function slotDescription(index) {
+    const slot = slotDef(index);
+    if (!slot) return '';
+    if (language === 'en') return slot.description_en || slot.description || slot.description_hu || '';
+    return slot.description_hu || slot.description || slot.description_en || '';
+  }
+
+  function ordinalWord(n) {
+    const value = Math.max(1, Number(n) || 1);
+    const hu = [
+      '',
+      'első', 'második', 'harmadik', 'negyedik', 'ötödik',
+      'hatodik', 'hetedik', 'nyolcadik', 'kilencedik', 'tizedik',
+      'tizenegyedik', 'tizenkettedik', 'tizenharmadik', 'tizennegyedik', 'tizenötödik',
+      'tizenhatodik', 'tizenhetedik', 'tizennyolcadik', 'tizenkilencedik', 'huszadik',
+      'huszonegyedik', 'huszonkettedik', 'huszonharmadik', 'huszonnegyedik', 'huszonötödik',
+      'huszonhatodik', 'huszonhetedik', 'huszonnyolcadik', 'huszonkilencedik', 'harmincadik',
+      'harmincegyedik', 'harminckettedik', 'harmincharmadik', 'harmincnegyedik', 'harmincötödik',
+      'harminchatodik', 'harminchetedik', 'harmincnyolcadik', 'harminckilencedik', 'negyvenedik',
+      'negyvenegyedik', 'negyvenkettedik', 'negyvenharmadik', 'negyvennegyedik', 'negyvenötödik',
+      'negyvenhatodik', 'negyvenhetedik', 'negyvennyolcadik', 'negyvenkilencedik',
+    ];
+    const en = [
+      '',
+      'first', 'second', 'third', 'fourth', 'fifth',
+      'sixth', 'seventh', 'eighth', 'ninth', 'tenth',
+      'eleventh', 'twelfth', 'thirteenth', 'fourteenth', 'fifteenth',
+      'sixteenth', 'seventeenth', 'eighteenth', 'nineteenth', 'twentieth',
+    ];
+    if (language === 'en') return en[value] || String(value);
+    return hu[value] || `${value}.`;
+  }
+
+  function updateDrawPrompt() {
+    if (!els.deckLabel) return;
+    const index = currentSlotIndex();
+    const slot = slotDef(index);
+    if (!slot || selected.length >= SLOT_COUNT) {
+      els.deckLabel.textContent = '';
+      els.deckLabel.hidden = true;
+      return;
+    }
+    const order = drawSequence().findIndex((item) => item.index === index) + 1;
+    const ordinal = ordinalWord(order);
+    const name = slotTitle(index).trim();
+    const description = slotDescription(index).trim();
+    const place = [name, description].filter(Boolean).join(' — ');
+    const text = t();
+    const parts = [];
+    if (hasQuestion && questionText().length < minQuestionChars) {
+      parts.push(text.drawNeedQuestion.replace('{n}', String(minQuestionChars)));
+    }
+    const article = /^[aáeéiíoóöőuúüű]/i.test(ordinal) ? 'az' : 'a';
+    parts.push(text.drawPick
+      .replace('{article}', article)
+      .replace('{ordinal}', ordinal)
+      .replace('{place}', place));
+    els.deckLabel.hidden = false;
+    els.deckLabel.textContent = parts.join(' ');
+  }
+
+  function drawSequence() {
+    return gameSlots
+      .map((slot, index) => ({
+        index,
+        order: Number(slot.draw_order) > 0 ? Number(slot.draw_order) : index + 1,
+      }))
+      .sort((a, b) => a.order - b.order || a.index - b.index);
+  }
+
+  function drawForSlot(index) {
+    return selected.find((item) => item.slotIndex === index) || null;
+  }
+
+  function drawOrderOf(index) {
+    const match = drawSequence().find((item) => item.index === index);
+    return match ? match.order : index + 1;
+  }
+
   function currentSlotIndex() {
-    return selected.length;
+    const taken = new Set(selected.map((item) => item.slotIndex));
+    const next = drawSequence().find((item) => !taken.has(item.index));
+    return next ? next.index : SLOT_COUNT;
   }
 
   function currentPackSlug() {
@@ -546,7 +638,8 @@
     return (gameConfig.packs && gameConfig.packs[slug]) || {};
   }
 
-  function cardBackSrc(deckKey) {
+  function cardBackSrc(deckKey, slot) {
+    if (slot?.card_back) return slot.card_back;
     const skin = packSkin(deckKey);
     if (skin.card_back) return skin.card_back;
     const slug = packSlug(deckKey);
@@ -656,7 +749,7 @@
   function applyCopy() {
     const text = t();
     const heading = gameDescription();
-    const hint = gameSlots.map((_, index) => slotTitle(index)).filter(Boolean).join(' → ') || text.hint;
+    const hint = drawSequence().map((item) => slotTitle(item.index)).filter(Boolean).join(' → ') || text.hint;
     if (els.menuButton) els.menuButton.setAttribute('aria-label', text.navLabel);
     const spreadName = language === 'en'
       ? (gameConfig.name_en || gameConfig.name || '')
@@ -701,12 +794,7 @@
     if (els.shareFacebook) els.shareFacebook.setAttribute('aria-label', text.shareFacebook);
     if (els.shareFacebook) els.shareFacebook.setAttribute('title', text.shareFacebook);
     if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/${SLOT_COUNT} ${text.selected}`;
-    if (els.deckLabel) {
-      const next = slotDef(currentSlotIndex());
-      els.deckLabel.textContent = next
-        ? slotTitle(currentSlotIndex())
-        : (language === 'en' ? 'Draw complete' : 'Húzás kész');
-    }
+    updateDrawPrompt();
     if (els.askedQuestion && lockedQuestion) {
       els.askedQuestion.textContent = lockedQuestion;
     }
@@ -752,13 +840,12 @@
     const deck = currentDeck();
     if (!deck) return;
 
-    const deckKey = `${currentPackSlug()}:${deck.figures.length}`;
+    const backSrc = cardBackSrc(currentPackSlug(), slotDef(currentSlotIndex()));
+    const deckKey = `${currentPackSlug()}:${deck.figures.length}:${backSrc}`;
     if (!force && renderedDeckKey === deckKey && els.slider.children.length === deck.figures.length) {
       syncDeckSelection();
       return;
     }
-
-    const backSrc = cardBackSrc(currentPackSlug());
     els.slider.innerHTML = '';
     renderedDeckKey = deckKey;
 
@@ -782,8 +869,10 @@
   function renderChosen() {
     if (!els.chosen) return;
     const text = t();
+    const maxPlaces = groupedRows().reduce((max, group) => Math.max(max, group.items.length), 1);
     els.chosen.innerHTML = '';
     els.chosen.className = 'chosen-grid';
+    els.chosen.style.setProperty('--places', String(maxPlaces));
 
     groupedRows().forEach((group) => {
       const rowEl = document.createElement('div');
@@ -791,9 +880,10 @@
       rowEl.dataset.places = String(group.items.length);
 
       group.items.forEach(({ slot, index }) => {
-        const draw = selected[index];
+        const draw = drawForSlot(index);
         const article = document.createElement('article');
         article.className = `chosen-card${draw ? ' has-card' : ' is-placeholder'}`;
+        article.dataset.slotIndex = String(index);
         const deckKey = packSlug(draw?.deck || slot.pack_slug);
 
         if (!draw) {
@@ -801,8 +891,8 @@
           <h3 class="slot-title">${escapeHtml(slotTitle(index))}</h3>
           <p class="polarity-label is-light">—</p>
           <div class="card-art placeholder-art">
-            <img class="card-back" src="${cardBackSrc(deckKey)}" alt="" decoding="async">
-            <span class="roman">${roman(index + 1)}</span>
+            <img class="card-back" src="${cardBackSrc(deckKey, slot)}" alt="" decoding="async">
+            <span class="roman">${roman(drawOrderOf(index))}</span>
           </div>
           <div class="card-caption">
             <h3>${escapeHtml(text.waiting)}</h3>
@@ -814,7 +904,7 @@
           <p class="polarity-label ${polarityClass(draw.variant)}">${polarityLabel(draw.variant)}</p>
           <div class="card-art is-full-bleed">
             <img class="card-figure" src="${figureSrc(draw.deck, draw.figureId, draw.variant)}" alt="" decoding="async">
-            <span class="roman">${roman(index + 1)}</span>
+            <span class="roman">${roman(drawOrderOf(index))}</span>
           </div>
           <div class="card-caption">
             ${slotCaptionHtml(index, draw.figureId)}
@@ -856,8 +946,107 @@
     }
   }
 
+  function showReveal(draw) {
+    if (!els.drawReveal || !els.drawRevealImage) return;
+    const meta = figureMeta(draw.deck, draw.figureId);
+    els.drawRevealImage.src = figureSrc(draw.deck, draw.figureId, draw.variant);
+    els.drawRevealImage.alt = meta ? (meta[language] || meta.en || '') : '';
+    els.drawReveal.hidden = false;
+    document.body.classList.add('is-revealing');
+  }
+
+  function hideReveal() {
+    if (els.drawReveal) els.drawReveal.hidden = true;
+    if (els.drawRevealImage) els.drawRevealImage.removeAttribute('src');
+    document.body.classList.remove('is-revealing');
+  }
+
+  function wait(ms) {
+    return new Promise((resolve) => {
+      settleTimer = window.setTimeout(() => {
+        settleTimer = null;
+        resolve();
+      }, ms);
+    });
+  }
+
+  function flyCardToSlot(draw, fromRect, src) {
+    return new Promise((resolve) => {
+      const art = els.chosen?.querySelector(`[data-slot-index="${draw.slotIndex}"] .card-art`);
+      if (!art || !fromRect?.width || !src) {
+        hideReveal();
+        resolve();
+        return;
+      }
+      const node = document.createElement('img');
+      node.className = 'draw-flyer';
+      node.alt = '';
+      node.src = src;
+      node.style.left = `${fromRect.left}px`;
+      node.style.top = `${fromRect.top}px`;
+      node.style.width = `${fromRect.width}px`;
+      node.style.height = `${fromRect.height}px`;
+      flyer = node;
+      document.body.appendChild(node);
+      hideReveal();
+      const scrolling = document.documentElement;
+      const previousScroll = scrolling.style.scrollBehavior;
+      scrolling.style.scrollBehavior = 'auto';
+      art.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+      scrolling.style.scrollBehavior = previousScroll;
+      const to = art.getBoundingClientRect();
+      const motion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        node.remove();
+        if (flyer === node) flyer = null;
+        art.closest('.chosen-card')?.classList.remove('is-arriving');
+        resolve();
+      };
+      if (motion || to.width < 2) {
+        done();
+        return;
+      }
+      node.addEventListener('transitionend', done, { once: true });
+      window.setTimeout(done, 900);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          node.style.left = `${to.left}px`;
+          node.style.top = `${to.top}px`;
+          node.style.width = `${to.width}px`;
+          node.style.height = `${to.height}px`;
+        });
+      });
+    });
+  }
+
+  async function finishDraw(draw) {
+    const token = drawToken;
+    revealTimer = null;
+    selected.push(draw);
+    if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/${SLOT_COUNT} ${t().selected}`;
+    const from = els.drawRevealImage?.getBoundingClientRect();
+    const src = els.drawRevealImage?.src || '';
+    renderChosen();
+    els.chosen?.querySelector(`[data-slot-index="${draw.slotIndex}"]`)?.classList.add('is-arriving');
+    await flyCardToSlot(draw, from, src);
+    if (token !== drawToken) return;
+    await wait(1000);
+    if (token !== drawToken) return;
+    revealing = false;
+    applyCopy();
+    renderDeck(true);
+    if (selected.length < SLOT_COUNT) {
+      els.slider?.scrollTo({ left: 0, behavior: 'auto' });
+      els.pickStage?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+    maybeRequestReading();
+  }
+
   function toggleBack(backIndex) {
-    if (selected.length >= SLOT_COUNT) return;
+    if (revealing || selected.length >= SLOT_COUNT) return;
     const deckKey = currentPackSlug();
     if (selected.some((item) => packSlug(item.deck) === deckKey && item.backIndex === backIndex)) {
       return;
@@ -877,23 +1066,28 @@
     const pool = available.length ? available : deck.figures;
     const figure = pick(pool);
 
-    selected.push({
+    const draw = {
+      slotIndex: currentSlotIndex(),
       deck: deckKey,
       backIndex,
       figureId: figure.id,
-      backgroundId: 'none',
       variant: randomVariant(),
-    });
-
-    if (els.counter) els.counter.innerHTML = `<b>${selected.length}</b>/${SLOT_COUNT} ${t().selected}`;
-
-    applyCopy();
-    renderDeck(true);
-    renderChosen();
-    maybeRequestReading();
+    };
+    revealing = true;
+    showReveal(draw);
+    revealTimer = window.setTimeout(() => finishDraw(draw), 2000);
   }
 
   function reset() {
+    drawToken += 1;
+    if (revealTimer) window.clearTimeout(revealTimer);
+    if (settleTimer) window.clearTimeout(settleTimer);
+    revealTimer = null;
+    settleTimer = null;
+    flyer?.remove();
+    flyer = null;
+    revealing = false;
+    hideReveal();
     selected = [];
     lastReadingKey = '';
     activeReading = null;
@@ -1176,7 +1370,8 @@
   }
 
   function buildCardsPayload() {
-    return selected.map((draw, slot) => {
+    return selected.map((draw) => {
+      const slot = draw.slotIndex;
       const meta = figureMeta(draw.deck, draw.figureId);
       const polarity = draw.variant === 'shadow' ? 'shadow' : 'positive';
       return {
@@ -1184,8 +1379,6 @@
         figure_name: meta ? meta[language] : draw.figureId,
         keyword: meta?.keyword ? meta.keyword[language] : '',
         blurb: meta?.blurb ? (meta.blurb[language] || meta.blurb.en || '') : '',
-        background_id: `${draw.backgroundId}-${draw.variant === 'shadow' ? 'shadow' : 'light'}`,
-        background: draw.backgroundId,
         variant: draw.variant,
         polarity,
         deck: packSlug(draw.deck),
@@ -1297,6 +1490,7 @@
           game_id: gameId || undefined,
           follow_up: followUp || undefined,
           previous_reading: mode === 'initial' ? undefined : activeReading?.reading,
+          session_id: mode === 'initial' ? undefined : (activeReading?.sessionId || undefined),
           cards,
           astro: readingAstroPayload(),
         }),
@@ -1334,6 +1528,7 @@
             text: data.reading,
             source: data.source?.label || '',
           }],
+          sessionId: data.session_id || '',
         };
         syncCompleteView();
         showReadingResult({
@@ -1395,7 +1590,12 @@
     els.spreadPanel?.querySelector('[data-spread-close]')?.addEventListener('click', () => {
       if (els.spreadPanel) els.spreadPanel.hidden = true;
     });
-    els.spreadGame?.addEventListener('change', syncSpreadPacks);
+    els.spreadGame?.addEventListener('change', () => {
+      root.querySelectorAll('[data-pack-type] select').forEach((select) => {
+        select.value = '';
+      });
+      syncSpreadPacks();
+    });
     els.spreadBack?.addEventListener('change', syncSpreadBack);
     syncSpreadPacks();
     syncSpreadBack();
@@ -1488,6 +1688,7 @@
       if (els.question.nextElementSibling) {
         els.question.nextElementSibling.textContent = `${els.question.value.length}/280`;
       }
+      updateDrawPrompt();
       clearTimeout(questionTimer);
       questionTimer = setTimeout(() => {
         if (selected.length === SLOT_COUNT) maybeRequestReading();

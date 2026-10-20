@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\ReadingLog;
+use App\Models\ReadingSession;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
@@ -15,10 +17,14 @@ class TarotReadingService
 
     public const MODE_EXPAND = 'expand';
 
+    public const MAX_DATA_ROUNDS = 3;
+
     public function __construct(
         private readonly OpenAIClient $openAI,
         private readonly AppSettings $settings,
         private readonly FigureMeaningService $meanings,
+        private readonly ReadingReplyParser $replies,
+        private readonly ReadingSkyLookup $sky,
     ) {}
 
     /**
@@ -62,24 +68,17 @@ class TarotReadingService
             throw new RuntimeException('A clarification requires a follow-up message.');
         }
 
-        $systemPrompt = match ($mode) {
-            self::MODE_CLARIFY => $this->settings->clarifyPrompt($locale),
-            self::MODE_EXPAND => $this->settings->expandPrompt($locale),
-            default => $overridePrompt !== '' ? $overridePrompt : $this->settings->systemPrompt($locale),
-        };
+        $systemPrompt = $this->settings->systemPrompt($locale);
+        $spreadPrompt = $overridePrompt;
+        $reader = $userId ? User::query()->find($userId) : null;
+        $session = $this->session($payload, $reader, $locale, $question, $cards);
+        $continuing = $mode !== self::MODE_INITIAL && $session->turns()->exists();
 
-        $userPrompt = match ($mode) {
-            self::MODE_CLARIFY, self::MODE_EXPAND => $this->followUpUserPrompt(
-                $locale,
-                $mode,
-                $question,
-                $cards,
-                $astro,
-                $previousReading,
-                $followUp
-            ),
-            default => $this->userPrompt($locale, $question, $cards, $astro),
-        };
+        $userPrompt = $continuing
+            ? $this->turnMessage($locale, $mode, $followUp, $previousReading)
+            : $this->openingMessage($locale, $question, $cards, $astro, $spreadPrompt, $reader, $mode, $followUp, $previousReading);
+
+        $this->remember($session, 'user', $continuing ? $mode : 'opening', $userPrompt);
 
         $logQuestion = $mode === self::MODE_CLARIFY
             ? $question."\n\n[pontosítás] ".$followUp
@@ -88,11 +87,12 @@ class TarotReadingService
         $log = ReadingLog::query()->create([
             'user_id' => $userId,
             'locale' => $locale,
-            'question' => $logQuestion,
+            'question' => mb_substr($logQuestion, 0, 280),
             'cards' => $cards,
             'astro' => array_merge($astro, [
                 'mode' => $mode,
                 'follow_up' => $followUp !== '' ? $followUp : null,
+                'session_id' => $session->public_id,
             ]),
             'system_prompt' => $systemPrompt,
             'user_prompt' => $userPrompt,
@@ -108,18 +108,175 @@ class TarotReadingService
         $maxTokens = match ($mode) {
             self::MODE_EXPAND => 2200,
             self::MODE_CLARIFY => 1400,
-            default => $this->looksMeaningless($question) ? 1200 : 1600,
+            default => $this->looksMeaningless($question) ? 1200 : 1800,
         };
+        $options = [
+            'temperature' => 0.6,
+            'max_tokens' => $maxTokens,
+        ];
+
+        $result = null;
+        $text = '';
+        $rounds = 0;
 
         try {
-            $result = $this->openAI->complete([
-                ['role' => 'system', 'content' => $systemPrompt],
-                ['role' => 'user', 'content' => $userPrompt],
-            ], $requestedModel, [
-                'temperature' => $mode === self::MODE_EXPAND ? 0.8 : 0.85,
-                'max_tokens' => $maxTokens,
+            while (true) {
+                $result = $this->complete($session, $systemPrompt, $requestedModel, $options, $log, $mode);
+                $raw = trim((string) data_get($result->response->json(), 'choices.0.message.content', ''));
+                if ($raw === '') {
+                    $log->update([
+                        'status' => 'error',
+                        'error' => 'Empty model response',
+                        'model' => $result->model,
+                        'llm_provider' => $result->provider,
+                        'llm_fallback' => $result->fallback,
+                    ]);
+                    throw new RuntimeException('Üres választ kaptunk az értelmezőtől.');
+                }
+
+                $parsed = $this->replies->parse($raw);
+                $this->remember(
+                    $session,
+                    'assistant',
+                    $parsed['status'] === 'need_data' ? 'data_request' : 'answer',
+                    $raw,
+                );
+
+                if ($parsed['status'] !== 'need_data') {
+                    $text = $parsed['text'];
+                    break;
+                }
+
+                if ($rounds >= self::MAX_DATA_ROUNDS) {
+                    $text = $parsed['text'];
+                    break;
+                }
+
+                $rounds++;
+                $data = $this->sky->fulfill($parsed['requests'], $reader);
+                $this->remember($session, 'user', 'data', $this->dataMessage($locale, $data, $rounds));
+            }
+        } catch (RuntimeException $e) {
+            throw $e;
+        }
+
+        if ($text === '') {
+            $log->update([
+                'status' => 'error',
+                'error' => 'Empty model response',
+                'model' => $result?->model,
+                'llm_provider' => $result?->provider,
+                'llm_fallback' => (bool) ($result?->fallback),
             ]);
-            $response = $result->response;
+            throw new RuntimeException('Üres választ kaptunk az értelmezőtől.');
+        }
+
+        $log->update([
+            'status' => 'success',
+            'response' => $text,
+            'model' => $result?->model,
+            'llm_provider' => $result?->provider,
+            'llm_fallback' => (bool) ($result?->fallback),
+            'error' => null,
+            'astro' => array_merge($log->astro ?? [], [
+                'data_rounds' => $rounds,
+                'session_id' => $session->public_id,
+            ]),
+        ]);
+
+        return [
+            'text' => $text,
+            'source' => $result?->toArray($locale) ?? [
+                'provider' => '',
+                'model' => '',
+                'fallback' => false,
+                'label' => '',
+            ],
+            'session_id' => $session->public_id,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @param  list<array<string, mixed>>  $cards
+     */
+    private function session(array $payload, ?User $reader, string $locale, string $question, array $cards): ReadingSession
+    {
+        $mode = $this->normalizeMode((string) ($payload['mode'] ?? self::MODE_INITIAL));
+        $publicId = trim((string) ($payload['session_id'] ?? ''));
+
+        if ($mode !== self::MODE_INITIAL && $publicId !== '') {
+            $session = ReadingSession::query()->where('public_id', $publicId)->first();
+            if ($session === null) {
+                throw new RuntimeException($locale === 'en'
+                    ? 'This reading session was not found.'
+                    : 'Ez a kifejtés nem található.');
+            }
+            if ($session->user_id !== null && (int) $session->user_id !== (int) ($reader?->id ?? 0)) {
+                throw new RuntimeException($locale === 'en'
+                    ? 'This reading belongs to another account.'
+                    : 'Ez a kifejtés egy másik fiókhoz tartozik.');
+            }
+
+            return $session;
+        }
+
+        return ReadingSession::query()->create([
+            'user_id' => $reader?->id,
+            'game_id' => isset($payload['game_id']) ? (int) $payload['game_id'] : null,
+            'locale' => $locale,
+            'question' => mb_substr($question, 0, 280),
+            'cards' => $cards,
+        ]);
+    }
+
+    private function remember(ReadingSession $session, string $role, string $kind, string $content): void
+    {
+        $next = (int) $session->turns()->max('sequence') + 1;
+        $session->turns()->create([
+            'sequence' => $next,
+            'role' => $role,
+            'kind' => $kind,
+            'content' => $content,
+        ]);
+    }
+
+    /**
+     * @return array<int, array{role: string, content: string}>
+     */
+    private function messages(ReadingSession $session, string $systemPrompt): array
+    {
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt],
+        ];
+
+        foreach ($session->turns()->orderBy('sequence')->get() as $turn) {
+            if (! in_array($turn->role, ['user', 'assistant'], true)) {
+                continue;
+            }
+            $messages[] = [
+                'role' => $turn->role,
+                'content' => $turn->content,
+            ];
+        }
+
+        return $messages;
+    }
+
+    private function complete(
+        ReadingSession $session,
+        string $systemPrompt,
+        string $requestedModel,
+        array $options,
+        ReadingLog $log,
+        string $mode,
+    ): \App\Services\LlmChatResult {
+        try {
+            $result = $this->openAI->complete(
+                $this->messages($session, $systemPrompt),
+                $requestedModel,
+                $options,
+            );
         } catch (Throwable $e) {
             Log::error('Tarot reading OpenAI request failed', ['error' => $e->getMessage(), 'mode' => $mode]);
             $log->update([
@@ -129,42 +286,21 @@ class TarotReadingService
             throw new RuntimeException('Az értelmezés most nem elérhető. Próbáld újra később.');
         }
 
-        if (! $response->successful()) {
-            $errorBody = $response->json();
+        if (! $result->response->successful()) {
+            $errorBody = $result->response->json();
             Log::error('Tarot reading OpenAI error', [
-                'status' => $response->status(),
+                'status' => $result->response->status(),
                 'body' => $errorBody,
                 'mode' => $mode,
             ]);
             $log->update([
                 'status' => 'error',
-                'error' => 'HTTP '.$response->status().': '.json_encode($errorBody, JSON_UNESCAPED_UNICODE),
+                'error' => 'HTTP '.$result->response->status().': '.json_encode($errorBody, JSON_UNESCAPED_UNICODE),
             ]);
             throw new RuntimeException('Az értelmezés most nem elérhető. Próbáld újra később.');
         }
 
-        $text = trim((string) data_get($response->json(), 'choices.0.message.content', ''));
-        if ($text === '') {
-            $log->update([
-                'status' => 'error',
-                'error' => 'Empty model response',
-            ]);
-            throw new RuntimeException('Üres választ kaptunk az értelmezőtől.');
-        }
-
-        $log->update([
-            'status' => 'success',
-            'response' => $text,
-            'model' => $result->model,
-            'llm_provider' => $result->provider,
-            'llm_fallback' => $result->fallback,
-            'error' => null,
-        ]);
-
-        return [
-            'text' => $text,
-            'source' => $result->toArray($locale),
-        ];
+        return $result;
     }
 
     private function normalizeMode(string $mode): string
@@ -178,30 +314,144 @@ class TarotReadingService
      * @param  list<array<string, mixed>>  $cards
      * @param  array<string, mixed>  $astro
      */
-    private function userPrompt(string $locale, string $question, array $cards, array $astro): string
+    private function openingMessage(
+        string $locale,
+        string $question,
+        array $cards,
+        array $astro,
+        string $spreadPrompt,
+        ?User $reader,
+        string $mode,
+        string $followUp,
+        string $previousReading,
+    ): string {
+        $baseHeader = $locale === 'en' ? '## BASE' : '## ALAPPROMPT';
+        $spreadHeader = $locale === 'en' ? '## SPREAD' : '## KIRAKASPROMPT';
+        $dataHeader = $locale === 'en' ? '## SPREAD_DATA' : '## KIRAKAS';
+        $userHeader = $locale === 'en' ? '## USER' : '## FELHASZNALO';
+        $emptySpread = $locale === 'en'
+            ? 'No extra spread instructions.'
+            : 'Nincs külön kirakásprompt.';
+
+        $parts = [
+            $baseHeader,
+            $this->settings->basePrompt($locale),
+            '',
+            $spreadHeader,
+            $spreadPrompt !== '' ? $spreadPrompt : $emptySpread,
+            '',
+            $dataHeader,
+            $locale === 'en' ? 'Drawn cards:' : 'Húzott lapok:',
+            $this->formatCards($locale, $cards),
+            '',
+            $this->formatScoring($locale, $astro),
+            '',
+            $userHeader,
+            $this->userBlock($locale, $question, $reader),
+        ];
+
+        if ($mode !== self::MODE_INITIAL || $previousReading !== '' || $followUp !== '') {
+            $parts[] = '';
+            $parts[] = $this->turnMessage($locale, $mode, $followUp, $previousReading);
+        }
+
+        return implode("\n", $parts);
+    }
+
+    private function userBlock(string $locale, string $question, ?User $reader): string
     {
         $lines = [];
         $lines[] = $locale === 'en' ? 'Question:' : 'Kérdés:';
         $lines[] = $question;
-        $lines[] = '';
 
-        if ($this->looksMeaningless($question)) {
+        if ($reader?->birth_at !== null) {
+            $local = $reader->birth_at->copy()->timezone('Europe/Budapest');
             $lines[] = $locale === 'en'
-                ? 'SPECIAL CASE: The question above is gibberish / uninterpretable. Do not give a normal reading. Reply that Your Master cannot interpret the question, then send a short random poem they feel the seeker needs.'
-                : 'KÜLÖNLEGES ESET: A fenti „kérdés” értelmetlen karakterhalmaz / nem értelmezhető. Ne adj szokásos olvasatot. Írd meg, hogy a Mestered a kérdést nem tudja értelmezni, majd küldj egy rövid, véletlenszerű verset, amire szerinte szükség van.';
-            $lines[] = '';
-            $lines[] = $locale === 'en' ? 'Cards (context only, do not force a reading from them):' : 'Lapok (csak kontextus, ne erőltesd rájuk az olvasatot):';
-            $lines[] = $this->formatCards($locale, $cards);
-
-            return implode("\n", $lines);
+                ? 'Birth time (Europe/Budapest): '.$local->format('Y-m-d H:i')
+                : 'Születési idő (Europe/Budapest): '.$local->format('Y-m-d H:i');
         }
 
-        $lines[] = $this->formatScoring($locale, $astro);
-        $lines[] = '';
-        $lines[] = $locale === 'en' ? 'Drawn cards:' : 'Húzott lapok:';
-        $lines[] = $this->formatCards($locale, $cards);
+        $gender = $this->genderLabel($locale, (string) ($reader->gender ?? ''));
+        if ($gender !== '') {
+            $lines[] = ($locale === 'en' ? 'Gender: ' : 'Nem: ').$gender;
+        }
+
+        $introduction = trim((string) ($reader->introduction ?? ''));
+        if ($introduction !== '') {
+            $lines[] = ($locale === 'en' ? 'Introduction: ' : 'Bemutatkozás: ').$introduction;
+        }
+
+        if ($this->looksMeaningless($question)) {
+            $lines[] = '';
+            $lines[] = $locale === 'en'
+                ? 'SPECIAL CASE: The question above is gibberish / uninterpretable. Do not give a normal reading and do not request sky data. Reply that Your Master cannot interpret the question, then send a short random poem they feel the seeker needs.'
+                : 'KÜLÖNLEGES ESET: A fenti „kérdés” értelmetlen karakterhalmaz / nem értelmezhető. Ne adj szokásos olvasatot, és ne kérj égi adatot. Írd meg, hogy a Mestered a kérdést nem tudja értelmezni, majd küldj egy rövid, véletlenszerű verset, amire szerinte szükség van.';
+        }
 
         return implode("\n", $lines);
+    }
+
+    private function genderLabel(string $locale, string $gender): string
+    {
+        return match ($gender) {
+            'female' => $locale === 'en' ? 'female' : 'nő',
+            'male' => $locale === 'en' ? 'male' : 'férfi',
+            'other' => $locale === 'en' ? 'other' : 'egyéb',
+            default => '',
+        };
+    }
+
+    private function turnMessage(string $locale, string $mode, string $followUp, string $previousReading): string
+    {
+        $lines = [];
+        $lines[] = $locale === 'en' ? '## TURN' : '## FORDULO';
+        if ($mode === self::MODE_CLARIFY) {
+            $lines[] = $locale === 'en'
+                ? 'This is a clarification of the same reading, not a new question.'
+                : 'Ez ugyanannak a kifejtésnek a pontosítása, nem új kérdés.';
+            $lines[] = ($locale === 'en' ? 'Clarification: ' : 'Pontosítás: ').$followUp;
+        } elseif ($mode === self::MODE_EXPAND) {
+            $lines[] = $locale === 'en'
+                ? 'This is a deeper expansion of the same reading, not a new question.'
+                : 'Ez ugyanannak a kifejtésnek a bővebb kifejtése, nem új kérdés.';
+            if ($followUp !== '') {
+                $lines[] = ($locale === 'en' ? 'Optional focus: ' : 'Opcionális fókusz: ').$followUp;
+            }
+        } else {
+            $lines[] = $locale === 'en'
+                ? 'Write the first reading for this question.'
+                : 'Írd meg ennek a kérdésnek az első olvasatát.';
+        }
+
+        if ($previousReading !== '') {
+            $lines[] = '';
+            $lines[] = $locale === 'en' ? 'Previous reading:' : 'Korábbi olvasat:';
+            $lines[] = $previousReading;
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $results
+     */
+    private function dataMessage(string $locale, array $results, int $round): string
+    {
+        $remaining = max(0, self::MAX_DATA_ROUNDS - $round);
+        $payload = [
+            'round' => $round,
+            'remaining_requests' => $remaining,
+            'results' => $results,
+        ];
+        if ($remaining === 0) {
+            $payload['note'] = $locale === 'en'
+                ? 'No further data will be fetched. The next reply must be status=answer.'
+                : 'További adat nem érkezik. A következő válasz status=answer legyen.';
+        }
+
+        $header = $locale === 'en' ? '## DATA' : '## ADAT';
+
+        return $header."\n".json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 
     /**
@@ -287,53 +537,6 @@ class TarotReadingService
         }
 
         return false;
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $cards
-     * @param  array<string, mixed>  $astro
-     */
-    private function followUpUserPrompt(
-        string $locale,
-        string $mode,
-        string $question,
-        array $cards,
-        array $astro,
-        string $previousReading,
-        string $followUp,
-    ): string {
-        $lines = [];
-        $lines[] = $locale === 'en' ? 'Original question:' : 'Eredeti kérdés:';
-        $lines[] = $question;
-        $lines[] = '';
-        $lines[] = $this->formatScoring($locale, $astro);
-        $lines[] = '';
-        $lines[] = $locale === 'en' ? 'Drawn cards:' : 'Húzott lapok:';
-        $lines[] = $this->formatCards($locale, $cards);
-        $lines[] = '';
-        $lines[] = $locale === 'en' ? 'Previous reading:' : 'Korábbi olvasat:';
-        $lines[] = $previousReading;
-        $lines[] = '';
-
-        if ($mode === self::MODE_CLARIFY) {
-            $lines[] = $locale === 'en' ? 'Clarification request:' : 'Pontosítás:';
-            $lines[] = $followUp;
-            $lines[] = '';
-            $lines[] = $locale === 'en'
-                ? 'Answer the clarification now.'
-                : 'Most válaszolj a pontosításra.';
-        } else {
-            if ($followUp !== '') {
-                $lines[] = $locale === 'en' ? 'Optional focus from the seeker:' : 'Opcionális fókusz a kérdezőtől:';
-                $lines[] = $followUp;
-                $lines[] = '';
-            }
-            $lines[] = $locale === 'en'
-                ? 'Expand the reading now with deeper practical detail.'
-                : 'Most fejtsd ki bővebben, gyakorlati mélységgel.';
-        }
-
-        return implode("\n", $lines);
     }
 
     /**

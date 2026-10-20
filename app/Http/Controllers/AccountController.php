@@ -6,6 +6,7 @@ use App\Models\CardPack;
 use App\Models\DataDeletionRequest;
 use App\Models\ReadingLog;
 use App\Models\UserPackPreference;
+use Carbon\Carbon;
 use App\Services\FeatureAccessService;
 use App\Services\PackResolutionService;
 use App\Services\PersonalDataService;
@@ -116,6 +117,37 @@ class AccountController extends Controller
         return redirect()
             ->route('account.show')
             ->with('status', __('messages.account_erasure_sent'));
+    }
+
+    public function introduction(Request $request): View
+    {
+        return view('account.introduction', [
+            'user' => $request->user(),
+            'assetBase' => asset('templates/art-deco'),
+        ]);
+    }
+
+    public function updateIntroduction(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'birth_at' => ['nullable', 'date'],
+            'gender' => ['nullable', 'in:female,male,other'],
+            'introduction' => ['nullable', 'string', 'max:200'],
+        ]);
+
+        $birth = filled($data['birth_at'] ?? null)
+            ? Carbon::parse($data['birth_at'], 'Europe/Budapest')->utc()
+            : null;
+
+        $request->user()->forceFill([
+            'birth_at' => $birth,
+            'gender' => $data['gender'] ?? null,
+            'introduction' => trim((string) ($data['introduction'] ?? '')) ?: null,
+        ])->save();
+
+        return redirect()
+            ->route('account.introduction')
+            ->with('status', __('messages.intro_saved'));
     }
 
     public function updatePassword(Request $request): RedirectResponse

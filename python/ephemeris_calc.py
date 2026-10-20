@@ -131,13 +131,19 @@ def object_row(
     return row
 
 
-def house_number(longitude: float, cusps) -> int:
-    """Return Placidus house 1..12. pyswisseph returns 12 cusps at indices 0..11."""
+def cusp_values(cusps) -> list[float]:
+    """Placidus cusps. pyswisseph may return 12 values or 13 with an unused index 0."""
     cusp_list = list(cusps)
     if len(cusp_list) >= 13:
-        cusp_list = [cusp_list[i] for i in range(1, 13)]
+        cusp_list = [float(cusp_list[i]) for i in range(1, 13)]
     else:
-        cusp_list = cusp_list[:12]
+        cusp_list = [float(value) for value in cusp_list[:12]]
+    return cusp_list
+
+
+def house_number(longitude: float, cusps) -> int:
+    """Return Placidus house 1..12."""
+    cusp_list = cusp_values(cusps)
 
     lon = normalize_degree(longitude)
     for i in range(12):
@@ -179,7 +185,23 @@ def calc_special_points(jd: float, lat: float, lon: float, ayanamsa: float, cusp
     ]
 
 
-def calc_fixed_stars(jd: float, ayanamsa: float) -> list[dict]:
+def house_table(cusps, ayanamsa: float) -> list[dict]:
+    rows = []
+    for index, cusp in enumerate(cusp_values(cusps)):
+        lon = normalize_degree(cusp - ayanamsa)
+        sign, degree = zodiac_sign(lon)
+        rows.append(
+            {
+                "house": index + 1,
+                "longitude": round(lon, 6),
+                "sign": sign,
+                "degree": round(degree, 4),
+            }
+        )
+    return rows
+
+
+def calc_fixed_stars(jd: float, ayanamsa: float, cusps) -> list[dict]:
     results = []
     for star_name in FIXED_STARS:
         try:
@@ -188,7 +210,9 @@ def calc_fixed_stars(jd: float, ayanamsa: float) -> list[dict]:
             retnam = result[1] if len(result) > 1 else star_name
             lon = normalize_degree(xx[0] - ayanamsa)
             label = retnam.split(",")[0].strip() if isinstance(retnam, str) and retnam else star_name
-            results.append(object_row(label, lon, "fixed_star"))
+            results.append(
+                object_row(label, lon, "fixed_star", house=house_number(lon, cusps))
+            )
         except Exception:
             continue
     return results
@@ -225,7 +249,7 @@ def build_ephemeris(payload: dict) -> dict:
 
     planets = calc_planets(jd, ayanamsa, cusps)
     points = calc_special_points(jd, lat, lon, ayanamsa, cusps, ascmc)
-    stars = calc_fixed_stars(jd, ayanamsa)
+    stars = calc_fixed_stars(jd, ayanamsa, cusps)
 
     # South Node derived from True Node
     true_node = next((p for p in planets if p["name"] == "True Node"), None)
@@ -246,12 +270,185 @@ def build_ephemeris(payload: dict) -> dict:
         "ayanamsa": ayanamsa_name if sidereal else None,
         "ayanamsa_degree": round(ayanamsa, 6),
         "conjunction_orb": orb,
+        "houses": house_table(cusps, ayanamsa),
         "objects": objects,
+    }
+
+
+PLANET_BY_NAME = {name: planet_id for planet_id, name in PLANETS}
+
+BODY_ALIASES = {
+    "sun": "Sun",
+    "nap": "Sun",
+    "moon": "Moon",
+    "hold": "Moon",
+    "mercury": "Mercury",
+    "merkur": "Mercury",
+    "merkúr": "Mercury",
+    "venus": "Venus",
+    "venusz": "Venus",
+    "vénusz": "Venus",
+    "mars": "Mars",
+    "jupiter": "Jupiter",
+    "saturn": "Saturn",
+    "szaturnusz": "Saturn",
+    "uranus": "Uranus",
+    "uranusz": "Uranus",
+    "neptune": "Neptune",
+    "neptunusz": "Neptune",
+    "neptun": "Neptune",
+    "pluto": "Pluto",
+    "plútó": "Pluto",
+}
+
+ASPECT_ALIASES = {
+    "conjunction": (0.0, 8.0),
+    "egyuttallas": (0.0, 8.0),
+    "együttállás": (0.0, 8.0),
+    "conjunct": (0.0, 8.0),
+    "sextile": (60.0, 4.0),
+    "szextil": (60.0, 4.0),
+    "square": (90.0, 6.0),
+    "kvadrat": (90.0, 6.0),
+    "kvadrát": (90.0, 6.0),
+    "trine": (120.0, 6.0),
+    "trigon": (120.0, 6.0),
+    "quincunx": (150.0, 3.0),
+    "kvinkunx": (150.0, 3.0),
+    "opposition": (180.0, 8.0),
+    "oppozicio": (180.0, 8.0),
+    "oppozíció": (180.0, 8.0),
+}
+
+
+def resolve_body(name: str) -> str | None:
+    return BODY_ALIASES.get(name.strip().lower())
+
+
+def resolve_aspect(name: str) -> tuple[float, float] | None:
+    return ASPECT_ALIASES.get(name.strip().lower())
+
+
+def body_position(jd: float, name: str, ayanamsa: float) -> tuple[float, float]:
+    flags = swe.FLG_SWIEPH | swe.FLG_MOSEPH | swe.FLG_SPEED
+    xx = swe.calc_ut(jd, PLANET_BY_NAME[name], flags)[0]
+    return normalize_degree(xx[0] - ayanamsa), float(xx[3])
+
+
+def build_projection(payload: dict) -> dict:
+    """Find windows when a body is in an aspect, a house, or retrograde."""
+    body = resolve_body(str(payload.get("body", "")))
+    event = str(payload.get("event", "")).strip().lower()
+    if body is None:
+        return {"error": "unknown_body", "body": payload.get("body")}
+    if event not in {"aspect", "house", "retrograde"}:
+        return {"error": "unknown_event", "event": event}
+
+    aspect = None
+    other = None
+    house = None
+    if event == "aspect":
+        aspect = resolve_aspect(str(payload.get("aspect", "")))
+        other = resolve_body(str(payload.get("with", "")))
+        if aspect is None or other is None or other == body:
+            return {"error": "invalid_aspect"}
+    if event == "house":
+        try:
+            house = int(payload.get("house") or 0)
+        except (TypeError, ValueError):
+            house = 0
+        if house < 1 or house > 12:
+            return {"error": "invalid_house"}
+    if event == "retrograde" and body in {"Sun", "Moon"}:
+        return {
+            "body": body,
+            "event": event,
+            "windows": [],
+            "note": "The Sun and Moon are never retrograde.",
+        }
+
+    try:
+        start = parse_datetime_utc(str(payload.get("from") or payload["datetime_utc"]))
+    except (KeyError, ValueError):
+        return {"error": "invalid_range"}
+
+    end_raw = payload.get("until")
+    try:
+        end = parse_datetime_utc(str(end_raw)) if end_raw else start
+    except ValueError:
+        return {"error": "invalid_range"}
+
+    if end < start:
+        start, end = end, start
+    max_end = start.timestamp() + 120 * 86400
+    if end.timestamp() > max_end:
+        end = datetime.fromtimestamp(max_end, tz=timezone.utc)
+
+    lat = float(payload.get("lat", 47.4979))
+    lon = float(payload.get("lon", 19.0402))
+    sidereal = bool(payload.get("sidereal", False))
+    if sidereal:
+        swe.set_sid_mode(swe.SIDM_LAHIRI)
+
+    step_hours = 6 if body == "Moon" else (12 if body in {"Sun", "Mercury", "Venus"} else 24)
+    step = step_hours * 3600
+
+    times: list[datetime] = []
+    flags: list[bool] = []
+    cursor = start.timestamp()
+    end_ts = end.timestamp()
+    count = 0
+    while cursor <= end_ts and count < 500:
+        dt = datetime.fromtimestamp(cursor, tz=timezone.utc)
+        jd = julian_day(dt)
+        ayanamsa = calc_ayanamsa(jd, sidereal)
+        body_lon, speed = body_position(jd, body, ayanamsa)
+        if event == "retrograde":
+            active = speed < 0
+        elif event == "aspect" and aspect is not None and other is not None:
+            other_lon, _speed = body_position(jd, other, ayanamsa)
+            angle, orb = aspect
+            active = abs(angle_delta(body_lon, other_lon) - angle) <= orb
+        else:
+            cusps, _ascmc = swe.houses(jd, lat, lon, b"P")
+            active = house_number(body_lon, cusps) == house
+        times.append(dt)
+        flags.append(active)
+        cursor += step
+        count += 1
+
+    windows = []
+    open_at = None
+    previous = None
+    for dt, active in zip(times, flags):
+        if active and open_at is None:
+            open_at = dt
+        if not active and open_at is not None and previous is not None:
+            windows.append({"from": open_at.isoformat(), "until": previous.isoformat()})
+            open_at = None
+        previous = dt
+    if open_at is not None and previous is not None:
+        windows.append({"from": open_at.isoformat(), "until": previous.isoformat()})
+
+    return {
+        "body": body,
+        "event": event,
+        "aspect": payload.get("aspect") if event == "aspect" else None,
+        "with": other,
+        "house": house,
+        "from": start.isoformat(),
+        "until": end.isoformat(),
+        "step_hours": step_hours,
+        "windows": windows[:24],
+        "samples": len(times),
     }
 
 
 def main() -> None:
     payload = json.loads(sys.stdin.read())
+    if payload.get("mode") == "projection":
+        sys.stdout.write(json.dumps(build_projection(payload)))
+        return
     sys.stdout.write(json.dumps(build_ephemeris(payload)))
 
 

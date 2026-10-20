@@ -27,15 +27,39 @@ class EphemerisService
      */
     public function calculate(array $input): array
     {
-        $payload = [
+        $data = $this->run([
             'datetime_utc' => $input['datetime_utc'],
             'lat' => (float) ($input['lat'] ?? config('ephemeris.default_lat')),
             'lon' => (float) ($input['lon'] ?? config('ephemeris.default_lon')),
             'sidereal' => (bool) ($input['sidereal'] ?? false),
             'ayanamsa' => $input['ayanamsa'] ?? 'lahiri',
             'conjunction_orb' => (float) ($input['conjunction_orb'] ?? config('ephemeris.conjunction_orb')),
-        ];
+        ]);
 
+        if (! isset($data['objects']) || ! is_array($data['objects'])) {
+            throw new RuntimeException('Invalid ephemeris response.');
+        }
+
+        return $this->enrichWithScoring($data);
+    }
+
+    /**
+     * Scan a date window for an aspect, a house stay, or retrograde motion.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    public function project(array $input): array
+    {
+        return $this->run(array_merge($input, ['mode' => 'projection']));
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function run(array $payload): array
+    {
         $python = (string) config('ephemeris.python_bin');
         $script = (string) config('ephemeris.script');
 
@@ -61,11 +85,11 @@ class EphemerisService
 
         $data = json_decode($process->getOutput(), true);
 
-        if (! is_array($data) || ! isset($data['objects']) || ! is_array($data['objects'])) {
+        if (! is_array($data)) {
             throw new RuntimeException('Invalid ephemeris response.');
         }
 
-        return $this->enrichWithScoring($data);
+        return $data;
     }
 
     /**

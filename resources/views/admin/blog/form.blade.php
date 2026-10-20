@@ -7,19 +7,20 @@
         <h1>{{ $post->exists ? __('admin.blog.edit') : __('admin.blog.create') }}</h1>
         <p class="muted">{{ __('admin.blog.form_hint') }}</p>
 
-        <form method="POST" action="{{ $post->exists ? route('admin.blog.update', $post) : route('admin.blog.store') }}" enctype="multipart/form-data" data-blog-form>
+        <form method="POST" action="{{ $post->exists ? route('admin.blog.update', $post) : route('admin.blog.store') }}" enctype="multipart/form-data" data-blog-form data-lang-scope data-active-lang="{{ app()->getLocale() === 'en' ? 'en' : 'hu' }}">
             @csrf
             @if ($post->exists)
                 @method('PUT')
             @endif
+            @include('admin.partials.lang-switch')
 
             <div class="row">
-                <div class="field">
+                <div class="field" data-lang="hu">
                     <label for="title_hu">{{ __('admin.blog.title_hu') }}</label>
                     <input id="title_hu" name="title_hu" value="{{ old('title_hu', $post->title_hu) }}" required>
                     @error('title_hu') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
                 </div>
-                <div class="field">
+                <div class="field" data-lang="en">
                     <label for="title_en">{{ __('admin.blog.title_en') }}</label>
                     <input id="title_en" name="title_en" value="{{ old('title_en', $post->title_en) }}">
                 </div>
@@ -33,23 +34,23 @@
             </div>
 
             <div class="row">
-                <div class="field">
+                <div class="field" data-lang="hu">
                     <label for="excerpt_hu">{{ __('admin.blog.excerpt_hu') }}</label>
                     <textarea id="excerpt_hu" name="excerpt_hu" rows="3" maxlength="300">{{ old('excerpt_hu', $post->excerpt_hu) }}</textarea>
                     <p class="muted">{{ __('admin.blog.excerpt_hint') }}</p>
                 </div>
-                <div class="field">
+                <div class="field" data-lang="en">
                     <label for="excerpt_en">{{ __('admin.blog.excerpt_en') }}</label>
                     <textarea id="excerpt_en" name="excerpt_en" rows="3" maxlength="300">{{ old('excerpt_en', $post->excerpt_en) }}</textarea>
                 </div>
             </div>
 
-            <div class="field">
+            <div class="field" data-lang="hu">
                 <label for="body_hu">{{ __('admin.blog.body_hu') }}</label>
                 <textarea id="body_hu" name="body_hu" rows="14" class="js-html-editor" data-editor-locale="hu" required>{{ old('body_hu', $post->body_hu) }}</textarea>
                 @error('body_hu') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
             </div>
-            <div class="field">
+            <div class="field" data-lang="en">
                 <label for="body_en">{{ __('admin.blog.body_en') }}</label>
                 <textarea id="body_en" name="body_en" rows="10" class="js-html-editor" data-editor-locale="en">{{ old('body_en', $post->body_en) }}</textarea>
             </div>

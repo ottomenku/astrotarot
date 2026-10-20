@@ -175,11 +175,6 @@ class CreditService
         return $this->spend($user, self::QUESTION_COST);
     }
 
-    public function hasQuestionCredit(User $user): bool
-    {
-        return (int) $user->credits >= self::QUESTION_COST;
-    }
-
     public function canExportPdf(User $user): bool
     {
         return app(FeatureAccessService::class)->can($user, FeatureCatalog::PDF);

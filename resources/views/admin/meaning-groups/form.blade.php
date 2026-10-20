@@ -21,18 +21,19 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ $group->exists ? route('admin.meaning-groups.update', $group) : route('admin.meaning-groups.store') }}" data-meaning-form>
+        <form method="POST" action="{{ $group->exists ? route('admin.meaning-groups.update', $group) : route('admin.meaning-groups.store') }}" data-meaning-form data-lang-scope data-active-lang="{{ app()->getLocale() === 'en' ? 'en' : 'hu' }}">
             @csrf
             @if ($group->exists)
                 @method('PUT')
             @endif
+            @include('admin.partials.lang-switch')
 
             <div class="row">
-                <div class="field">
+                <div class="field" data-lang="hu">
                     <label for="name_hu">{{ __('admin.meaning_groups.name_hu') }}</label>
                     <input id="name_hu" name="name_hu" value="{{ old('name_hu', $group->name_hu) }}" required>
                 </div>
-                <div class="field">
+                <div class="field" data-lang="en">
                     <label for="name_en">{{ __('admin.meaning_groups.name_en') }}</label>
                     <input id="name_en" name="name_en" value="{{ old('name_en', $group->name_en) }}" required>
                 </div>
@@ -63,16 +64,17 @@
                 </div>
             </div>
 
-            <div class="field">
+            <div class="field" data-lang="hu">
                 <label for="description_hu">{{ __('admin.meaning_groups.description_hu') }}</label>
                 <textarea id="description_hu" name="description_hu" rows="2">{{ old('description_hu', $group->description_hu) }}</textarea>
             </div>
-            <div class="field">
+            <div class="field" data-lang="en">
                 <label for="description_en">{{ __('admin.meaning_groups.description_en') }}</label>
                 <textarea id="description_en" name="description_en" rows="2">{{ old('description_en', $group->description_en) }}</textarea>
             </div>
 
             <h2>{{ __('admin.meaning_groups.entries') }}</h2>
+            @include('admin.partials.lang-switch')
             <p class="muted">{{ __('admin.meaning_groups.entries_hint') }}</p>
             <div data-entry-list>
                 @forelse ($entryRows as $index => $entry)

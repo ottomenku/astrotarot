@@ -28,9 +28,14 @@ class GameRule extends Model
         'default_pack_id',
         'title_hu',
         'title_en',
+        'slot_key',
+        'description_hu',
+        'description_en',
+        'card_back_id',
         'info_mode',
         'row',
         'place',
+        'draw_order',
     ];
 
     protected function casts(): array
@@ -38,6 +43,7 @@ class GameRule extends Model
         return [
             'row' => 'integer',
             'place' => 'integer',
+            'draw_order' => 'integer',
         ];
     }
 
@@ -49,6 +55,11 @@ class GameRule extends Model
     public function defaultPack(): BelongsTo
     {
         return $this->belongsTo(CardPack::class, 'default_pack_id');
+    }
+
+    public function cardBack(): BelongsTo
+    {
+        return $this->belongsTo(CardPack::class, 'card_back_id');
     }
 
     public function title(?string $locale = null): string

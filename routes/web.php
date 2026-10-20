@@ -3,9 +3,9 @@
 use App\Http\Controllers\Admin\BlogPostController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\CardPackController;
+use App\Http\Controllers\Admin\PackInstallController;
 use App\Http\Controllers\Admin\DataDeletionRequestController;
 use App\Http\Controllers\Admin\EphemerisController;
-use App\Http\Controllers\Admin\FeatureAccessController;
 use App\Http\Controllers\Admin\GameController;
 use App\Http\Controllers\Admin\LegalController;
 use App\Http\Controllers\Admin\MeaningGroupController;
@@ -102,6 +102,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/account/packs', [PackPreferenceController::class, 'update'])
         ->middleware('feature:'.FeatureCatalog::ACCOUNT)
         ->name('account.packs.update');
+    Route::get('/account/introduction', [AccountController::class, 'introduction'])
+        ->middleware('feature:'.FeatureCatalog::ACCOUNT)
+        ->name('account.introduction');
+    Route::put('/account/introduction', [AccountController::class, 'updateIntroduction'])
+        ->middleware('feature:'.FeatureCatalog::ACCOUNT)
+        ->name('account.introduction.update');
     Route::get('/my-readings', [ReadingHistoryController::class, 'index'])
         ->middleware('feature:'.FeatureCatalog::HISTORY)
         ->name('readings.history');
@@ -170,6 +176,9 @@ Route::prefix('admin')
         Route::post('/games/{game}/default', [GameController::class, 'makeDefault'])->name('games.default');
         Route::delete('/games/{game}', [GameController::class, 'destroy'])->name('games.destroy');
 
+        Route::get('/packs/install', [PackInstallController::class, 'create'])->name('packs.install');
+        Route::post('/packs/install', [PackInstallController::class, 'store'])->name('packs.install.store');
+
         Route::get('/packs', [CardPackController::class, 'index'])->name('packs.index');
         Route::get('/packs/create', [CardPackController::class, 'create'])->name('packs.create');
         Route::post('/packs', [CardPackController::class, 'store'])->name('packs.store');
@@ -193,9 +202,6 @@ Route::prefix('admin')
         Route::get('/blog/{post}/edit', [BlogPostController::class, 'edit'])->name('blog.edit');
         Route::put('/blog/{post}', [BlogPostController::class, 'update'])->name('blog.update');
         Route::delete('/blog/{post}', [BlogPostController::class, 'destroy'])->name('blog.destroy');
-
-        Route::get('/access', [FeatureAccessController::class, 'edit'])->name('feature-access.edit');
-        Route::put('/access', [FeatureAccessController::class, 'update'])->name('feature-access.update');
 
         Route::get('/readings', [ReadingLogController::class, 'index'])->name('readings.index');
         Route::get('/readings/{reading}/preview', [ReadingLogController::class, 'preview'])->name('readings.preview');

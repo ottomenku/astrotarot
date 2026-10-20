@@ -16,19 +16,20 @@
             <p class="muted">{{ session('status') }}</p>
         @endif
 
-        <form method="POST" action="{{ $pack->exists ? route('admin.packs.update', $pack) : route('admin.packs.store') }}" enctype="multipart/form-data" data-pack-form>
+        <form method="POST" action="{{ $pack->exists ? route('admin.packs.update', $pack) : route('admin.packs.store') }}" enctype="multipart/form-data" data-pack-form data-lang-scope data-active-lang="{{ app()->getLocale() === 'en' ? 'en' : 'hu' }}">
             @csrf
             @if ($pack->exists)
                 @method('PUT')
             @endif
+            @include('admin.partials.lang-switch')
 
             <div class="row">
-                <div class="field">
+                <div class="field" data-lang="hu">
                     <label for="name_hu">{{ __('admin.packs.name_hu') }}</label>
                     <input id="name_hu" name="name_hu" value="{{ old('name_hu', $pack->name_hu) }}" required>
                     @error('name_hu') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
                 </div>
-                <div class="field">
+                <div class="field" data-lang="en">
                     <label for="name_en">{{ __('admin.packs.name_en') }}</label>
                     <input id="name_en" name="name_en" value="{{ old('name_en', $pack->name_en) }}" required>
                     @error('name_en') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
@@ -56,11 +57,11 @@
                 </div>
             </div>
 
-            <div class="field">
+            <div class="field" data-lang="hu">
                 <label for="description_hu">{{ __('admin.packs.description_hu') }}</label>
                 <textarea id="description_hu" name="description_hu" rows="2">{{ old('description_hu', $pack->description_hu) }}</textarea>
             </div>
-            <div class="field">
+            <div class="field" data-lang="en">
                 <label for="description_en">{{ __('admin.packs.description_en') }}</label>
                 <textarea id="description_en" name="description_en" rows="2">{{ old('description_en', $pack->description_en) }}</textarea>
             </div>
@@ -68,7 +69,7 @@
             <div class="row">
                 <div class="field">
                     <label for="card_count">{{ __('admin.packs.cards') }}</label>
-                    <input id="card_count" name="card_count" type="number" min="0" max="200" value="{{ old('card_count', $pack->card_count ?? 0) }}">
+                    <input id="card_count" name="card_count" type="number" min="0" max="500" value="{{ old('card_count', $pack->card_count ?? 0) }}">
                 </div>
                 <div class="field">
                     <label for="style">{{ __('admin.packs.style') }}</label>
@@ -140,6 +141,74 @@
                 </div>
             </div>
 
+            @if ($pack->exists && $pack->cards->isNotEmpty())
+                @php
+                    $selectedGroup = (string) old('meaning_group_id', $pack->meaning_group_id);
+                    $groupEntries = $meaningCatalog[$selectedGroup] ?? $meaningCatalog[(int) $selectedGroup] ?? [];
+                @endphp
+                <div data-pack-cards @unless($isFigure) hidden @endunless>
+                    <h2>{{ __('admin.packs.cards_editor') }}</h2>
+                    @include('admin.partials.lang-switch')
+                    <p class="muted">{{ __('admin.packs.cards_editor_hint') }}</p>
+                    @foreach ($pack->cards as $card)
+                        @php
+                            $entryId = old('cards.'.$card->id.'.meaning_entry_id', $card->meaning_entry_id);
+                        @endphp
+                        <div class="rule-card" data-pack-card>
+                            <div class="pack-card-layout">
+                                <div class="pack-card-preview">
+                                    <img data-card-preview src="{{ $card->imageUrl() }}" alt="" width="88" height="132" @unless($card->imageUrl()) hidden @endunless>
+                                    <label>{{ __('admin.packs.card_image') }}</label>
+                                    <input type="file" name="cards[{{ $card->id }}][image]" accept="image/png,image/jpeg,image/webp" data-card-image>
+                                    @error('cards.'.$card->id.'.image') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <p class="muted">{{ $card->figure_id }}</p>
+                                    <div class="field">
+                                        <label>{{ __('admin.packs.card_meaning') }}</label>
+                                        <select name="cards[{{ $card->id }}][meaning_entry_id]" data-meaning-entry>
+                                            <option value="">{{ __('admin.packs.card_meaning_manual') }}</option>
+                                            @foreach ($groupEntries as $entry)
+                                                <option value="{{ $entry['id'] }}" @selected((int) $entryId === (int) $entry['id'])>{{ $entry['name_hu'] }} · {{ $entry['figure_id'] }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="row">
+                                        <div class="field" data-lang="hu">
+                                            <label>{{ __('admin.packs.card_name_hu') }}</label>
+                                            <input name="cards[{{ $card->id }}][name_hu]" value="{{ old('cards.'.$card->id.'.name_hu', $card->name_hu) }}" data-card-name-hu>
+                                        </div>
+                                        <div class="field" data-lang="en">
+                                            <label>{{ __('admin.packs.card_name_en') }}</label>
+                                            <input name="cards[{{ $card->id }}][name_en]" value="{{ old('cards.'.$card->id.'.name_en', $card->name_en) }}" data-card-name-en>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="field" data-lang="hu">
+                                            <label>{{ __('admin.packs.card_keyword_hu') }}</label>
+                                            <input name="cards[{{ $card->id }}][keyword_hu]" value="{{ old('cards.'.$card->id.'.keyword_hu', $card->keyword_hu) }}" data-card-keyword-hu>
+                                        </div>
+                                        <div class="field" data-lang="en">
+                                            <label>{{ __('admin.packs.card_keyword_en') }}</label>
+                                            <input name="cards[{{ $card->id }}][keyword_en]" value="{{ old('cards.'.$card->id.'.keyword_en', $card->keyword_en) }}" data-card-keyword-en>
+                                        </div>
+                                    </div>
+                                    <div class="field" data-lang="hu">
+                                        <label>{{ __('admin.packs.card_description_hu') }}</label>
+                                        <textarea name="cards[{{ $card->id }}][description_hu]" rows="2" data-card-description-hu>{{ old('cards.'.$card->id.'.description_hu', $card->description_hu) }}</textarea>
+                                    </div>
+                                    <div class="field" data-lang="en">
+                                        <label>{{ __('admin.packs.card_description_en') }}</label>
+                                        <textarea name="cards[{{ $card->id }}][description_en]" rows="2" data-card-description-en>{{ old('cards.'.$card->id.'.description_en', $card->description_en) }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <script type="application/json" id="meaning-catalog">@json($meaningCatalog)</script>
+            @endif
+
             <p style="display:flex;gap:.75rem;flex-wrap:wrap">
                 <button type="submit">{{ __('admin.packs.save') }}</button>
                 <a href="{{ route('admin.packs.index') }}">{{ __('admin.packs.back') }}</a>
@@ -165,6 +234,8 @@
                 const figure = value === 'tarot' || value === 'oracle';
                 if (asset) asset.hidden = figure;
                 if (skins) skins.hidden = !figure;
+                const cards = document.querySelector('[data-pack-cards]');
+                if (cards) cards.hidden = !figure;
                 if (meaning) {
                     let keep = false;
                     meaning.querySelectorAll('option[data-pack-type]').forEach((option) => {
@@ -177,6 +248,63 @@
             };
             type?.addEventListener('change', sync);
             sync();
+
+            const catalog = JSON.parse(document.getElementById('meaning-catalog')?.textContent || '{}');
+            const groupField = document.querySelector('[data-meaning-group-field]');
+            const entryById = {};
+            Object.values(catalog).forEach((entries) => {
+                entries.forEach((entry) => { entryById[String(entry.id)] = entry; });
+            });
+
+            const refillEntries = (select, groupId) => {
+                const previous = select.value;
+                const entries = catalog[groupId] || catalog[String(groupId)] || [];
+                select.replaceChildren();
+                const empty = document.createElement('option');
+                empty.value = '';
+                empty.textContent = @json(__('admin.packs.card_meaning_manual'));
+                select.appendChild(empty);
+                entries.forEach((entry) => {
+                    const option = document.createElement('option');
+                    option.value = String(entry.id);
+                    option.textContent = `${entry.name_hu} · ${entry.figure_id}`;
+                    if (String(entry.id) === previous) option.selected = true;
+                    select.appendChild(option);
+                });
+                if (select.value !== previous) select.value = '';
+            };
+
+            const fillFromEntry = (select) => {
+                const entry = entryById[select.value];
+                const card = select.closest('[data-pack-card]');
+                if (!entry || !card) return;
+                const set = (selector, value) => {
+                    const field = card.querySelector(selector);
+                    if (field) field.value = value || '';
+                };
+                set('[data-card-name-hu]', entry.name_hu);
+                set('[data-card-name-en]', entry.name_en);
+                set('[data-card-keyword-hu]', entry.meaning_hu);
+                set('[data-card-keyword-en]', entry.meaning_en);
+                set('[data-card-description-hu]', entry.description_hu);
+                set('[data-card-description-en]', entry.description_en);
+            };
+
+            groupField?.addEventListener('change', () => {
+                document.querySelectorAll('[data-meaning-entry]').forEach((select) => refillEntries(select, groupField.value));
+            });
+            document.querySelectorAll('[data-meaning-entry]').forEach((select) => {
+                select.addEventListener('change', () => fillFromEntry(select));
+            });
+            document.querySelectorAll('[data-card-image]').forEach((input) => {
+                input.addEventListener('change', () => {
+                    const file = input.files && input.files[0];
+                    const preview = input.closest('[data-pack-card]')?.querySelector('[data-card-preview]');
+                    if (!file || !preview) return;
+                    preview.src = URL.createObjectURL(file);
+                    preview.hidden = false;
+                });
+            });
         })();
     </script>
 @endsection

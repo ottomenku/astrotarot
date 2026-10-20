@@ -30,7 +30,15 @@ class AdminGamesTest extends TestCase
             ->get(route('admin.games.create'))
             ->assertOk()
             ->assertSee(__('admin.games.prompt_hu'), false)
-            ->assertSee(__('admin.games.add_rule'), false);
+            ->assertSee(__('admin.games.add_rule'), false)
+            ->assertSee(__('admin.games.slot_key'), false)
+            ->assertSee(__('admin.games.slot_description_hu'), false)
+            ->assertSee(__('admin.games.slot_description_en'), false)
+            ->assertSee(__('admin.games.card_back'), false)
+            ->assertSee('data-remove-rule', false)
+            ->assertSee('window.confirm(removeConfirm)', false)
+            ->assertDontSee('Laphely infó', false)
+            ->assertDontSee('Ha a felhasználó nem választ paklit', false);
 
         $this->actingAs($admin)
             ->post(route('admin.games.store'), [
@@ -78,6 +86,7 @@ class AdminGamesTest extends TestCase
         );
 
         $this->actingAs($admin)
+            ->withSession(['spread' => ['game' => 1, 'back' => 4]])
             ->put(route('admin.games.update', $game), [
                 'name_hu' => 'Hétnapos plusz',
                 'name_en' => 'Seven day plus',
@@ -109,6 +118,8 @@ class AdminGamesTest extends TestCase
         $this->assertTrue($game->is_default);
         $this->assertSame(1, $game->rules()->count());
         $this->assertFalse(Game::query()->where('slug', 'astro-tarot')->value('is_default'));
+        $this->assertNull(session('spread.game'));
+        $this->assertSame(4, session('spread.back'));
     }
 
     public function test_non_admin_cannot_manage_games(): void
@@ -179,5 +190,104 @@ class AdminGamesTest extends TestCase
         $this->assertSame('oracle', $rule->pack_type);
         $this->assertNull($rule->default_pack_id);
         $this->assertSame('egi-orakulum', $rule->pack_slug);
+    }
+
+    public function test_rule_stores_slot_key_description_and_card_back(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $back = CardPack::query()->where('type', CardPack::TYPE_CARD_BACK)->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.games.store'), [
+                'name_hu' => 'Azonosítós',
+                'name_en' => 'Keyed',
+                'sort_order' => 3,
+                'is_active' => '1',
+                'rules' => [
+                    [
+                        'pack_type' => 'tarot',
+                        'title_hu' => 'Múlt',
+                        'title_en' => 'Past',
+                        'slot_key' => 'mult',
+                        'description_hu' => 'A múlt lapja.',
+                        'description_en' => 'The past card.',
+                        'card_back_id' => $back->id,
+                        'row' => 1,
+                        'place' => 1,
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $rule = Game::query()->where('slug', 'azonositos')->firstOrFail()->rules()->first();
+        $this->assertSame('mult', $rule->slot_key);
+        $this->assertSame('A múlt lapja.', $rule->description_hu);
+        $this->assertSame('The past card.', $rule->description_en);
+        $this->assertSame($back->id, $rule->card_back_id);
+        $this->assertSame(GameRule::INFO_MEANING, $rule->info_mode);
+        $this->assertSame(1, $rule->draw_order);
+    }
+
+    public function test_draw_order_is_stored_and_must_be_unique(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->post(route('admin.games.store'), [
+                'name_hu' => 'Sorrend',
+                'name_en' => 'Order',
+                'sort_order' => 6,
+                'is_active' => '1',
+                'rules' => [
+                    [
+                        'pack_type' => 'tarot',
+                        'title_hu' => 'Később',
+                        'title_en' => 'Later',
+                        'draw_order' => 2,
+                        'row' => 1,
+                        'place' => 1,
+                    ],
+                    [
+                        'pack_type' => 'oracle',
+                        'title_hu' => 'Előbb',
+                        'title_en' => 'Sooner',
+                        'draw_order' => 1,
+                        'row' => 2,
+                        'place' => 1,
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $rules = Game::query()->where('slug', 'sorrend')->firstOrFail()->rules()->orderBy('draw_order')->get();
+        $this->assertSame(['Előbb', 'Később'], $rules->pluck('title_hu')->all());
+        $this->assertSame([1, 2], $rules->pluck('draw_order')->all());
+
+        $this->actingAs($admin)
+            ->post(route('admin.games.store'), [
+                'name_hu' => 'Ütköző',
+                'name_en' => 'Clash',
+                'sort_order' => 7,
+                'is_active' => '1',
+                'rules' => [
+                    [
+                        'pack_type' => 'tarot',
+                        'title_hu' => 'A',
+                        'title_en' => 'A',
+                        'draw_order' => 1,
+                        'row' => 1,
+                        'place' => 1,
+                    ],
+                    [
+                        'pack_type' => 'tarot',
+                        'title_hu' => 'B',
+                        'title_en' => 'B',
+                        'draw_order' => 1,
+                        'row' => 1,
+                        'place' => 2,
+                    ],
+                ],
+            ])
+            ->assertSessionHasErrors('rules.1.draw_order');
     }
 }

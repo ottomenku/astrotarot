@@ -43,8 +43,6 @@ class CardDrawProfileServiceTest extends TestCase
         $this->assertSame(-2, $profile['scoring']['tone_net']);
         $this->assertSame(['pozitív', 'negatív', 'pozitív'], $profile['tones']);
         $this->assertSame(['positive', 'shadow', 'positive'], $profile['variants']);
-        $this->assertSame(['scorpio', 'water', 'fixed'], $profile['slots']);
-        $this->assertSame(['sun_sign', 'element', 'modality'], $profile['slot_kinds']);
         $this->assertSame('scoring', $profile['draw_mode']);
     }
 
@@ -65,7 +63,6 @@ class CardDrawProfileServiceTest extends TestCase
 
         $this->assertSame('positive', $profile['variant']);
         $this->assertSame(['positive', 'positive', 'positive'], $profile['variants']);
-        $this->assertSame(['leo', 'fire', 'mutable'], $profile['slots']);
     }
 
     public function test_air_and_cardinal_mapping(): void
@@ -83,7 +80,8 @@ class CardDrawProfileServiceTest extends TestCase
             ],
         ]);
 
-        $this->assertSame(['libra', 'air', 'cardinal'], $profile['slots']);
+        $this->assertSame('levegő', $profile['element']);
+        $this->assertSame('fő', $profile['modality']);
         $this->assertSame('positive', $profile['variant']);
     }
 
@@ -95,7 +93,6 @@ class CardDrawProfileServiceTest extends TestCase
         $this->assertSame('tűz', $profile['element']);
         $this->assertSame('scoring', $profile['draw_mode']);
         $this->assertSame(['positive', 'positive', 'positive'], $profile['variants']);
-        $this->assertCount(3, $profile['slots']);
         $this->assertSame([], $profile['chart']['objects']);
     }
 }

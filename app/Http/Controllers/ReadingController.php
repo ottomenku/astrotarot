@@ -46,6 +46,7 @@ class ReadingController extends Controller
                 : ['nullable', 'string', 'max:280'],
             'locale' => ['nullable', 'string', 'in:hu,en'],
             'mode' => ['nullable', 'string', 'in:initial,clarify,expand'],
+            'session_id' => ['nullable', 'uuid'],
             'previous_reading' => ['nullable', 'string', 'max:12000'],
             'follow_up' => ['nullable', 'string', 'max:500'],
             'astro' => ['nullable', 'array'],
@@ -57,8 +58,6 @@ class ReadingController extends Controller
             'cards.*.figure_name' => ['nullable', 'string', 'max:120'],
             'cards.*.keyword' => ['nullable', 'string', 'max:120'],
             'cards.*.blurb' => ['nullable', 'string', 'max:1200'],
-            'cards.*.background_id' => ['required', 'string', 'max:64'],
-            'cards.*.background' => ['nullable', 'string', 'max:64'],
             'cards.*.variant' => ['nullable', 'string', 'max:32'],
             'cards.*.polarity' => ['nullable', 'string', 'max:32'],
             'cards.*.deck' => ['nullable', 'string', 'max:64'],
@@ -107,13 +106,7 @@ class ReadingController extends Controller
                 $question = $locale === 'en' ? 'No question for this game.' : 'Ehhez a játékhoz nincs kérdés.';
             }
 
-            $systemPrompt = null;
-            if ($mode === TarotReadingService::MODE_INITIAL && $game !== null) {
-                $systemPrompt = $game->prompt($locale);
-                if ($systemPrompt === '') {
-                    $systemPrompt = null;
-                }
-            }
+            $spreadPrompt = $game?->prompt($locale) ?? '';
 
             $cards = $this->cardsWithGameRules($game, $data['cards'], $locale, $user, $packs);
 
@@ -125,7 +118,9 @@ class ReadingController extends Controller
                 'mode' => $mode,
                 'previous_reading' => $data['previous_reading'] ?? null,
                 'follow_up' => $data['follow_up'] ?? null,
-                'system_prompt' => $systemPrompt,
+                'system_prompt' => $spreadPrompt !== '' ? $spreadPrompt : null,
+                'session_id' => $data['session_id'] ?? null,
+                'game_id' => $game?->id,
                 'ip' => $request->ip(),
                 'user_id' => $user?->id,
             ]);
@@ -161,6 +156,7 @@ class ReadingController extends Controller
             'reading' => $text,
             'source' => $source,
             'mode' => $mode,
+            'session_id' => $result['session_id'] ?? null,
             'credits' => $balance,
         ]);
     }

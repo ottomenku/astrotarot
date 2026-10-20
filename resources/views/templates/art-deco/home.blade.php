@@ -108,6 +108,7 @@
                 @endif
                 @if(!empty($canOpenAccount))
                     <a href="{{ route('account.show') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.account_menu') }}<x-feature-marks feature="account.show" /></span><b>↗</b></a>
+                    <a href="{{ route('account.introduction') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.intro_menu') }}<x-feature-marks feature="account.show" /></span><b>↗</b></a>
                 @endif
                 @if(!empty($canViewHistory))
                     <a href="{{ route('readings.history') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.history_menu') }}<x-feature-marks feature="readings.history" /></span><b>↗</b></a>
@@ -275,6 +276,12 @@
             </div>
         </article>
     </section>
+
+    <div class="draw-reveal" data-draw-reveal hidden>
+        <figure class="draw-reveal-card">
+            <img data-draw-reveal-image alt="">
+        </figure>
+    </div>
 
     <div class="reading-toast" data-reading-toast hidden>
         <span class="reading-toast-dot" aria-hidden="true"></span>

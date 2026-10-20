@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CardPack;
+use App\Models\MeaningEntry;
 use App\Models\MeaningGroup;
+use App\Models\PackCard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -68,10 +70,12 @@ class CardPackController extends Controller
     public function update(Request $request, CardPack $pack): RedirectResponse
     {
         $data = $this->validated($request, $pack);
-        unset($data['preview'], $data['asset']);
+        unset($data['preview'], $data['asset'], $data['cards']);
 
         $pack->update($data);
-        $this->storeFiles($request, $pack->fresh());
+        $pack = $pack->fresh();
+        $this->storeFiles($request, $pack);
+        $this->syncCards($request, $pack);
 
         if ($pack->fresh()->is_default) {
             $pack->fresh()->makeDefault();
@@ -116,10 +120,30 @@ class CardPackController extends Controller
      */
     private function formData(CardPack $pack): array
     {
+        if ($pack->exists) {
+            $pack->load(['cards.meaningEntry']);
+        }
+
         return [
             'pack' => $pack,
             'backs' => CardPack::query()->ofType(CardPack::TYPE_CARD_BACK)->ordered()->get(),
             'meaningGroups' => MeaningGroup::query()->orderBy('name_hu')->get(),
+            'meaningCatalog' => MeaningEntry::query()
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get()
+                ->groupBy('meaning_group_id')
+                ->map(fn ($entries) => $entries->map(fn (MeaningEntry $entry) => [
+                    'id' => $entry->id,
+                    'figure_id' => $entry->figure_id,
+                    'name_hu' => $entry->name_hu,
+                    'name_en' => $entry->name_en,
+                    'meaning_hu' => $entry->meaning_hu,
+                    'meaning_en' => $entry->meaning_en,
+                    'description_hu' => $entry->description_hu,
+                    'description_en' => $entry->description_en,
+                ])->values())
+                ->all(),
         ];
     }
 
@@ -143,7 +167,16 @@ class CardPackController extends Controller
             'description_hu' => ['nullable', 'string', 'max:2000'],
             'description_en' => ['nullable', 'string', 'max:2000'],
             'type' => ['required', 'string', Rule::in(CardPack::TYPES)],
-            'card_count' => ['nullable', 'integer', 'min:0', 'max:200'],
+            'card_count' => ['nullable', 'integer', 'min:0', 'max:500'],
+            'cards' => ['nullable', 'array'],
+            'cards.*.meaning_entry_id' => ['nullable', 'integer'],
+            'cards.*.name_hu' => ['nullable', 'string', 'max:160'],
+            'cards.*.name_en' => ['nullable', 'string', 'max:160'],
+            'cards.*.keyword_hu' => ['nullable', 'string', 'max:160'],
+            'cards.*.keyword_en' => ['nullable', 'string', 'max:160'],
+            'cards.*.description_hu' => ['nullable', 'string', 'max:5000'],
+            'cards.*.description_en' => ['nullable', 'string', 'max:5000'],
+            'cards.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
             'style' => ['nullable', 'string', 'max:120'],
             'owner' => ['nullable', 'string', 'max:120'],
             'preview' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
@@ -245,5 +278,80 @@ class CardPackController extends Controller
         $full = $dir.DIRECTORY_SEPARATOR.$name;
 
         return ltrim(str_replace('\\', '/', substr($full, strlen($publicRoot))), '/');
+    }
+
+    private function syncCards(Request $request, CardPack $pack): void
+    {
+        $rows = $request->input('cards');
+        if (! is_array($rows)) {
+            return;
+        }
+
+        $allowed = $pack->meaning_group_id
+            ? array_map('intval', MeaningEntry::query()->where('meaning_group_id', $pack->meaning_group_id)->pluck('id')->all())
+            : [];
+
+        foreach ($rows as $id => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $card = $pack->cards()->whereKey((int) $id)->first();
+            if (! $card instanceof PackCard) {
+                continue;
+            }
+            $entryId = (int) ($row['meaning_entry_id'] ?? 0);
+            $nameHu = trim((string) ($row['name_hu'] ?? ''));
+            $nameEn = trim((string) ($row['name_en'] ?? ''));
+            $card->update([
+                'meaning_entry_id' => in_array($entryId, $allowed, true) ? $entryId : null,
+                'name_hu' => $nameHu !== '' ? $nameHu : $card->name_hu,
+                'name_en' => $nameEn !== '' ? $nameEn : $card->name_en,
+                'keyword_hu' => trim((string) ($row['keyword_hu'] ?? '')) ?: null,
+                'keyword_en' => trim((string) ($row['keyword_en'] ?? '')) ?: null,
+                'description_hu' => trim((string) ($row['description_hu'] ?? '')) ?: null,
+                'description_en' => trim((string) ($row['description_en'] ?? '')) ?: null,
+            ]);
+            $upload = $request->file('cards.'.$id.'.image');
+            if ($upload instanceof UploadedFile) {
+                $this->replaceCardImage($upload, $card->fresh());
+            }
+        }
+    }
+
+    private function replaceCardImage(UploadedFile $file, PackCard $card): void
+    {
+        $pack = $card->pack;
+        if (! $pack instanceof CardPack) {
+            return;
+        }
+        $ext = strtolower((string) ($file->guessExtension() ?: $file->getClientOriginalExtension() ?: 'png'));
+        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            $ext = 'png';
+        }
+
+        $current = str_replace('\\', '/', (string) $card->image_path);
+        $prefix = 'card-pack/'.$pack->slug.'/';
+        if ($current !== '' && str_starts_with($current, $prefix) && is_file(public_path($current))) {
+            $dir = public_path(dirname($current));
+            $base = pathinfo($current, PATHINFO_FILENAME);
+            $previous = public_path($current);
+            $file->move($dir, $base.'.'.$ext);
+            $saved = $dir.DIRECTORY_SEPARATOR.$base.'.'.$ext;
+            if (is_file($previous) && realpath($previous) !== realpath($saved)) {
+                @unlink($previous);
+            }
+            $card->update([
+                'image_path' => ltrim(str_replace('\\', '/', substr($saved, strlen(public_path()))), '/'),
+            ]);
+
+            return;
+        }
+
+        $dir = public_path('card-pack/'.$pack->slug.'/figures');
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $file->move($dir, $card->figure_id.'.'.$ext);
+        $card->update(['image_path' => 'card-pack/'.$pack->slug.'/figures/'.$card->figure_id.'.'.$ext]);
     }
 }

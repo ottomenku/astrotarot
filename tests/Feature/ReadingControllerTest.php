@@ -34,7 +34,6 @@ class ReadingControllerTest extends TestCase
                     'figure_name' => 'Mars',
                     'keyword' => 'akarat',
                     'blurb' => '',
-                    'background_id' => 'shared-light',
                     'background' => 'shared',
                     'variant' => 'positive',
                     'polarity' => 'positive',
@@ -47,7 +46,6 @@ class ReadingControllerTest extends TestCase
                     'figure_name' => 'A Mágus',
                     'keyword' => 'teremtő erő',
                     'blurb' => 'A Mágus tudatos alkotóerőt hoz.',
-                    'background_id' => 'shared-shadow',
                     'background' => 'shared',
                     'variant' => 'shadow',
                     'polarity' => 'shadow',
@@ -130,7 +128,9 @@ class ReadingControllerTest extends TestCase
         $this->assertStringContainsString('asztrológiai adat:', $log->user_prompt);
         $this->assertStringContainsString('elem: tűz', $log->user_prompt);
         $this->assertStringContainsString('minőség: szilárd', $log->user_prompt);
-        $this->assertStringContainsString('10–12 mondat', $log->system_prompt);
+        $this->assertStringContainsString('need_data', $log->system_prompt);
+        $this->assertStringContainsString('10–12 mondat', $log->user_prompt);
+        $this->assertNotEmpty($response->json('session_id'));
     }
 
     public function test_reading_sends_game_prompt_places_and_moment_scoring(): void
@@ -164,7 +164,8 @@ class ReadingControllerTest extends TestCase
         ]))->assertOk();
 
         $log = ReadingLog::query()->first();
-        $this->assertSame($game->prompt('hu'), $log->system_prompt);
+        $this->assertStringContainsString($game->prompt('hu'), $log->user_prompt);
+        $this->assertStringContainsString('need_data', $log->system_prompt);
         $this->assertStringContainsString('1. sor 1. lap — Égi Orákulum', $log->user_prompt);
         $this->assertStringContainsString('1. sor 2. lap — Tarot figura', $log->user_prompt);
         $this->assertStringContainsString('asztrológiai adat:', $log->user_prompt);
@@ -202,13 +203,11 @@ class ReadingControllerTest extends TestCase
                 [
                     'figure_id' => 'mars',
                     'figure_name' => 'Mars',
-                    'background_id' => 'shared-light',
                     'deck' => 'oracle',
                 ],
                 [
                     'figure_id' => '01-the-magician',
                     'figure_name' => 'A Mágus',
-                    'background_id' => 'shared-shadow',
                     'deck' => 'tarot',
                 ],
             ],
@@ -230,14 +229,12 @@ class ReadingControllerTest extends TestCase
                 [
                     'figure_id' => 'mars',
                     'figure_name' => 'Mars',
-                    'background_id' => 'shared-light',
                     'deck' => 'oracle',
                     'astro_caption' => 'Mars · Skorpió',
                 ],
                 [
                     'figure_id' => '01-the-magician',
                     'figure_name' => 'A Mágus',
-                    'background_id' => 'shared-shadow',
                     'deck' => 'tarot',
                     'blurb' => 'Alkotóerő',
                 ],
@@ -451,6 +448,84 @@ class ReadingControllerTest extends TestCase
 
         $this->assertSame(10, (int) $user->fresh()->credits);
         $this->assertSame('Empty model response', ReadingLog::query()->first()?->error);
+    }
+
+    public function test_profile_and_data_requests_travel_with_the_reading(): void
+    {
+        config([
+            'services.openai.driver' => 'openai',
+            'services.openai.api_key' => 'test-key',
+            'services.openai.base_url' => 'https://api.openai.com/v1',
+            'services.openai.model' => 'gpt-4o-mini',
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.openai.com/*' => Http::sequence()
+                ->push([
+                    'choices' => [[
+                        'message' => ['content' => json_encode([
+                            'status' => 'need_data',
+                            'question_type' => 'kapcsolat',
+                            'spread_type' => 'döntés',
+                            'requests' => [[
+                                'id' => '1',
+                                'kind' => 'chart',
+                                'moment' => 'birth',
+                                'include' => ['planets'],
+                            ]],
+                        ], JSON_UNESCAPED_UNICODE)],
+                    ]],
+                ])
+                ->push([
+                    'choices' => [[
+                        'message' => ['content' => json_encode([
+                            'status' => 'answer',
+                            'text' => 'A születési idő után ez a kész olvasat.',
+                        ], JSON_UNESCAPED_UNICODE)],
+                    ]],
+                ])
+                ->push([
+                    'choices' => [[
+                        'message' => ['content' => 'Pontosítom a korábbi olvasatot.'],
+                    ]],
+                ]),
+        ]);
+
+        $user = User::factory()->create([
+            'credits' => 10,
+            'birth_at' => '1990-05-01 12:30:00',
+            'gender' => 'female',
+            'introduction' => 'Kertész vagyok.',
+        ]);
+
+        $first = $this->actingAs($user)->postJson(route('reading'), $this->validPayload());
+
+        $first->assertOk()
+            ->assertJsonPath('reading', 'A születési idő után ez a kész olvasat.');
+
+        $log = ReadingLog::query()->first();
+        $this->assertStringContainsString('Kertész vagyok.', $log->user_prompt);
+        $this->assertStringContainsString('Születési idő (Europe/Budapest):', $log->user_prompt);
+        $this->assertStringContainsString('Nem: nő', $log->user_prompt);
+        $this->assertSame(2, \App\Models\ReadingTurn::query()->where('role', 'assistant')->count());
+        $this->assertSame(1, \App\Models\ReadingTurn::query()->where('kind', 'data')->count());
+
+        $sessionId = $first->json('session_id');
+
+        $follow = $this->actingAs($user)->postJson(route('reading'), $this->validPayload([
+            'mode' => 'clarify',
+            'follow_up' => 'Mit jelent ez a kapcsolatban?',
+            'previous_reading' => 'A születési idő után ez a kész olvasat.',
+            'session_id' => $sessionId,
+        ]));
+        $follow->assertOk()
+            ->assertJsonPath('reading', 'Pontosítom a korábbi olvasatot.')
+            ->assertJsonPath('session_id', $sessionId);
+
+        $followUp = ReadingLog::query()->latest('id')->first();
+        $this->assertStringNotContainsString('## ALAPPROMPT', $followUp->user_prompt);
+        $this->assertStringContainsString('Pontosítás:', $followUp->user_prompt);
     }
 
     public function test_long_astro_caption_is_accepted(): void

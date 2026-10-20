@@ -247,24 +247,6 @@ class FeatureAccessService
         return $map;
     }
 
-    public function refreshPackageDescriptions(): void
-    {
-        $labels = $this->labelMap();
-        foreach (Package::query()->get() as $package) {
-            $keys = $package->perk_keys ?? [];
-            $package->update([
-                'body_hu' => PackageBody::merge(
-                    (string) $package->body_hu,
-                    PackageBody::items('hu', (int) $package->credits, (string) $package->period, $keys, $labels),
-                ),
-                'body_en' => PackageBody::merge(
-                    (string) $package->body_en,
-                    PackageBody::items('en', (int) $package->credits, (string) $package->period, $keys, $labels),
-                ),
-            ]);
-        }
-    }
-
     public function abortUnlessCan(?User $user, string $key): void
     {
         $decision = $this->decide($user, $key);

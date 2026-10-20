@@ -8,7 +8,7 @@
             <h1 style="margin:0">{{ __('admin.packages.title') }}</h1>
             <a class="btn btn-primary" href="{{ route('admin.packages.create') }}">{{ __('admin.packages.create') }}</a>
         </div>
-        <p class="muted">{{ __('admin.packages.hint') }} <a href="{{ route('admin.feature-access.edit') }}">{{ __('admin.nav.feature_access') }}</a></p>
+        <p class="muted">{{ __('admin.packages.hint') }}</p>
 
         <table>
             <thead>

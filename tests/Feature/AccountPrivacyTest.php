@@ -172,6 +172,10 @@ class AccountPrivacyTest extends TestCase
             'pack_type' => 'tarot',
             'card_pack_id' => \App\Models\CardPack::query()->where('slug', 'tarot')->value('id'),
         ]);
+        \App\Models\UserSpreadPreference::query()->create([
+            'user_id' => $user->id,
+            'packs' => [],
+        ]);
         $post = \App\Models\BlogPost::factory()->create(['user_id' => $user->id]);
         \App\Models\BlogComment::query()->create([
             'blog_post_id' => $post->id,
@@ -210,6 +214,7 @@ class AccountPrivacyTest extends TestCase
             'credits' => 50,
         ]);
         $this->assertDatabaseMissing('user_pack_preferences', ['user_id' => $user->id]);
+        $this->assertDatabaseMissing('user_spread_preferences', ['user_id' => $user->id]);
         $this->assertDatabaseMissing('blog_comments', ['user_id' => $user->id]);
         $this->assertDatabaseHas('blog_posts', ['id' => $post->id, 'user_id' => null]);
         $this->assertSame(DataDeletionRequest::STATUS_PROCESSED, $deletion->fresh()->status);

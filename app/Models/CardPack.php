@@ -72,9 +72,9 @@ class CardPack extends Model
         return $this->belongsTo(self::class, 'default_card_back_id');
     }
 
-    public function gameRules(): HasMany
+    public function cards(): HasMany
     {
-        return $this->hasMany(GameRule::class, 'default_pack_id');
+        return $this->hasMany(PackCard::class)->orderBy('sort_order')->orderBy('id');
     }
 
     public function name(?string $locale = null): string

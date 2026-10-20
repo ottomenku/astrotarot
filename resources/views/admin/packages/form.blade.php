@@ -24,19 +24,20 @@
             <p class="muted">{{ session('status') }}</p>
         @endif
 
-        <form method="POST" action="{{ $package->exists ? route('admin.packages.update', $package) : route('admin.packages.store') }}" data-package-form>
+        <form method="POST" action="{{ $package->exists ? route('admin.packages.update', $package) : route('admin.packages.store') }}" data-package-form data-lang-scope data-active-lang="{{ app()->getLocale() === 'en' ? 'en' : 'hu' }}">
             @csrf
             @if ($package->exists)
                 @method('PUT')
             @endif
+            @include('admin.partials.lang-switch')
 
             <div class="row">
-                <div class="field">
+                <div class="field" data-lang="hu">
                     <label for="name_hu">{{ __('admin.packages.name_hu') }}</label>
                     <input id="name_hu" name="name_hu" value="{{ old('name_hu', $package->name_hu) }}" required>
                     @error('name_hu') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
                 </div>
-                <div class="field">
+                <div class="field" data-lang="en">
                     <label for="name_en">{{ __('admin.packages.name_en') }}</label>
                     <input id="name_en" name="name_en" value="{{ old('name_en', $package->name_en) }}" required>
                     @error('name_en') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
@@ -114,13 +115,13 @@
                 <p class="muted" style="margin:.85rem 0 0">{{ __('admin.packages.perks_how') }}</p>
             </fieldset>
 
-            <div class="field">
+            <div class="field" data-lang="hu">
                 <label for="body_hu">{{ __('admin.packages.body_hu') }}</label>
                 <textarea id="body_hu" name="body_hu" rows="10" class="js-html-editor" data-editor-locale="hu">{{ old('body_hu', $package->body_hu) }}</textarea>
                 <p class="muted">{{ __('admin.packages.body_hint') }}</p>
                 @error('body_hu') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
             </div>
-            <div class="field">
+            <div class="field" data-lang="en">
                 <label for="body_en">{{ __('admin.packages.body_en') }}</label>
                 <textarea id="body_en" name="body_en" rows="10" class="js-html-editor" data-editor-locale="en">{{ old('body_en', $package->body_en) }}</textarea>
                 @error('body_en') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror

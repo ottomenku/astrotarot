@@ -42,17 +42,19 @@
                         <td>{{ $game->is_default ? '✓' : '—' }}</td>
                         <td>{{ $game->is_active ? '✓' : '—' }}</td>
                         <td>
-                            <a href="{{ route('admin.games.edit', $game) }}">{{ __('admin.games.edit') }}</a>
-                            @unless ($game->is_default)
-                                <form method="POST" action="{{ route('admin.games.default', $game) }}" style="display:inline;margin-left:.5rem">
+                            <div class="admin-actions" style="flex-wrap:wrap">
+                                <a href="{{ route('admin.games.edit', $game) }}">{{ __('admin.games.edit') }}</a>
+                                @unless ($game->is_default)
+                                    <form method="POST" action="{{ route('admin.games.default', $game) }}">
+                                        @csrf
+                                        <button type="submit">{{ __('admin.games.make_default') }}</button>
+                                    </form>
+                                @endunless
+                                <form method="POST" action="{{ route('admin.games.toggle', $game) }}">
                                     @csrf
-                                    <button type="submit">{{ __('admin.games.make_default') }}</button>
+                                    <button type="submit">{{ $game->is_active ? __('admin.games.deactivate') : __('admin.games.activate') }}</button>
                                 </form>
-                            @endunless
-                            <form method="POST" action="{{ route('admin.games.toggle', $game) }}" style="display:inline;margin-left:.5rem">
-                                @csrf
-                                <button type="submit">{{ $game->is_active ? __('admin.games.deactivate') : __('admin.games.activate') }}</button>
-                            </form>
+                            </div>
                         </td>
                     </tr>
                 @empty

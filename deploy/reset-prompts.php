@@ -10,10 +10,8 @@ $s = app(App\Services\AppSettings::class);
 $s->putMany([
     App\Services\AppSettings::SYSTEM_PROMPT_HU => $s->defaultSystemPromptHu(),
     App\Services\AppSettings::SYSTEM_PROMPT_EN => $s->defaultSystemPromptEn(),
-    App\Services\AppSettings::CLARIFY_PROMPT_HU => $s->defaultClarifyPromptHu(),
-    App\Services\AppSettings::CLARIFY_PROMPT_EN => $s->defaultClarifyPromptEn(),
-    App\Services\AppSettings::EXPAND_PROMPT_HU => $s->defaultExpandPromptHu(),
-    App\Services\AppSettings::EXPAND_PROMPT_EN => $s->defaultExpandPromptEn(),
+    App\Services\AppSettings::BASE_PROMPT_HU => $s->defaultBasePromptHu(),
+    App\Services\AppSettings::BASE_PROMPT_EN => $s->defaultBasePromptEn(),
 ]);
 
 echo "prompts reset\n";

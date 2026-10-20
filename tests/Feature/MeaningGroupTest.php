@@ -8,6 +8,9 @@ use App\Models\MeaningGroup;
 use App\Models\User;
 use App\Services\FigureMeaningService;
 use App\Support\BaseMeaningCatalog;
+use App\Support\GypsyCardMeaningCatalog;
+use App\Support\MajorArcanaMeaningCatalog;
+use App\Support\MinorArcanaMeaningCatalog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -36,7 +39,50 @@ class MeaningGroupTest extends TestCase
         ]);
         $this->assertSame($tarot->id, CardPack::query()->where('slug', 'tarot')->value('meaning_group_id'));
         $this->assertSame($oracle->id, CardPack::query()->where('slug', 'egi-orakulum')->value('meaning_group_id'));
-        $this->assertNull(CardPack::query()->where('slug', 'cigany-kartya')->value('meaning_group_id'));
+    }
+
+    public function test_minor_arcana_group_holds_all_four_suits(): void
+    {
+        $group = MeaningGroup::query()->where('slug', MinorArcanaMeaningCatalog::SLUG)->firstOrFail();
+
+        $this->assertSame('Kis Arkánum', $group->name_hu);
+        $this->assertSame(56, $group->entries()->count());
+        $this->assertSame(
+            'Az új érzelmi kezdetek, a lehetőségek és a kreativitás szimbóluma.',
+            $group->entries()->where('figure_id', 'cups-ace')->value('description_hu'),
+        );
+        $this->assertSame('Botok 10', $group->entries()->where('figure_id', 'wands-10')->value('name_hu'));
+        $this->assertSame('Érmék királya', $group->entries()->where('figure_id', 'pentacles-king')->value('name_hu'));
+        $this->assertSame('Kardok 9', $group->entries()->where('figure_id', 'swords-09')->value('name_hu'));
+    }
+
+    public function test_major_arcana_group_holds_the_twenty_two_trumps(): void
+    {
+        $group = MeaningGroup::query()->where('slug', MajorArcanaMeaningCatalog::SLUG)->firstOrFail();
+
+        $this->assertSame('Nagy Arkánum', $group->name_hu);
+        $this->assertSame(22, $group->entries()->count());
+        $this->assertSame('A Bolond', $group->entries()->where('figure_id', '00-the-fool')->value('name_hu'));
+        $this->assertSame(
+            '0. vagy XXII. Eredetileg nem számozott, a mai francia kártya Jokerének korai megfelelője lehetett. Sors, szerencse, vég(zet).',
+            $group->entries()->where('figure_id', '00-the-fool')->value('description_hu'),
+        );
+        $this->assertSame('A Világ', $group->entries()->where('figure_id', '21-the-world')->value('name_hu'));
+        $this->assertSame('Beteljesülés, harmónia.', $group->entries()->where('figure_id', '21-the-world')->value('description_hu'));
+    }
+
+    public function test_gypsy_card_group_is_assigned_to_the_deck(): void
+    {
+        $group = MeaningGroup::query()->where('slug', GypsyCardMeaningCatalog::SLUG)->firstOrFail();
+
+        $this->assertSame('Cigánykártya', $group->name_hu);
+        $this->assertSame(36, $group->entries()->count());
+        $this->assertSame('Örömteli fordulat.', $group->entries()->where('figure_id', 'ajandek')->value('description_hu'));
+        $this->assertSame(
+            '„Szív királynő”. A kérdezőt jelenti, ha a kérdező nő. Ha férfi a kérdező, akkor a jelenlegi vagy jövendő párját jelenti.',
+            $group->entries()->where('figure_id', 'szerelmes-no')->value('description_hu'),
+        );
+        $this->assertSame($group->id, CardPack::query()->where('slug', 'cigany-kartya')->value('meaning_group_id'));
     }
 
     public function test_admin_can_create_copy_and_delete_a_group(): void

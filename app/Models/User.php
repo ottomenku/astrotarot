@@ -9,6 +9,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -19,6 +20,9 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'birth_at',
+        'gender',
+        'introduction',
         'email',
         'password',
         'provider',
@@ -44,6 +48,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'birth_at' => 'datetime',
             'password' => 'hashed',
             'role' => Role::class,
             'credits' => 'integer',
@@ -67,6 +72,11 @@ class User extends Authenticatable
         return $this->hasMany(ReadingLog::class);
     }
 
+    public function readingSessions(): HasMany
+    {
+        return $this->hasMany(ReadingSession::class);
+    }
+
     public function readingShares(): HasMany
     {
         return $this->hasMany(ReadingShare::class);
@@ -85,6 +95,11 @@ class User extends Authenticatable
     public function packPreferences(): HasMany
     {
         return $this->hasMany(UserPackPreference::class);
+    }
+
+    public function spreadPreference(): HasOne
+    {
+        return $this->hasOne(UserSpreadPreference::class);
     }
 
     public function isAdmin(): bool

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CardPack;
 use App\Models\Template;
+use App\Models\UserSpreadPreference;
 use App\Services\AppSettings;
 use App\Services\CardDrawProfileService;
 use App\Services\CreditService;
@@ -20,22 +21,23 @@ class HomeController extends Controller
     public function __invoke(Request $request, CardDrawProfileService $drawProfile, AppSettings $settings, GameConfigService $games): View|RedirectResponse
     {
         if ($request->boolean('spread')) {
-            session(['spread' => [
+            $selection = [
                 'game' => $request->integer('game') ?: null,
                 'packs' => array_filter([
                     CardPack::TYPE_ORACLE => trim((string) $request->input('pack_oracle', '')),
                     CardPack::TYPE_TAROT => trim((string) $request->input('pack_tarot', '')),
                 ], fn (string $slug): bool => $slug !== ''),
                 'back' => $request->integer('back') ?: null,
-            ]]);
+            ];
+            if ($request->user() !== null) {
+                UserSpreadPreference::remember($request->user(), $selection);
+            }
+            session(['spread' => $selection]);
 
             return redirect()->route('home', $request->user() ? [] : ['draw' => 1]);
         }
 
-        $selection = session('spread', []);
-        if (! is_array($selection)) {
-            $selection = [];
-        }
+        $selection = UserSpreadPreference::selectionFor($request->user());
 
         $template = Template::query()
             ->where('is_active', true)

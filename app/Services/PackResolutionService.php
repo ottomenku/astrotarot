@@ -7,6 +7,7 @@ use App\Models\Game;
 use App\Models\GameRule;
 use App\Models\User;
 use App\Models\UserPackPreference;
+use App\Models\UserSpreadPreference;
 use App\Support\CardPackCatalog;
 use App\Support\FeatureCatalog;
 use Illuminate\Support\Collection;
@@ -83,8 +84,7 @@ class PackResolutionService
         }
 
         $resolved = $this->resolveRule($user, $rule);
-        $sessionPacks = session('spread.packs', []);
-        $sessionSlug = is_array($sessionPacks) ? trim((string) ($sessionPacks[$resolved['type']] ?? '')) : '';
+        $sessionSlug = $this->spreadPackSlug($user, (string) $resolved['type']);
         if ($sessionSlug !== '') {
             $sessionPack = CardPack::query()->active()->figure()->where('slug', $sessionSlug)->first();
             if ($sessionPack !== null && $sessionPack->type === $resolved['type']) {
@@ -137,6 +137,28 @@ class PackResolutionService
         }
 
         return $pack;
+    }
+
+    /** @var array<int, array<string, string>|null> */
+    private array $spreadPackCache = [];
+
+    private function spreadPackSlug(?User $user, string $type): string
+    {
+        if ($user !== null) {
+            if (! array_key_exists($user->id, $this->spreadPackCache)) {
+                $stored = UserSpreadPreference::query()->where('user_id', $user->id)->first();
+                $packs = $stored !== null && is_array($stored->packs) ? $stored->packs : null;
+                $this->spreadPackCache[$user->id] = $packs;
+            }
+            $packs = $this->spreadPackCache[$user->id];
+            if (is_array($packs)) {
+                return trim((string) ($packs[$type] ?? ''));
+            }
+        }
+
+        $sessionPacks = session('spread.packs', []);
+
+        return is_array($sessionPacks) ? trim((string) ($sessionPacks[$type] ?? '')) : '';
     }
 
     private function chosenFigure(User $user, string $packType): ?CardPack

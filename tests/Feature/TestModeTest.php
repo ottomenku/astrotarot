@@ -68,11 +68,9 @@ class TestModeTest extends TestCase
             'cards' => [
                 [
                     'figure_id' => '01-the-magician',
-                    'background_id' => 'leo-positive',
                 ],
                 [
                     'figure_id' => '02-the-high-priestess',
-                    'background_id' => 'fire-shadow',
                 ],
             ],
         ])

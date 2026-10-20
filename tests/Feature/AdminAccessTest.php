@@ -60,10 +60,6 @@ class AdminAccessTest extends TestCase
             ->assertOk();
 
         $this->actingAs($admin)
-            ->get(route('admin.feature-access.edit'))
-            ->assertOk();
-
-        $this->actingAs($admin)
             ->get(route('admin.blog.index'))
             ->assertOk();
 

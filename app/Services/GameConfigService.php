@@ -15,15 +15,12 @@ class GameConfigService
     ) {}
 
     /**
-     * @return array<string, mixed>
-     */
-    /**
      * @param  array{game?: int|null, packs?: array<string, string>, back?: int|null}  $selection
      * @return array<string, mixed>
      */
     public function homepage(?string $locale = null, array $selection = []): array
     {
-        $withRules = ['rules' => fn ($query) => $query->ordered()->with('defaultPack')];
+        $withRules = ['rules' => fn ($query) => $query->ordered()->with(['defaultPack', 'cardBack'])];
         $game = null;
         $gameId = (int) ($selection['game'] ?? 0);
         if ($gameId > 0) {
@@ -49,9 +46,6 @@ class GameConfigService
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    /**
      * @param  array{game?: int|null, packs?: array<string, string>, back?: int|null}  $selection
      * @return array<string, mixed>
      */
@@ -61,6 +55,11 @@ class GameConfigService
         $locale = $locale === 'en' ? 'en' : 'hu';
         $user = auth()->user();
         $chosenPacks = is_array($selection['packs'] ?? null) ? $selection['packs'] : [];
+        $backId = (int) ($selection['back'] ?? 0);
+        $globalBackUrl = null;
+        if ($backId > 0) {
+            $globalBackUrl = CardPack::query()->active()->ofType(CardPack::TYPE_CARD_BACK)->find($backId)?->fileUrl();
+        }
 
         $slots = [];
         $packs = [];
@@ -76,15 +75,24 @@ class GameConfigService
                     $skin = $this->packs->skin($user, $override);
                 }
             }
+            $slotBack = is_string($globalBackUrl) && $globalBackUrl !== ''
+                ? $globalBackUrl
+                : ($rule->cardBack?->is_active ? $rule->cardBack->fileUrl() : null);
             $slots[] = [
                 'pack_slug' => $slug,
                 'pack_type' => $resolved['type'],
                 'title' => $rule->title($locale),
                 'title_hu' => $rule->title_hu,
                 'title_en' => $rule->title_en,
+                'slot_key' => $rule->slot_key,
+                'description' => $locale === 'en' ? (string) $rule->description_en : (string) $rule->description_hu,
+                'description_hu' => (string) $rule->description_hu,
+                'description_en' => (string) $rule->description_en,
+                'card_back' => $slotBack,
                 'info_mode' => $rule->info_mode,
                 'row' => (int) $rule->row,
                 'place' => (int) $rule->place,
+                'draw_order' => (int) ($rule->draw_order ?: 0),
                 'full_bleed' => true,
             ];
             $packs[$slug] = [
@@ -99,15 +107,9 @@ class GameConfigService
             return [$a['row'], $a['place']] <=> [$b['row'], $b['place']];
         });
 
-        $backId = (int) ($selection['back'] ?? 0);
-        $backUrl = null;
-        if ($backId > 0) {
-            $back = CardPack::query()->active()->ofType(CardPack::TYPE_CARD_BACK)->find($backId);
-            $backUrl = $back?->fileUrl();
-        }
-        if (is_string($backUrl) && $backUrl !== '') {
+        if (is_string($globalBackUrl) && $globalBackUrl !== '') {
             foreach ($packs as $slug => $meta) {
-                $packs[$slug]['card_back'] = $backUrl;
+                $packs[$slug]['card_back'] = $globalBackUrl;
             }
         }
 
@@ -139,21 +141,21 @@ class GameConfigService
             'packs' => $packs,
             'pack_options' => $options,
             'can_choose_packs' => $user !== null && $this->features->can($user, FeatureCatalog::PACKS_CHOOSE),
-            'choices' => $this->choices($locale, $game, $slots, $backId),
+            'choices' => $this->choices($locale, $game, $backId, $chosenPacks),
         ];
     }
 
     /**
-     * @param  list<array<string, mixed>>  $slots
+     * @param  array<string, string>  $chosenPacks
      * @return array<string, mixed>
      */
-    private function choices(string $locale, Game $current, array $slots, int $backId): array
+    private function choices(string $locale, Game $current, int $backId, array $chosenPacks): array
     {
         $selectedPacks = [];
-        foreach ($slots as $slot) {
-            $type = (string) ($slot['pack_type'] ?? '');
-            if ($type !== '' && ! isset($selectedPacks[$type])) {
-                $selectedPacks[$type] = (string) ($slot['pack_slug'] ?? '');
+        foreach ($chosenPacks as $type => $slug) {
+            $slug = trim((string) $slug);
+            if ($slug !== '') {
+                $selectedPacks[(string) $type] = $slug;
             }
         }
 

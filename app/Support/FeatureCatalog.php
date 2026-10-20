@@ -37,75 +37,25 @@ final class FeatureCatalog
     public const LOGIC_OR = 'or';
 
     /**
-     * @return array<string, array{charges: bool, routes: list<string>}>
+     * @return array<string, array{charges: bool}>
      */
     public static function all(): array
     {
         return [
-            self::READING => [
-                'charges' => true,
-                'routes' => ['reading'],
-            ],
-            self::CLARIFY => [
-                'charges' => true,
-                'routes' => ['reading'],
-            ],
-            self::EXPAND => [
-                'charges' => true,
-                'routes' => ['reading'],
-            ],
-            self::PDF => [
-                'charges' => true,
-                'routes' => ['reading.export.pdf'],
-            ],
-            self::EMAIL => [
-                'charges' => true,
-                'routes' => ['reading.export.email'],
-            ],
-            self::SHARE => [
-                'charges' => true,
-                'routes' => ['reading.share.create'],
-            ],
-            self::HISTORY => [
-                'charges' => false,
-                'routes' => ['readings.history', 'readings.history.show'],
-            ],
-            self::ASTROMOTTO => [
-                'charges' => false,
-                'routes' => [],
-            ],
-            self::CREDITS_PAGE => [
-                'charges' => false,
-                'routes' => ['credits.packages'],
-            ],
-            self::CREDITS_REQUEST => [
-                'charges' => true,
-                'routes' => ['credits.request'],
-            ],
-            self::CREDITS_PROMO => [
-                'charges' => false,
-                'routes' => ['credits.promo'],
-            ],
-            self::ACCOUNT => [
-                'charges' => false,
-                'routes' => [
-                    'account.show',
-                    'account.readings.show',
-                    'account.readings.destroy',
-                    'account.readings.destroy-all',
-                    'account.deletion-request.store',
-                    'account.password.update',
-                    'account.packs.update',
-                ],
-            ],
-            self::PACKS_CHOOSE => [
-                'charges' => false,
-                'routes' => ['account.packs.update'],
-            ],
-            self::PACKS_BACKS => [
-                'charges' => false,
-                'routes' => ['account.packs.update'],
-            ],
+            self::READING => ['charges' => true],
+            self::CLARIFY => ['charges' => true],
+            self::EXPAND => ['charges' => true],
+            self::PDF => ['charges' => true],
+            self::EMAIL => ['charges' => true],
+            self::SHARE => ['charges' => true],
+            self::HISTORY => ['charges' => false],
+            self::ASTROMOTTO => ['charges' => false],
+            self::CREDITS_PAGE => ['charges' => false],
+            self::CREDITS_REQUEST => ['charges' => true],
+            self::CREDITS_PROMO => ['charges' => false],
+            self::ACCOUNT => ['charges' => false],
+            self::PACKS_CHOOSE => ['charges' => false],
+            self::PACKS_BACKS => ['charges' => false],
         ];
     }
 
@@ -117,13 +67,6 @@ final class FeatureCatalog
     public static function charges(string $key): bool
     {
         return (bool) (self::all()[$key]['charges'] ?? false);
-    }
-
-    public static function help(string $key): string
-    {
-        $help = __('admin.feature_access.help');
-
-        return is_array($help) ? (string) ($help[$key] ?? $key) : $key;
     }
 
     /**

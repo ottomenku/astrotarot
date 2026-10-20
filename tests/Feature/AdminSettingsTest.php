@@ -58,14 +58,13 @@ class AdminSettingsTest extends TestCase
             ->put(route('admin.prompts.update'), [
                 'system_prompt_hu' => $custom,
                 'system_prompt_en' => $custom,
-                'clarify_prompt_hu' => $custom,
-                'clarify_prompt_en' => $custom,
-                'expand_prompt_hu' => $custom,
-                'expand_prompt_en' => $custom,
+                'base_prompt_hu' => $custom,
+                'base_prompt_en' => $custom,
             ])
             ->assertRedirect(route('admin.prompts.edit'));
 
         $this->assertSame($custom, $settings->systemPrompt('hu'));
+        $this->assertSame($custom, $settings->basePrompt('hu'));
 
         $this->actingAs($admin)
             ->post(route('admin.prompts.reset'))

@@ -34,6 +34,7 @@ class GameController extends Controller
             ]),
             'rules' => [],
             'packs' => $this->figurePacks(),
+            'backs' => $this->cardBacks(),
         ]);
     }
 
@@ -48,7 +49,7 @@ class GameController extends Controller
         $this->storeIcon($request, $game);
 
         if ($game->is_default) {
-            $game->makeDefault();
+            $this->applyDefault($game);
         }
 
         return redirect()
@@ -68,11 +69,17 @@ class GameController extends Controller
                 'default_pack_id' => $rule->default_pack_id,
                 'title_hu' => $rule->title_hu,
                 'title_en' => $rule->title_en,
+                'slot_key' => $rule->slot_key,
+                'description_hu' => $rule->description_hu,
+                'description_en' => $rule->description_en,
+                'card_back_id' => $rule->card_back_id,
                 'info_mode' => $rule->info_mode,
                 'row' => $rule->row,
                 'place' => $rule->place,
+                'draw_order' => $rule->draw_order,
             ])->all()),
             'packs' => $this->figurePacks(),
+            'backs' => $this->cardBacks(),
         ]);
     }
 
@@ -87,7 +94,7 @@ class GameController extends Controller
         $this->storeIcon($request, $game);
 
         if ($game->is_default) {
-            $game->makeDefault();
+            $this->applyDefault($game);
         }
 
         return redirect()
@@ -108,11 +115,24 @@ class GameController extends Controller
 
     public function makeDefault(Game $game): RedirectResponse
     {
-        $game->makeDefault();
+        $this->applyDefault($game);
 
         return redirect()
             ->route('admin.games.index')
             ->with('status', __('admin.games.default_set'));
+    }
+
+    private function applyDefault(Game $game): void
+    {
+        $game->makeDefault();
+
+        $spread = session('spread');
+        if (! is_array($spread) || ! array_key_exists('game', $spread)) {
+            return;
+        }
+
+        unset($spread['game']);
+        session(['spread' => $spread]);
     }
 
     public function destroy(Game $game): RedirectResponse
@@ -163,9 +183,18 @@ class GameController extends Controller
             'rules.*.pack_slug' => ['nullable', 'string', Rule::in(CardPackCatalog::slugs())],
             'rules.*.title_hu' => ['required', 'string', 'max:120'],
             'rules.*.title_en' => ['required', 'string', 'max:120'],
-            'rules.*.info_mode' => ['required', 'string', Rule::in(GameRule::INFO_MODES)],
+            'rules.*.slot_key' => ['nullable', 'string', 'max:64', 'alpha_dash'],
+            'rules.*.description_hu' => ['nullable', 'string', 'max:2000'],
+            'rules.*.description_en' => ['nullable', 'string', 'max:2000'],
+            'rules.*.card_back_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('card_packs', 'id')->where('type', CardPack::TYPE_CARD_BACK),
+            ],
+            'rules.*.info_mode' => ['nullable', 'string', Rule::in(GameRule::INFO_MODES)],
             'rules.*.row' => ['required', 'integer', 'min:1', 'max:12'],
             'rules.*.place' => ['required', 'integer', 'min:1', 'max:7'],
+            'rules.*.draw_order' => ['nullable', 'integer', 'min:1', 'max:49'],
         ]);
 
         $data['slug'] = trim((string) ($data['slug'] ?? ''));
@@ -183,17 +212,20 @@ class GameController extends Controller
         $data['description_hu'] = (string) ($data['description_hu'] ?? '');
         $data['description_en'] = (string) ($data['description_en'] ?? '');
 
-        $this->assertRuleLayout($data['rules']);
+        $data['rules'] = $this->assertRuleLayout($data['rules']);
 
         return $data;
     }
 
     /**
      * @param  list<array<string, mixed>>  $rules
+     * @return list<array<string, mixed>>
      */
-    private function assertRuleLayout(array $rules): void
+    private function assertRuleLayout(array $rules): array
     {
         $seen = [];
+        $seenKeys = [];
+        $seenOrders = [];
         $perRow = [];
         foreach ($rules as $index => $rule) {
             $row = (int) $rule['row'];
@@ -205,6 +237,27 @@ class GameController extends Controller
                 ]);
             }
             $seen[$key] = true;
+            $order = (int) ($rule['draw_order'] ?? 0);
+            if ($order < 1) {
+                $order = $index + 1;
+            }
+            if (isset($seenOrders[$order])) {
+                throw ValidationException::withMessages([
+                    "rules.{$index}.draw_order" => __('admin.games.duplicate_draw'),
+                ]);
+            }
+            $seenOrders[$order] = true;
+            $rules[$index]['draw_order'] = $order;
+            $slotKey = trim((string) ($rule['slot_key'] ?? ''));
+            if ($slotKey !== '') {
+                $slotKey = Str::lower($slotKey);
+                if (isset($seenKeys[$slotKey])) {
+                    throw ValidationException::withMessages([
+                        "rules.{$index}.slot_key" => __('admin.games.duplicate_slot_key'),
+                    ]);
+                }
+                $seenKeys[$slotKey] = true;
+            }
             $perRow[$row] = ($perRow[$row] ?? 0) + 1;
             if ($perRow[$row] > 7) {
                 throw ValidationException::withMessages([
@@ -212,6 +265,8 @@ class GameController extends Controller
                 ]);
             }
         }
+
+        return $rules;
     }
 
     /**
@@ -264,6 +319,17 @@ class GameController extends Controller
     }
 
     /**
+     * @return list<array{id: int, name: string}>
+     */
+    private function cardBacks(): array
+    {
+        return CardPack::query()->ofType(CardPack::TYPE_CARD_BACK)->ordered()->get()->map(fn (CardPack $pack) => [
+            'id' => $pack->id,
+            'name' => $pack->name_hu,
+        ])->all();
+    }
+
+    /**
      * @param  array<string, mixed>  $rule
      * @return array<string, mixed>
      */
@@ -296,15 +362,28 @@ class GameController extends Controller
             $packId = null;
         }
 
+        $infoMode = (string) ($rule['info_mode'] ?? '');
+        if (! in_array($infoMode, GameRule::INFO_MODES, true)) {
+            $infoMode = $type === CardPack::TYPE_ORACLE ? GameRule::INFO_ASTRO : GameRule::INFO_MEANING;
+        }
+
+        $backId = (int) ($rule['card_back_id'] ?? 0);
+        $slotKey = trim((string) ($rule['slot_key'] ?? ''));
+
         return [
             'pack_slug' => $slug,
             'pack_type' => $type,
             'default_pack_id' => $packId,
             'title_hu' => $rule['title_hu'],
             'title_en' => $rule['title_en'],
-            'info_mode' => $rule['info_mode'],
+            'slot_key' => $slotKey !== '' ? $slotKey : null,
+            'description_hu' => trim((string) ($rule['description_hu'] ?? '')) ?: null,
+            'description_en' => trim((string) ($rule['description_en'] ?? '')) ?: null,
+            'card_back_id' => $backId > 0 ? $backId : null,
+            'info_mode' => $infoMode,
             'row' => (int) $rule['row'],
             'place' => (int) $rule['place'],
+            'draw_order' => (int) $rule['draw_order'],
         ];
     }
 }

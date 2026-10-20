@@ -24,6 +24,11 @@ final class AdminIcons
         return '<svg class="admin-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm8 10a8 8 0 0 1-1.76 5.08L6.92 5.76A8 8 0 0 1 20 12zM4 12a8 8 0 0 1 1.76-5.08L17.08 18.24A8 8 0 0 1 4 12z"/></svg>';
     }
 
+    public static function trash(): string
+    {
+        return '<svg class="admin-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2zM4 6h16v2H4V6z"/></svg>';
+    }
+
     public static function eye(): string
     {
         return '<svg class="admin-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 12.5A5 5 0 1 1 17 12.5 5 5 0 0 1 12 17.5zm0-8A3 3 0 1 0 15 12.5 3 3 0 0 0 12 9.5z"/></svg>';

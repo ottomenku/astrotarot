@@ -15,6 +15,7 @@
                 'info_mode' => 'astro',
                 'row' => 1,
                 'place' => 1,
+                'draw_order' => 1,
             ];
         }
     @endphp
@@ -27,19 +28,20 @@
             <p class="muted">{{ session('status') }}</p>
         @endif
 
-        <form method="POST" action="{{ $game->exists ? route('admin.games.update', $game) : route('admin.games.store') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ $game->exists ? route('admin.games.update', $game) : route('admin.games.store') }}" enctype="multipart/form-data" data-lang-scope data-active-lang="{{ app()->getLocale() === 'en' ? 'en' : 'hu' }}">
             @csrf
             @if ($game->exists)
                 @method('PUT')
             @endif
+            @include('admin.partials.lang-switch')
 
             <div class="row">
-                <div class="field">
+                <div class="field" data-lang="hu">
                     <label for="name_hu">{{ __('admin.games.name_hu') }}</label>
                     <input id="name_hu" name="name_hu" value="{{ old('name_hu', $game->name_hu) }}" required>
                     @error('name_hu') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
                 </div>
-                <div class="field">
+                <div class="field" data-lang="en">
                     <label for="name_en">{{ __('admin.games.name_en') }}</label>
                     <input id="name_en" name="name_en" value="{{ old('name_en', $game->name_en) }}" required>
                     @error('name_en') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
@@ -59,12 +61,12 @@
                 </div>
             </div>
 
-            <div class="field">
+            <div class="field" data-lang="hu">
                 <label for="description_hu">{{ __('admin.games.description_hu') }}</label>
                 <textarea id="description_hu" name="description_hu" rows="3">{{ old('description_hu', $game->description_hu) }}</textarea>
                 @error('description_hu') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
             </div>
-            <div class="field">
+            <div class="field" data-lang="en">
                 <label for="description_en">{{ __('admin.games.description_en') }}</label>
                 <textarea id="description_en" name="description_en" rows="3">{{ old('description_en', $game->description_en) }}</textarea>
                 @error('description_en') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
@@ -103,25 +105,26 @@
                 </div>
             </div>
 
-            <div class="field">
+            <div class="field" data-lang="hu">
                 <label for="prompt_hu">{{ __('admin.games.prompt_hu') }}</label>
                 <textarea id="prompt_hu" name="prompt_hu" rows="8">{{ old('prompt_hu', $game->prompt_hu) }}</textarea>
                 <p class="muted">{{ __('admin.games.prompt_hint') }}</p>
                 @error('prompt_hu') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
             </div>
-            <div class="field">
+            <div class="field" data-lang="en">
                 <label for="prompt_en">{{ __('admin.games.prompt_en') }}</label>
                 <textarea id="prompt_en" name="prompt_en" rows="8">{{ old('prompt_en', $game->prompt_en) }}</textarea>
                 @error('prompt_en') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
             </div>
 
             <h2>{{ __('admin.games.rules') }}</h2>
+            @include('admin.partials.lang-switch')
             <p class="muted">{{ __('admin.games.rules_hint') }}</p>
             @error('rules') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
 
             <div data-rules>
                 @foreach ($rules as $index => $rule)
-                    @include('admin.games.partials.rule-row', ['index' => $index, 'rule' => $rule, 'packs' => $packs])
+                    @include('admin.games.partials.rule-row', ['index' => $index, 'rule' => $rule, 'packs' => $packs, 'backs' => $backs])
                 @endforeach
             </div>
             <p>
@@ -148,13 +151,19 @@
             'rule' => [
                 'pack_type' => 'oracle',
                 'default_pack_id' => '',
+                'card_back_id' => '',
+                'slot_key' => '',
                 'title_hu' => '',
                 'title_en' => '',
-                'info_mode' => 'meaning',
+                'description_hu' => '',
+                'description_en' => '',
+                'info_mode' => '',
                 'row' => 1,
                 'place' => 1,
+                'draw_order' => 1,
             ],
             'packs' => $packs,
+            'backs' => $backs,
         ])
     </template>
 
@@ -189,16 +198,20 @@
                 const html = template.innerHTML.replaceAll('__INDEX__', String(nextIndex()));
                 list.insertAdjacentHTML('beforeend', html);
                 const rows = list.querySelectorAll('[data-rule-row]');
-                filterPacks(rows[rows.length - 1]);
+                const row = rows[rows.length - 1];
+                const draw = row?.querySelector('[data-draw-order]');
+                if (draw) draw.value = String(rows.length);
+                filterPacks(row);
             });
 
+            const removeConfirm = @json(__('admin.games.remove_rule_confirm'));
             list.addEventListener('click', (event) => {
                 const button = event.target.closest('[data-remove-rule]');
                 if (!button) return;
                 const row = button.closest('[data-rule-row]');
-                if (row && list.querySelectorAll('[data-rule-row]').length > 1) {
-                    row.remove();
-                }
+                if (!row || list.querySelectorAll('[data-rule-row]').length < 2) return;
+                if (!window.confirm(removeConfirm)) return;
+                row.remove();
             });
         })();
     </script>

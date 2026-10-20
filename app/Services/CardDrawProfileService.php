@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -22,20 +23,11 @@ class CardDrawProfileService
         'pisces' => 'pisces', 'halak' => 'pisces',
     ];
 
-    /** Elem → háttér asset id. */
-    private const ELEMENT_BACKGROUNDS = [
-        'tűz' => 'fire',
-        'víz' => 'water',
-        'föld' => 'earth',
-        'levegő' => 'air',
-    ];
+    /** @var list<string> */
+    private const ELEMENTS = ['tűz', 'víz', 'föld', 'levegő'];
 
-    /** Minőség → háttér asset id. */
-    private const MODALITY_BACKGROUNDS = [
-        'fő' => 'cardinal',
-        'szilárd' => 'fixed',
-        'változó' => 'mutable',
-    ];
+    /** @var list<string> */
+    private const MODALITIES = ['fő', 'szilárd', 'változó'];
 
     /** Objektumnév → chart id (angol és magyar címkék). */
     private const CHART_OBJECT_IDS = [
@@ -81,7 +73,6 @@ class CardDrawProfileService
      *     variant: string,
      *     variants: list<string>,
      *     tones: list<string>,
-     *     slots: list<string>,
      *     draw_mode: string,
      *     chart_mode: string,
      *     datetime_utc: string,
@@ -90,8 +81,22 @@ class CardDrawProfileService
      */
     public function forNow(): array
     {
+        $chart = $this->chartContext->resolve();
+        $minute = substr((string) $chart['datetime_utc'], 0, 16);
+        $key = 'card-draw-profile:'.md5(json_encode([
+            $minute,
+            $chart['mode'],
+            $chart['lat'],
+            $chart['lon'],
+            $chart['sidereal'],
+        ]));
+
+        $cached = Cache::get($key);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
         try {
-            $chart = $this->chartContext->resolve();
             $result = $this->ephemeris->calculate([
                 'datetime_utc' => $chart['datetime_utc'],
                 'lat' => $chart['lat'],
@@ -103,6 +108,7 @@ class CardDrawProfileService
             $profile['chart_mode'] = $chart['mode'];
             $profile['datetime_utc'] = $chart['datetime_utc'];
             $profile['chart'] = $this->chartSnapshot($result);
+            Cache::put($key, $profile, now()->addMinutes(2));
 
             return $profile;
         } catch (Throwable $e) {
@@ -122,7 +128,6 @@ class CardDrawProfileService
      *     variant: string,
      *     variants: list<string>,
      *     tones: list<string>,
-     *     slots: list<string>,
      *     draw_mode: string
      * }
      */
@@ -136,10 +141,10 @@ class CardDrawProfileService
         $modality = (string) ($clean['minoseg_dominancia']['nev'] ?? 'fő');
         $tone = (string) ($clean['pozitiv_negativ']['nev'] ?? 'pozitív');
 
-        if (! isset(self::ELEMENT_BACKGROUNDS[$element])) {
+        if (! in_array($element, self::ELEMENTS, true)) {
             $element = 'tűz';
         }
-        if (! isset(self::MODALITY_BACKGROUNDS[$modality])) {
+        if (! in_array($modality, self::MODALITIES, true)) {
             $modality = 'fő';
         }
         if (! in_array($tone, ['pozitív', 'negatív'], true)) {
@@ -150,7 +155,7 @@ class CardDrawProfileService
 
         $variant = $variants[0] ?? ($tone === 'negatív' ? 'shadow' : 'positive');
 
-        return $this->withFixedSlots([
+        return [
             'sun_sign' => $sunSign,
             'element' => $element,
             'modality' => $modality,
@@ -160,7 +165,7 @@ class CardDrawProfileService
             'variants' => $variants,
             'draw_mode' => 'scoring',
             'scoring' => $this->scoringSnapshot($clean, $element, $modality, $tone),
-        ]);
+        ];
     }
 
     /**
@@ -172,7 +177,6 @@ class CardDrawProfileService
      *     variant: string,
      *     variants: list<string>,
      *     tones: list<string>,
-     *     slots: list<string>,
      *     draw_mode: string,
      *     chart_mode?: string,
      *     datetime_utc?: string
@@ -184,7 +188,7 @@ class CardDrawProfileService
         $variants = ['positive', 'positive', 'positive'];
         $tone = 'pozitív';
 
-        return $this->withFixedSlots([
+        return [
             'sun_sign' => 'leo',
             'element' => 'tűz',
             'modality' => 'fő',
@@ -200,7 +204,7 @@ class CardDrawProfileService
                 'aspects' => [],
             ],
             'scoring' => $this->scoringSnapshot([], 'tűz', 'fő', $tone),
-        ]);
+        ];
     }
 
     /**
@@ -292,37 +296,6 @@ class CardDrawProfileService
     private function chartObjectId(string $name): string
     {
         return self::CHART_OBJECT_IDS[$name] ?? strtolower(str_replace(' ', '_', $name));
-    }
-
-    /**
-     * @param  array<string, mixed>  $profile
-     * @return array<string, mixed>
-     */
-    private function withFixedSlots(array $profile): array
-    {
-        $sunSign = (string) ($profile['sun_sign'] ?? 'leo');
-        $element = (string) ($profile['element'] ?? 'tűz');
-        $modality = (string) ($profile['modality'] ?? 'fő');
-
-        if (! isset(self::ELEMENT_BACKGROUNDS[$element])) {
-            $element = 'tűz';
-            $profile['element'] = $element;
-        }
-        if (! isset(self::MODALITY_BACKGROUNDS[$modality])) {
-            $modality = 'fő';
-            $profile['modality'] = $modality;
-        }
-
-        $profile['slots'] = [
-            $sunSign,
-            self::ELEMENT_BACKGROUNDS[$element],
-            self::MODALITY_BACKGROUNDS[$modality],
-        ];
-        $profile['slot_sources'] = ['sun_sign', 'element', 'modality'];
-        $profile['slot_kinds'] = ['sun_sign', 'element', 'modality'];
-        $profile['slot_values'] = [$sunSign, $element, $modality];
-
-        return $profile;
     }
 
     /**

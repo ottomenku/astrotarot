@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Services\AppSettings;
 use App\Services\CardDrawProfileService;
 use App\Support\FeatureCatalog;
-use App\Support\PackageBody;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -18,92 +17,16 @@ class FeatureAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * @param  array<string, array<string, mixed>>  $overrides
-     * @return array{features: array<string, array<string, mixed>>}
-     */
-    private function accessPayload(array $overrides = []): array
+    public function test_free_user_can_download_pdf_when_it_is_open_to_every_package(): void
     {
-        $features = [];
-        foreach (FeatureAccess::query()->with('packages')->get() as $rule) {
-            $features[$rule->key] = [
-                'label_hu' => $rule->label('hu'),
-                'label_en' => $rule->label('en'),
-                'credit_cost' => $rule->credit_cost,
-                'logic' => $rule->logic,
-                'package_ids' => $rule->packages->pluck('id')->all(),
-            ];
-        }
-
-        foreach ($overrides as $key => $row) {
-            $features[$key] = array_merge($features[$key] ?? [
-                'label_hu' => PackageBody::perkLabel($key, 'hu'),
-                'label_en' => PackageBody::perkLabel($key, 'en'),
-                'credit_cost' => 0,
-                'logic' => FeatureCatalog::LOGIC_AND,
-                'package_ids' => [],
-            ], $row);
-        }
-
-        return ['features' => $features];
-    }
-
-    public function test_admin_can_view_and_save_access_matrix(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $freeId = Package::query()->where('slug', 'free')->value('id');
-
-        $this->actingAs($admin)
-            ->get(route('admin.feature-access.edit'))
-            ->assertOk()
-            ->assertSee(FeatureCatalog::help(FeatureCatalog::READING), false)
-            ->assertSee(FeatureCatalog::help(FeatureCatalog::PDF), false)
-            ->assertSee(FeatureCatalog::help(FeatureCatalog::PACKS_CHOOSE), false)
-            ->assertSee(__('admin.feature_access.card_name'), false);
-
-        $this->actingAs($admin)
-            ->put(
-                route('admin.feature-access.update'),
-                $this->accessPayload([
-                    FeatureCatalog::PDF => [
-                        'credit_cost' => 0,
-                        'logic' => FeatureCatalog::LOGIC_AND,
-                        'package_ids' => [$freeId],
-                    ],
-                ])
-            )
-            ->assertRedirect(route('admin.feature-access.edit'));
-
-        $rule = FeatureAccess::query()->where('key', FeatureCatalog::PDF)->firstOrFail();
-        $this->assertEqualsCanonicalizing([(int) $freeId], $rule->packages()->pluck('packages.id')->all());
-    }
-
-    public function test_non_admin_cannot_edit_access_matrix(): void
-    {
-        $user = User::factory()->create();
-
-        $this->actingAs($user)
-            ->get(route('admin.feature-access.edit'))
-            ->assertForbidden();
-    }
-
-    public function test_free_user_can_download_pdf_when_admin_opens_it(): void
-    {
-        $admin = User::factory()->admin()->create();
         $user = User::factory()->create(['credits' => 10, 'plan' => 'free']);
 
-        $this->actingAs($admin)
-            ->put(
-                route('admin.feature-access.update'),
-                $this->accessPayload([
-                    FeatureCatalog::PDF => [
-                        'credit_cost' => 0,
-                        'logic' => FeatureCatalog::LOGIC_AND,
-                        'package_ids' => [],
-                    ],
-                ])
-            )
-            ->assertRedirect();
+        $rule = FeatureAccess::query()->where('key', FeatureCatalog::PDF)->firstOrFail();
+        $rule->update([
+            'credit_cost' => 0,
+            'logic' => FeatureCatalog::LOGIC_AND,
+        ]);
+        $rule->packages()->sync([]);
 
         $this->actingAs($user)
             ->postJson(route('reading.export.pdf'), [
@@ -220,13 +143,11 @@ class FeatureAccessTest extends TestCase
                     [
                         'figure_id' => 'mars',
                         'figure_name' => 'Mars',
-                        'background_id' => 'shared-light',
                         'deck' => 'oracle',
                     ],
                     [
                         'figure_id' => '01-the-magician',
                         'figure_name' => 'A Mágus',
-                        'background_id' => 'shared-shadow',
                         'deck' => 'tarot',
                     ],
                 ],
@@ -235,34 +156,6 @@ class FeatureAccessTest extends TestCase
             ->assertJsonPath('credits', 3);
 
         $this->assertSame(3, (int) $user->fresh()->credits);
-    }
-
-    public function test_custom_feature_label_appears_on_package_card(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $user = User::factory()->create(['plan' => 'free']);
-
-        $this->actingAs($admin)
-            ->put(
-                route('admin.feature-access.update'),
-                $this->accessPayload([
-                    FeatureCatalog::PDF => [
-                        'label_hu' => 'PDF kártya',
-                        'label_en' => 'PDF card',
-                    ],
-                ])
-            )
-            ->assertRedirect(route('admin.feature-access.edit'));
-
-        $premium = Package::query()->where('slug', 'premium')->firstOrFail();
-        $this->assertStringContainsString('PDF kártya', (string) $premium->body_hu);
-        $this->assertStringContainsString('PDF card', (string) $premium->body_en);
-
-        $this->actingAs($user)
-            ->withSession(['locale' => 'hu'])
-            ->get(route('credits.packages'))
-            ->assertOk()
-            ->assertSee('PDF kártya', false);
     }
 
     public function test_home_shows_package_icons_and_credit_cost_on_controls(): void

@@ -11,48 +11,37 @@
             <p class="muted">{{ session('status') }}</p>
         @endif
 
-        <form method="POST" action="{{ route('admin.prompts.update') }}" style="margin-bottom:1rem">
+        <form method="POST" action="{{ route('admin.prompts.update') }}" style="margin-bottom:1rem" data-lang-scope data-active-lang="{{ app()->getLocale() === 'en' ? 'en' : 'hu' }}">
             @csrf
             @method('PUT')
-            <div class="field">
+            @include('admin.partials.lang-switch')
+            <div class="field" data-lang="hu">
                 <label for="system_prompt_hu">{{ __('admin.prompts.system_prompt_hu') }}</label>
-                <textarea id="system_prompt_hu" name="system_prompt_hu" rows="12" required>{{ old('system_prompt_hu', $systemPromptHu) }}</textarea>
+                <textarea id="system_prompt_hu" name="system_prompt_hu" rows="16" required>{{ old('system_prompt_hu', $systemPromptHu) }}</textarea>
+                <p class="muted">{{ __('admin.prompts.system_hint') }}</p>
                 @error('system_prompt_hu')
                     <p class="muted" style="color:#b33">{{ $message }}</p>
                 @enderror
             </div>
-            <div class="field">
+            <div class="field" data-lang="en">
                 <label for="system_prompt_en">{{ __('admin.prompts.system_prompt_en') }}</label>
-                <textarea id="system_prompt_en" name="system_prompt_en" rows="12" required>{{ old('system_prompt_en', $systemPromptEn) }}</textarea>
+                <textarea id="system_prompt_en" name="system_prompt_en" rows="16" required>{{ old('system_prompt_en', $systemPromptEn) }}</textarea>
                 @error('system_prompt_en')
                     <p class="muted" style="color:#b33">{{ $message }}</p>
                 @enderror
             </div>
-            <div class="field">
-                <label for="clarify_prompt_hu">{{ __('admin.prompts.clarify_prompt_hu') }}</label>
-                <textarea id="clarify_prompt_hu" name="clarify_prompt_hu" rows="8" required>{{ old('clarify_prompt_hu', $clarifyPromptHu) }}</textarea>
-                @error('clarify_prompt_hu')
+            <div class="field" data-lang="hu">
+                <label for="base_prompt_hu">{{ __('admin.prompts.base_prompt_hu') }}</label>
+                <textarea id="base_prompt_hu" name="base_prompt_hu" rows="12" required>{{ old('base_prompt_hu', $basePromptHu) }}</textarea>
+                <p class="muted">{{ __('admin.prompts.base_hint') }}</p>
+                @error('base_prompt_hu')
                     <p class="muted" style="color:#b33">{{ $message }}</p>
                 @enderror
             </div>
-            <div class="field">
-                <label for="clarify_prompt_en">{{ __('admin.prompts.clarify_prompt_en') }}</label>
-                <textarea id="clarify_prompt_en" name="clarify_prompt_en" rows="8" required>{{ old('clarify_prompt_en', $clarifyPromptEn) }}</textarea>
-                @error('clarify_prompt_en')
-                    <p class="muted" style="color:#b33">{{ $message }}</p>
-                @enderror
-            </div>
-            <div class="field">
-                <label for="expand_prompt_hu">{{ __('admin.prompts.expand_prompt_hu') }}</label>
-                <textarea id="expand_prompt_hu" name="expand_prompt_hu" rows="8" required>{{ old('expand_prompt_hu', $expandPromptHu) }}</textarea>
-                @error('expand_prompt_hu')
-                    <p class="muted" style="color:#b33">{{ $message }}</p>
-                @enderror
-            </div>
-            <div class="field">
-                <label for="expand_prompt_en">{{ __('admin.prompts.expand_prompt_en') }}</label>
-                <textarea id="expand_prompt_en" name="expand_prompt_en" rows="8" required>{{ old('expand_prompt_en', $expandPromptEn) }}</textarea>
-                @error('expand_prompt_en')
+            <div class="field" data-lang="en">
+                <label for="base_prompt_en">{{ __('admin.prompts.base_prompt_en') }}</label>
+                <textarea id="base_prompt_en" name="base_prompt_en" rows="12" required>{{ old('base_prompt_en', $basePromptEn) }}</textarea>
+                @error('base_prompt_en')
                     <p class="muted" style="color:#b33">{{ $message }}</p>
                 @enderror
             </div>

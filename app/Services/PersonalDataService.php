@@ -15,6 +15,7 @@ class PersonalDataService
 {
     public function eraseConversations(User $user): void
     {
+        $user->readingSessions()->delete();
         $user->readingLogs()->delete();
         $user->readingShares()->delete();
     }
@@ -79,6 +80,7 @@ class PersonalDataService
     {
         $this->eraseConversations($user);
         $user->packPreferences()->delete();
+        $user->spreadPreference()->delete();
         BlogComment::query()->where('user_id', $user->id)->delete();
         BlogLike::query()->where('user_id', $user->id)->delete();
         BlogPost::query()->where('user_id', $user->id)->update(['user_id' => null]);
@@ -94,6 +96,9 @@ class PersonalDataService
 
         $user->forceFill([
             'name' => 'Törölt fiók',
+            'birth_at' => null,
+            'gender' => null,
+            'introduction' => null,
             'email' => 'deleted+'.$user->id.'-'.Str::lower(Str::random(8)).'@anonymized.invalid',
             'password' => Str::password(32),
             'provider' => null,

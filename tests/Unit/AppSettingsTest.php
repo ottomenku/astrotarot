@@ -29,7 +29,7 @@ class AppSettingsTest extends TestCase
         $settings = app(AppSettings::class);
 
         $this->assertSame($settings->defaultSystemPromptHu(), $settings->systemPrompt('hu'));
-        $this->assertSame($settings->defaultClarifyPromptEn(), $settings->clarifyPrompt('en'));
+        $this->assertSame($settings->defaultBasePromptEn(), $settings->basePrompt('en'));
 
         $this->assertSame($settings->defaultTermsHu(), $settings->terms('hu'));
         $this->assertSame($settings->defaultPrivacyEn(), $settings->privacy('en'));
