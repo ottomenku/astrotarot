@@ -35,6 +35,7 @@ class EphemerisTest extends TestCase
                         'longitude' => 137.5,
                         'sign' => 'Leo',
                         'degree' => 17.5,
+                        'house' => 5,
                         'fixed_star' => null,
                         'elem' => 'tűz',
                         'elem_ertek' => 3.0,
@@ -43,6 +44,9 @@ class EphemerisTest extends TestCase
                         'jegy_polaritas' => 'pozitív (aktív)',
                         'pozitiv_negativ_besorolas' => 'pozitív',
                         'pozitiv_negativ_ertek' => 1.5,
+                        'polaritas_pont' => 5,
+                        'polaritas_besorolas' => 'positive',
+                        'polaritas_magyarazat' => 'Positive planet: +3. Positive sign (Leo): +2. Total: +5.',
                     ],
                     [
                         'name' => 'Moon',
@@ -71,6 +75,13 @@ class EphemerisTest extends TestCase
                         'minoseg_dominancia' => ['nev' => 'szilárd', 'ertek' => 3],
                         'pozitiv_negativ' => ['nev' => 'pozitív', 'netto_ertek' => 2],
                     ],
+                    'fenyszogek' => [
+                        ['left' => 'Sun', 'right' => 'Moon', 'kind' => 'opposition', 'points' => -1],
+                    ],
+                    'polaritas_osszesites' => [
+                        'bolygok' => ['pont' => 5, 'besorolas' => 'positive'],
+                        'jegyek' => ['pont' => 0, 'besorolas' => 'positive'],
+                    ],
                     'tarot_helyek' => [
                         'positions' => [
                             ['hely' => 1, 'nev' => 'A jelenlegi helyzet lényege', 'besorolas' => 'pozitív', 'ertek' => 12],
@@ -93,12 +104,21 @@ class EphemerisTest extends TestCase
             ->assertSee('Sun', false)
             ->assertSee('Leo', false)
             ->assertSee('Regulus', false)
-            ->assertSee('tűz', false)
-            ->assertSee('szilárd', false)
+            ->assertSee(__('admin.ephemeris.house'), false)
+            ->assertSee(__('admin.ephemeris.aspects'), false)
+            ->assertSee(__('admin.ephemeris.aspect_opposition'), false)
+            ->assertSee('Positive planet: +3. Positive sign (Leo): +2. Total: +5.', false)
             ->assertSee(__('admin.ephemeris.summary'), false)
-            ->assertSee(__('admin.ephemeris.summary_clean'), false)
-            ->assertSee(__('admin.ephemeris.tarot_slots'), false)
-            ->assertSee('A ható erő vagy akadály', false)
+            ->assertSee(__('admin.ephemeris.summary_planets'), false)
+            ->assertSee(__('admin.ephemeris.summary_signs'), false)
+            ->assertSee('0', false)
+            ->assertSee(__('admin.ephemeris.polarity_positive'), false)
+            ->assertDontSee(__('admin.ephemeris.polarity_neutral'), false)
+            ->assertSee(__('admin.ephemeris.explanation'), false)
+            ->assertDontSee(__('admin.ephemeris.element_dominance'), false)
+            ->assertDontSee(__('admin.ephemeris.modality_dominance'), false)
+            ->assertDontSee(__('admin.ephemeris.tarot_slots'), false)
+            ->assertDontSee('A ható erő vagy akadály', false)
             ->assertSee(__('admin.ephemeris.card_chart_fixed'), false);
     }
 
@@ -176,5 +196,58 @@ class EphemerisTest extends TestCase
             ->assertSee(__('admin.ephemeris.card_chart_now'), false);
 
         $this->assertTrue(app(EphemerisChartContext::class)->isNow());
+    }
+
+    public function test_coordinates_follow_residence_and_fall_back_to_budapest(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'residence_country' => 'Ausztria',
+            'residence_city' => 'Bécs',
+            'residence_latitude' => '48.208353',
+            'residence_longitude' => '16.372504',
+        ]);
+
+        $this->mock(EphemerisService::class, function ($mock) {
+            $mock->shouldReceive('calculate')
+                ->once()
+                ->with(Mockery::on(function (array $input): bool {
+                    return abs((float) $input['lat'] - 48.208353) < 0.000001
+                        && abs((float) $input['lon'] - 16.372504) < 0.000001;
+                }))
+                ->andReturn([
+                    'datetime_utc' => '2026-08-09T12:00:00+00:00',
+                    'objects' => [],
+                    'scoring' => null,
+                ]);
+        });
+
+        $this->actingAs($admin)
+            ->get(route('admin.ephemeris.index'))
+            ->assertOk()
+            ->assertSee('Bécs, Ausztria', false)
+            ->assertSee('value="48.208353"', false)
+            ->assertSee('value="16.372504"', false);
+
+        $guestPlace = User::factory()->admin()->create();
+
+        $this->mock(EphemerisService::class, function ($mock) {
+            $mock->shouldReceive('calculate')
+                ->once()
+                ->with(Mockery::on(function (array $input): bool {
+                    return abs((float) $input['lat'] - 47.4979) < 0.000001
+                        && abs((float) $input['lon'] - 19.0402) < 0.000001;
+                }))
+                ->andReturn([
+                    'datetime_utc' => '2026-08-09T12:00:00+00:00',
+                    'objects' => [],
+                    'scoring' => null,
+                ]);
+        });
+
+        $this->actingAs($guestPlace)
+            ->get(route('admin.ephemeris.index'))
+            ->assertOk()
+            ->assertSee('Budapest', false)
+            ->assertSee('value="47.4979"', false);
     }
 }

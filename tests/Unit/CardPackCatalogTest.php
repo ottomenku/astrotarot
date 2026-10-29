@@ -20,12 +20,14 @@ class CardPackCatalogTest extends TestCase
         $this->assertContains('cosplay-tarot', $slugs);
         $this->assertContains('tacsko-orakulum', $slugs);
         $this->assertContains('tacsko-tarot', $slugs);
+        $this->assertContains('egi-orakulum-ls', $slugs);
         $this->assertTrue(CardPackCatalog::hasPolarFigures('anime-orakulum'));
         $this->assertTrue(CardPackCatalog::hasPolarFigures('anime-tarot'));
         $this->assertFalse(CardPackCatalog::hasPolarFigures('cosplay-orakulum'));
         $this->assertFalse(CardPackCatalog::hasPolarFigures('cosplay-tarot'));
         $this->assertFalse(CardPackCatalog::hasPolarFigures('tacsko-orakulum'));
         $this->assertFalse(CardPackCatalog::hasPolarFigures('tacsko-tarot'));
+        $this->assertTrue(CardPackCatalog::hasPolarFigures('egi-orakulum-ls'));
     }
 
     public function test_aliases_legacy_deck_keys(): void
@@ -52,6 +54,14 @@ class CardPackCatalogTest extends TestCase
         $this->assertSame(
             'card-pack/anime-orakulum/figures/sun-shadow.png',
             CardPackCatalog::figureRelative('anime-orakulum', 'sun', 'shadow')
+        );
+        $this->assertSame(
+            'card-pack/egi-orakulum-ls/figures/sun-light.png',
+            CardPackCatalog::figureRelative('egi-orakulum-ls', 'sun', 'light')
+        );
+        $this->assertSame(
+            'card-pack/egi-orakulum-ls/figures/sun-shadow.png',
+            CardPackCatalog::figureRelative('egi-orakulum-ls', 'sun', 'shadow')
         );
         $this->assertSame(
             'card-pack/anime-tarot/figures/00-the-fool-light.png',

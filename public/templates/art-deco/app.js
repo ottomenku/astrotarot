@@ -124,6 +124,9 @@
       slotTitles: ['Választott Égi mestered', 'Választott Figurád'],
       polarityLight: 'Light',
       polarityShadow: 'Shadow',
+      fateRandom: 'sorslenyomat: :value',
+      fateAnalyzing: 'Égi adatok elemzése',
+      fateSky: 'Az égi helyzet: :value',
       chartAtQuestion: 'A kérdezés idején',
       house: 'ház',
       retrograde: 'retrográd',
@@ -188,6 +191,9 @@
       slotTitles: ['Your Celestial Master', 'Your Chosen Figure'],
       polarityLight: 'Light',
       polarityShadow: 'Shadow',
+      fateRandom: 'fate imprint: :value',
+      fateAnalyzing: 'Reading the sky',
+      fateSky: 'The sky’s position: :value',
       chartAtQuestion: 'At the time of the question',
       house: 'house',
       retrograde: 'retrograde',
@@ -317,6 +323,9 @@
   let activeReading = null;
   let lockedQuestion = '';
   let shareBusy = false;
+  let polarityTimer = null;
+  let polarityFrame = 'positive';
+  let revealingDraw = null;
 
   const pick = (items) => items[Math.floor(Math.random() * items.length)];
 
@@ -330,6 +339,163 @@
 
   function randomVariant() {
     return Math.random() < 0.5 ? 'shadow' : 'positive';
+  }
+
+  function slotRequestsAstroPolarity(slot) {
+    const mode = gameConfig.light_shadow_mode || 'full-random';
+    if (mode === 'full-astro') return true;
+    if (mode === 'oracle-astro' || mode === 'orakulum-astro') {
+      return (slot?.pack_type || '') === 'oracle';
+    }
+    return false;
+  }
+
+  function slotLightShadow(slot) {
+    const mode = slot?.light_shadow;
+    if (mode === 'none' || mode === 'random' || mode === 'random60' || mode === 'random70' || mode === 'astro' || mode === 'llm') {
+      return mode;
+    }
+    return slotRequestsAstroPolarity(slot) ? 'llm' : 'random';
+  }
+
+  function celestialPool() {
+    const list = Array.isArray(gameConfig.celestial_oracles) ? gameConfig.celestial_oracles : [];
+    const ids = list.map((oracle) => oracle.id).filter(Boolean);
+    return ids.length ? ids : ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces'];
+  }
+
+  function resolveCelestialHelper(slot) {
+    const value = slot?.celestial_helper || 'none';
+    if (value === 'none') return null;
+    if (value === 'random') return pick(celestialPool());
+    return value;
+  }
+
+  function oracleFace(id) {
+    const map = drawProfile.oracle_polarity || {};
+    return map[id] === 'shadow' || map[id] === 'negative' ? 'shadow' : 'positive';
+  }
+
+  function rollLightShadow(mode) {
+    const roll = Math.random();
+    const lightChance = mode === 'random70' ? 0.7 : (mode === 'random60' ? 0.6 : 0.5);
+    return roll < lightChance ? 'positive' : 'shadow';
+  }
+
+  function celestialHelperName(id) {
+    const list = Array.isArray(gameConfig.celestial_oracles) ? gameConfig.celestial_oracles : [];
+    const item = list.find((oracle) => oracle.id === id);
+    if (!item) return id;
+    return item[language] || item.en || item.hu || id;
+  }
+
+  function helperHtml(draw) {
+    if (!draw?.showCelestialHelper || !draw.celestialHelper) return '';
+    const prefix = language === 'en' ? 'Celestial helper' : 'Égi segítő';
+    return `<p class="celestial-helper">${escapeHtml(prefix)}: ${escapeHtml(celestialHelperName(draw.celestialHelper))}</p>`;
+  }
+
+  function skyWord(variant) {
+    return variant === 'shadow' ? 'shadow' : 'light';
+  }
+
+  function fateLabelHtml(draw) {
+    const text = t();
+    if (!draw || draw.polaritySource === 'none') return '';
+    if (draw.polarityPending) {
+      return `<p class="fate-label is-pending">${escapeHtml(text.fateAnalyzing)}</p>`;
+    }
+    const template = draw.polaritySource === 'astro' ? text.fateSky : text.fateRandom;
+    return `<p class="fate-label ${polarityClass(draw.variant)}">${escapeHtml(template.replace(':value', skyWord(draw.variant)))}</p>`;
+  }
+
+  function paintFigure(img, draw, variant) {
+    if (!img || !draw) return;
+    const tone = variant === 'shadow' ? 'shadow' : 'positive';
+    const polar = packHasPolarFigures(draw.deck);
+    img.src = figureSrc(draw.deck, draw.figureId, polar ? tone : 'positive');
+    img.classList.toggle('is-reversed', !polar && tone === 'shadow');
+  }
+
+  function tickPolarityPreview() {
+    polarityFrame = polarityFrame === 'shadow' ? 'positive' : 'shadow';
+    if (revealingDraw?.polarityPending) {
+      paintFigure(els.drawRevealImage, revealingDraw, polarityFrame);
+    }
+    document.querySelectorAll('[data-polarity-pending="1"]').forEach((article) => {
+      const img = article.querySelector('.card-figure');
+      paintFigure(img, {
+        deck: article.dataset.deck || '',
+        figureId: article.dataset.figure || '',
+      }, polarityFrame);
+    });
+  }
+
+  function syncPolarityMotion() {
+    const pending = Boolean(revealingDraw?.polarityPending)
+      || selected.some((draw) => draw.polarityPending);
+    if (!pending) {
+      if (polarityTimer) {
+        window.clearInterval(polarityTimer);
+        polarityTimer = null;
+      }
+      return;
+    }
+    if (polarityTimer) return;
+    polarityFrame = 'positive';
+    polarityTimer = window.setInterval(tickPolarityPreview, 1000);
+  }
+
+  function settlePendingAsRandom() {
+    let changed = false;
+    selected.forEach((draw) => {
+      if (!draw.polarityPending) return;
+      draw.variant = randomVariant();
+      draw.polarityPending = false;
+      draw.polaritySource = 'random';
+      changed = true;
+    });
+    if (!changed) return;
+    renderChosen();
+  }
+
+  function normalizeSkyVariant(value) {
+    const text = String(value || '').toLowerCase();
+    if (text === 'shadow' || text === 'negative' || text === 'negatív') return 'shadow';
+    if (text === 'light' || text === 'positive' || text === 'pozitív') return 'positive';
+    return '';
+  }
+
+  function applySkyPolarities(rows) {
+    const list = Array.isArray(rows) ? rows : [];
+    const claimed = new Set();
+    list.forEach((row) => {
+      const variant = normalizeSkyVariant(row?.value ?? row?.polarity);
+      if (!variant) return;
+      let draw = null;
+      const slotNo = Number(row?.slot);
+      if (Number.isInteger(slotNo) && slotNo >= 1) draw = selected[slotNo - 1] || null;
+      if (!draw) {
+        const rowNo = Number(row?.row);
+        const placeNo = Number(row?.place);
+        draw = selected.find((item) => {
+          const slot = slotDef(item.slotIndex);
+          return Number(slot?.row) === rowNo && Number(slot?.place) === placeNo;
+        }) || null;
+      }
+      if (!draw || !draw.polarityPending || claimed.has(draw)) return;
+      claimed.add(draw);
+      draw.variant = variant;
+      draw.polarityPending = false;
+      draw.polaritySource = 'astro';
+    });
+    selected.forEach((draw) => {
+      if (!draw.polarityPending) return;
+      draw.variant = randomVariant();
+      draw.polarityPending = false;
+      draw.polaritySource = 'random';
+    });
+    renderChosen();
   }
 
   function packSlug(key) {
@@ -899,14 +1065,27 @@
           </div>
         `;
         } else {
+          const pending = Boolean(draw.polarityPending);
+          const paired = draw.polaritySource && draw.polaritySource !== 'none';
+          const shownVariant = pending ? 'positive' : draw.variant;
+          const polar = packHasPolarFigures(deckKey);
+          const reversed = paired && !pending && !polar && draw.variant === 'shadow';
+          article.dataset.polarityPending = pending ? '1' : '0';
+          article.dataset.deck = deckKey;
+          article.dataset.figure = draw.figureId;
+          const polarityHtml = paired
+            ? `<p class="polarity-label ${pending ? 'is-pending' : polarityClass(draw.variant)}">${pending ? escapeHtml(t().fateAnalyzing) : polarityLabel(draw.variant)}</p>`
+            : '<p class="polarity-label is-light">—</p>';
           article.innerHTML = `
           <h3 class="slot-title">${escapeHtml(slotTitle(index))}</h3>
-          <p class="polarity-label ${polarityClass(draw.variant)}">${polarityLabel(draw.variant)}</p>
+          ${helperHtml(draw)}
+          ${polarityHtml}
           <div class="card-art is-full-bleed">
-            <img class="card-figure" src="${figureSrc(draw.deck, draw.figureId, draw.variant)}" alt="" decoding="async">
+            <img class="card-figure${reversed ? ' is-reversed' : ''}" src="${figureSrc(draw.deck, draw.figureId, polar ? shownVariant : 'positive')}" alt="" decoding="async">
             <span class="roman">${roman(drawOrderOf(index))}</span>
           </div>
           <div class="card-caption">
+            ${fateLabelHtml(draw)}
             ${slotCaptionHtml(index, draw.figureId)}
           </div>
         `;
@@ -919,6 +1098,7 @@
     });
 
     syncCompleteView();
+    syncPolarityMotion();
   }
 
   function syncCompleteView() {
@@ -948,17 +1128,24 @@
 
   function showReveal(draw) {
     if (!els.drawReveal || !els.drawRevealImage) return;
+    revealingDraw = draw;
     const meta = figureMeta(draw.deck, draw.figureId);
-    els.drawRevealImage.src = figureSrc(draw.deck, draw.figureId, draw.variant);
+    paintFigure(els.drawRevealImage, draw, draw.polarityPending ? 'positive' : draw.variant);
     els.drawRevealImage.alt = meta ? (meta[language] || meta.en || '') : '';
     els.drawReveal.hidden = false;
     document.body.classList.add('is-revealing');
+    syncPolarityMotion();
   }
 
   function hideReveal() {
+    revealingDraw = null;
     if (els.drawReveal) els.drawReveal.hidden = true;
-    if (els.drawRevealImage) els.drawRevealImage.removeAttribute('src');
+    if (els.drawRevealImage) {
+      els.drawRevealImage.classList.remove('is-reversed');
+      els.drawRevealImage.removeAttribute('src');
+    }
     document.body.classList.remove('is-revealing');
+    syncPolarityMotion();
   }
 
   function wait(ms) {
@@ -1061,6 +1248,23 @@
     const deck = currentDeck();
     if (!deck) return;
 
+    const slot = slotDef(currentSlotIndex());
+    const helper = resolveCelestialHelper(slot);
+    const shadowMode = slotLightShadow(slot);
+    let variant = 'positive';
+    let polarityPending = false;
+    let polaritySource = 'none';
+    if (shadowMode === 'llm') {
+      polarityPending = true;
+      polaritySource = 'llm';
+    } else if (shadowMode === 'astro') {
+      variant = helper ? oracleFace(helper) : 'positive';
+      polaritySource = 'astro';
+    } else if (shadowMode === 'random' || shadowMode === 'random60' || shadowMode === 'random70') {
+      variant = rollLightShadow(shadowMode);
+      polaritySource = 'random';
+    }
+
     const used = selected.filter((item) => packSlug(item.deck) === deckKey).map((item) => item.figureId);
     const available = deck.figures.filter((figure) => !used.includes(figure.id));
     const pool = available.length ? available : deck.figures;
@@ -1071,7 +1275,12 @@
       deck: deckKey,
       backIndex,
       figureId: figure.id,
-      variant: randomVariant(),
+      celestialHelper: helper,
+      helperPolarity: helper ? oracleFace(helper) : '',
+      showCelestialHelper: Boolean(slot?.show_celestial_helper) && Boolean(helper),
+      variant,
+      polarityPending,
+      polaritySource,
     };
     revealing = true;
     showReveal(draw);
@@ -1080,6 +1289,11 @@
 
   function reset() {
     drawToken += 1;
+    revealingDraw = null;
+    if (polarityTimer) {
+      window.clearInterval(polarityTimer);
+      polarityTimer = null;
+    }
     if (revealTimer) window.clearTimeout(revealTimer);
     if (settleTimer) window.clearTimeout(settleTimer);
     revealTimer = null;
@@ -1373,14 +1587,18 @@
     return selected.map((draw) => {
       const slot = draw.slotIndex;
       const meta = figureMeta(draw.deck, draw.figureId);
-      const polarity = draw.variant === 'shadow' ? 'shadow' : 'positive';
+      const pending = Boolean(draw.polarityPending);
+      const polarity = pending ? '' : (draw.variant === 'shadow' ? 'shadow' : 'positive');
       return {
         figure_id: draw.figureId,
         figure_name: meta ? meta[language] : draw.figureId,
         keyword: meta?.keyword ? meta.keyword[language] : '',
         blurb: meta?.blurb ? (meta.blurb[language] || meta.blurb.en || '') : '',
-        variant: draw.variant,
+        variant: pending ? '' : draw.variant,
         polarity,
+        light_shadow_request: pending || draw.polaritySource === 'llm',
+        celestial_helper: draw.celestialHelper || '',
+        celestial_polarity: draw.helperPolarity || '',
         deck: packSlug(draw.deck),
         row: Number(slotDef(slot)?.row) || 1,
         place: Number(slotDef(slot)?.place) || (slot + 1),
@@ -1430,10 +1648,12 @@
     const feature = featureState(readingFeatureKey(mode));
     if (!feature.allowed) {
       showToast(feature.message || t().messageNeedCredits, false);
+      if (mode === 'initial') settlePendingAsRandom();
       return;
     }
     if (feature.will_charge && creditsBalance < feature.cost) {
       showToast(t().messageNeedCredits, false);
+      if (mode === 'initial') settlePendingAsRandom();
       return;
     }
 
@@ -1448,6 +1668,7 @@
 
     if (!llmEnabled) {
       showToast(t().messageLlmDisabled, false);
+      if (mode === 'initial') settlePendingAsRandom();
       return;
     }
 
@@ -1518,9 +1739,10 @@
       }
 
       if (mode === 'initial') {
+        applySkyPolarities(data.light_shadow || []);
         activeReading = {
           question,
-          cards,
+          cards: buildCardsPayload(),
           reading: data.reading,
           answers: [{
             mode: 'initial',
@@ -1545,7 +1767,10 @@
       }
     } catch (error) {
       if (error?.name === 'AbortError') return;
-      if (mode === 'initial') lastReadingKey = '';
+      if (mode === 'initial') {
+        lastReadingKey = '';
+        settlePendingAsRandom();
+      }
       showToast(error?.message || t().messageError, false);
     } finally {
       if (readingRequest === controller) readingRequest = null;

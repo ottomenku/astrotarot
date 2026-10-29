@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\CelestialOracleCatalog;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -83,7 +84,7 @@ class CardDrawProfileService
     {
         $chart = $this->chartContext->resolve();
         $minute = substr((string) $chart['datetime_utc'], 0, 16);
-        $key = 'card-draw-profile:'.md5(json_encode([
+        $key = 'card-draw-profile:v2:'.md5(json_encode([
             $minute,
             $chart['mode'],
             $chart['lat'],
@@ -164,6 +165,7 @@ class CardDrawProfileService
             'tones' => $tones,
             'variants' => $variants,
             'draw_mode' => 'scoring',
+            'oracle_polarity' => $this->oraclePolarity($result),
             'scoring' => $this->scoringSnapshot($clean, $element, $modality, $tone),
         ];
     }
@@ -199,6 +201,7 @@ class CardDrawProfileService
             'draw_mode' => 'scoring',
             'chart_mode' => 'now',
             'datetime_utc' => now('UTC')->format('Y-m-d\TH:i:s\Z'),
+            'oracle_polarity' => [],
             'chart' => [
                 'objects' => [],
                 'aspects' => [],
@@ -322,6 +325,50 @@ class CardDrawProfileService
         }
 
         return [$tones, $variants];
+    }
+
+    /**
+     * Oracle id => positive|shadow. Zero and a missing score count as positive.
+     *
+     * @param  array<string, mixed>  $result
+     * @return array<string, string>
+     */
+    private function oraclePolarity(array $result): array
+    {
+        $allowed = array_fill_keys(CelestialOracleCatalog::ids(), true);
+        $map = [];
+
+        foreach ($result['objects'] ?? [] as $object) {
+            if (! is_array($object)) {
+                continue;
+            }
+            $id = $this->chartObjectId((string) ($object['name'] ?? ''));
+            if (! isset($allowed[$id])) {
+                continue;
+            }
+            $class = (string) ($object['polaritas_besorolas'] ?? '');
+            if ($class === '') {
+                continue;
+            }
+            $map[$id] = $class === 'negative' ? 'shadow' : 'positive';
+        }
+
+        foreach ($result['scoring']['jegyek'] ?? [] as $sign) {
+            if (! is_array($sign)) {
+                continue;
+            }
+            $id = $this->normalizeSign((string) ($sign['kulcs'] ?? '')) ?? '';
+            if ($id === '' || ! isset($allowed[$id])) {
+                continue;
+            }
+            $class = (string) ($sign['besorolas'] ?? '');
+            if ($class === '') {
+                continue;
+            }
+            $map[$id] = $class === 'negative' ? 'shadow' : 'positive';
+        }
+
+        return $map;
     }
 
     private function normalizeSign(string $sign): ?string

@@ -170,11 +170,56 @@ class ReadingControllerTest extends TestCase
         $this->assertStringContainsString('1. sor 2. lap — Tarot figura', $log->user_prompt);
         $this->assertStringContainsString('asztrológiai adat:', $log->user_prompt);
         $this->assertStringContainsString('jelentés:', $log->user_prompt);
-        $this->assertStringContainsString('elem: tűz (11.5)', $log->user_prompt);
-        $this->assertStringContainsString('minőség: szilárd (9)', $log->user_prompt);
-        $this->assertStringContainsString('pozitív / negatív: pozitív (pozitív 14, negatív 5, nettó 9)', $log->user_prompt);
-        $this->assertStringContainsString('elemek: tűz 12, víz 4, föld 3, levegő 2', $log->user_prompt);
+        $this->assertStringContainsString('Asztrológiai adat: nincs. Ne kérj égi adatot.', $log->user_prompt);
+        $this->assertStringNotContainsString('elem: tűz (11.5)', $log->user_prompt);
         $this->assertStringNotContainsString('Most írd meg az olvasatot', $log->user_prompt);
+    }
+
+    public function test_spread_settings_add_types_sky_data_and_the_celestial_helper(): void
+    {
+        $this->mock(\App\Services\ReadingSkyLookup::class, function ($mock) {
+            $mock->shouldReceive('fulfill')->once()->andReturn([[
+                'id' => 'now',
+                'datetime_utc' => '2026-10-29T12:00:00Z',
+                'data' => [
+                    'planets' => [[
+                        'name' => 'Mars',
+                        'sign' => 'Scorpio',
+                        'degree' => 12,
+                        'house' => 8,
+                        'polarity' => 'negative',
+                    ]],
+                ],
+            ]]);
+        });
+        $this->fakeOpenAi('A segítő Mars.');
+
+        $game = Game::query()->where('slug', 'astro-tarot')->firstOrFail();
+        $game->update([
+            'astro_data_mode' => Game::ASTRO_DATA_NOW,
+            'spread_types' => [Game::SPREAD_YES_NO, Game::SPREAD_TIMING],
+        ]);
+        $rule = $game->rules()->orderBy('place')->firstOrFail();
+        $rule->update([
+            'celestial_helper' => 'mars',
+            'light_shadow' => 'astro',
+            'send_celestial_helper' => true,
+        ]);
+
+        $payload = $this->validPayload(['game_id' => $game->id]);
+        $payload['cards'][0]['celestial_helper'] = 'mars';
+        $payload['cards'][0]['celestial_polarity'] = 'shadow';
+
+        $user = User::factory()->create(['credits' => 10]);
+        $this->actingAs($user)->postJson(route('reading'), $payload)->assertOk();
+
+        $log = ReadingLog::query()->first();
+        $this->assertStringContainsString('Beállított kirakás típusok: YES_NO, TIMING', $log->user_prompt);
+        $this->assertStringContainsString('Képlet now 2026-10-29T12:00:00Z', $log->user_prompt);
+        $this->assertStringContainsString('Mars Scorpio 12° h8 negative', $log->user_prompt);
+        $this->assertStringContainsString('égi segítő: Mars (mars), polaritás shadow', $log->user_prompt);
+        $this->assertStringContainsString('elem: tűz', $log->user_prompt);
+        $this->assertMatchesRegularExpression('/lap sorszám: 1[\s\S]*light-shadow: nem/', $log->user_prompt);
     }
 
     public function test_reading_blocked_without_credits(): void
@@ -557,6 +602,61 @@ class ReadingControllerTest extends TestCase
             'A munkamenet lejárt. Frissítsd az oldalt, majd próbáld újra.',
             json_decode($response->getContent(), true)['error'] ?? null
         );
+    }
+
+    public function test_celestial_light_shadow_is_requested_in_the_prompt_and_returned(): void
+    {
+        $this->fakeOpenAi(json_encode([
+            'status' => 'answer',
+            'text' => 'Az ég shadow felé dönt.',
+            'light_shadow' => [
+                ['slot' => 1, 'row' => 1, 'place' => 1, 'value' => 'shadow'],
+                ['slot' => 2, 'row' => 1, 'place' => 2, 'value' => 'light'],
+            ],
+        ], JSON_UNESCAPED_UNICODE));
+
+        $game = Game::query()->where('slug', 'astro-tarot')->firstOrFail();
+        $game->update(['light_shadow_mode' => Game::LIGHT_SHADOW_FULL_ASTRO]);
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)
+            ->postJson(route('reading'), $this->validPayload([
+                'game_id' => $game->id,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('reading', 'Az ég shadow felé dönt.')
+            ->assertJsonPath('light_shadow.0.slot', 1)
+            ->assertJsonPath('light_shadow.0.value', 'shadow')
+            ->assertJsonPath('light_shadow.1.value', 'light');
+
+        $log = ReadingLog::query()->first();
+        $this->assertMatchesRegularExpression('/lap sorszám: 1[\s\S]*light-shadow: igen/', $log->user_prompt);
+        $this->assertMatchesRegularExpression('/lap sorszám: 2[\s\S]*light-shadow: igen/', $log->user_prompt);
+        $this->assertStringContainsString('light_shadow', $log->system_prompt);
+        $this->assertSame('shadow', $log->cards[0]['light_shadow'] ?? null);
+        $this->assertSame('shadow', $log->cards[0]['polarity'] ?? null);
+        $this->assertSame('light', $log->cards[1]['light_shadow'] ?? null);
+        $this->assertSame('positive', $log->cards[1]['variant'] ?? null);
+    }
+
+    public function test_oracle_astro_mode_requests_celestial_light_shadow_only_for_oracle_cards(): void
+    {
+        $this->fakeOpenAi('{"status":"answer","text":"Csak az orákulum kér eget.","light_shadow":[{"slot":1,"value":"light"}]}');
+
+        $game = Game::query()->where('slug', 'astro-tarot')->firstOrFail();
+        $game->update(['light_shadow_mode' => Game::LIGHT_SHADOW_ORACLE_ASTRO]);
+        $user = User::factory()->create(['credits' => 10]);
+
+        $this->actingAs($user)
+            ->postJson(route('reading'), $this->validPayload(['game_id' => $game->id]))
+            ->assertOk()
+            ->assertJsonPath('light_shadow.0.value', 'light');
+
+        $log = ReadingLog::query()->first();
+        $this->assertMatchesRegularExpression('/lap sorszám: 1[\s\S]*light-shadow: igen/', $log->user_prompt);
+        $this->assertMatchesRegularExpression('/lap sorszám: 2[\s\S]*light-shadow: nem/', $log->user_prompt);
+        $this->assertSame('light', $log->cards[0]['light_shadow'] ?? null);
+        $this->assertArrayNotHasKey('light_shadow', $log->cards[1]);
     }
 
     /**

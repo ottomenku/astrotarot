@@ -66,6 +66,12 @@ class ReadingFrontendContractTest extends TestCase
         $this->assertStringContainsString('gameSlots', $js);
         $this->assertStringContainsString('scoring', $js);
         $this->assertStringContainsString('row:', $js);
+        $this->assertStringContainsString('function slotRequestsAstroPolarity(', $js);
+        $this->assertStringContainsString('function slotLightShadow(', $js);
+        $this->assertStringContainsString('function resolveCelestialHelper(', $js);
+        $this->assertStringContainsString('setInterval(tickPolarityPreview, 1000)', $js);
+        $this->assertStringContainsString('fateAnalyzing', $js);
+        $this->assertStringContainsString('light_shadow_request', $js);
         $this->assertStringContainsString('function packHasPolarFigures(', $js);
         $this->assertStringContainsString('polarFigures', $js);
         $this->assertStringContainsString('card_back', $js);

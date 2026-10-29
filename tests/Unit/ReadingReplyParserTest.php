@@ -44,6 +44,19 @@ JSON;
 
         $this->assertSame('answer', $parsed['status']);
         $this->assertSame('Kész olvasat.', $parsed['text']);
+        $this->assertSame([], $parsed['light_shadow']);
+    }
+
+    public function test_answer_json_keeps_light_shadow_decisions(): void
+    {
+        $parsed = (new ReadingReplyParser)->parse('{"status":"answer","text":"Kész.","light_shadow":[{"slot":1,"row":1,"place":2,"value":"shadow"},{"value":"poem"},{"slot":2,"value":"light"}]}');
+
+        $this->assertSame('answer', $parsed['status']);
+        $this->assertCount(2, $parsed['light_shadow']);
+        $this->assertSame(1, $parsed['light_shadow'][0]['slot']);
+        $this->assertSame(2, $parsed['light_shadow'][0]['place']);
+        $this->assertSame('shadow', $parsed['light_shadow'][0]['value']);
+        $this->assertSame('light', $parsed['light_shadow'][1]['value']);
     }
 
     public function test_data_request_without_usable_requests_becomes_an_answer(): void

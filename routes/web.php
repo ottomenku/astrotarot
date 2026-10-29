@@ -105,6 +105,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/account/introduction', [AccountController::class, 'introduction'])
         ->middleware('feature:'.FeatureCatalog::ACCOUNT)
         ->name('account.introduction');
+    Route::get('/account/introduction/cities', [AccountController::class, 'cities'])
+        ->middleware(['feature:'.FeatureCatalog::ACCOUNT, 'throttle:30,1'])
+        ->name('account.introduction.cities');
     Route::put('/account/introduction', [AccountController::class, 'updateIntroduction'])
         ->middleware('feature:'.FeatureCatalog::ACCOUNT)
         ->name('account.introduction.update');

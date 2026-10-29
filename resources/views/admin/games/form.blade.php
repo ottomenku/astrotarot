@@ -105,6 +105,57 @@
                 </div>
             </div>
 
+            <div class="field">
+                <label for="light_shadow_mode">{{ __('admin.games.light_shadow_mode') }}</label>
+                <select id="light_shadow_mode" name="light_shadow_mode">
+                    @foreach ([
+                        'full-astro' => 'light_shadow_full_astro',
+                        'oracle-astro' => 'light_shadow_oracle_astro',
+                        'full-random' => 'light_shadow_full_random',
+                    ] as $value => $label)
+                        <option value="{{ $value }}" @selected(old('light_shadow_mode', $game->light_shadow_mode ?: 'full-random') === $value)>{{ __('admin.games.'.$label) }}</option>
+                    @endforeach
+                </select>
+                <p class="muted">{{ __('admin.games.light_shadow_hint') }}</p>
+            </div>
+
+            <div class="field">
+                <label for="astro_data_mode">{{ __('admin.games.astro_data_mode') }}</label>
+                <select id="astro_data_mode" name="astro_data_mode">
+                    @foreach ([
+                        'none' => 'astro_data_none',
+                        'now' => 'astro_data_now',
+                        'personal' => 'astro_data_personal',
+                        'relations' => 'astro_data_relations',
+                        'ask' => 'astro_data_ask',
+                    ] as $value => $label)
+                        <option value="{{ $value }}" @selected(old('astro_data_mode', $game->astro_data_mode ?: 'none') === $value)>{{ __('admin.games.'.$label) }}</option>
+                    @endforeach
+                </select>
+                <p class="muted">{{ __('admin.games.astro_data_hint') }}</p>
+            </div>
+
+            <fieldset class="field">
+                <legend>{{ __('admin.games.spread_types') }}</legend>
+                @php
+                    $selectedTypes = old('spread_types', $game->spread_types ?? []);
+                    $selectedTypes = is_array($selectedTypes) ? $selectedTypes : [];
+                @endphp
+                @foreach ([
+                    'YES_NO' => 'spread_yes_no',
+                    'TIMING' => 'spread_timing',
+                    'RELATIONSHIP' => 'spread_relationship',
+                    'DILEMMA' => 'spread_dilemma',
+                    'GENERAL' => 'spread_general',
+                ] as $value => $label)
+                    <label style="display:block;margin:.25rem 0">
+                        <input type="checkbox" name="spread_types[]" value="{{ $value }}" @checked(in_array($value, $selectedTypes, true))>
+                        {{ __('admin.games.'.$label) }}
+                    </label>
+                @endforeach
+                <p class="muted">{{ __('admin.games.spread_types_hint') }}</p>
+            </fieldset>
+
             <div class="field" data-lang="hu">
                 <label for="prompt_hu">{{ __('admin.games.prompt_hu') }}</label>
                 <textarea id="prompt_hu" name="prompt_hu" rows="8">{{ old('prompt_hu', $game->prompt_hu) }}</textarea>
@@ -158,6 +209,10 @@
                 'description_hu' => '',
                 'description_en' => '',
                 'info_mode' => '',
+                'celestial_helper' => 'none',
+                'light_shadow' => 'none',
+                'show_celestial_helper' => false,
+                'send_celestial_helper' => false,
                 'row' => 1,
                 'place' => 1,
                 'draw_order' => 1,

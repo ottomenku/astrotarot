@@ -34,6 +34,9 @@ class EphemerisServiceTest extends TestCase
         $this->assertNotNull($sun);
         $this->assertArrayHasKey('sign', $sun);
         $this->assertArrayHasKey('degree', $sun);
+        $this->assertGreaterThanOrEqual(1, (int) ($sun['house'] ?? 0));
+        $this->assertLessThanOrEqual(12, (int) ($sun['house'] ?? 0));
+        $this->assertIsArray($result['scoring']['fenyszogek'] ?? null);
         $this->assertArrayHasKey('fixed_star', $sun);
         $this->assertArrayHasKey('elem', $sun);
         $this->assertArrayHasKey('minoseg', $sun);
@@ -73,6 +76,14 @@ class EphemerisServiceTest extends TestCase
         ]);
 
         $this->assertSame('tűz', $result['objects'][0]['elem']);
+        $this->assertSame(5, $result['objects'][0]['polaritas_pont']);
+        $this->assertSame('positive', $result['objects'][0]['polaritas_besorolas']);
+        $this->assertArrayHasKey('polaritas_osszesites', $result['scoring']);
+        $this->assertContains($result['scoring']['polaritas_osszesites']['bolygok']['besorolas'], ['positive', 'negative']);
+        $this->assertStringContainsString('+3', $result['objects'][0]['polaritas_magyarazat']);
+        $this->assertArrayNotHasKey('polaritas_pont', $result['objects'][2]);
+        $leo = collect($result['scoring']['jegyek'])->firstWhere('kulcs', 'oroszlan');
+        $this->assertSame(8, $leo['pont']);
         $this->assertArrayNotHasKey('elem', $result['objects'][1]);
         $this->assertSame('víz', $result['objects'][2]['elem']);
         $this->assertArrayHasKey('elem_dominancia', $result['scoring']['summary']);

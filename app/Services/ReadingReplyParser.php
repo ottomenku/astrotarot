@@ -10,7 +10,8 @@ class ReadingReplyParser
      *   text: string,
      *   requests: list<array<string, mixed>>,
      *   question_type: ?string,
-     *   spread_type: ?string
+     *   spread_type: ?string,
+     *   light_shadow: list<array{slot?: int, row?: int, place?: int, value: string}>
      * }
      */
     public function parse(string $raw): array
@@ -35,6 +36,7 @@ class ReadingReplyParser
                     'requests' => $requests,
                     'question_type' => $questionType,
                     'spread_type' => $spreadType,
+                    'light_shadow' => [],
                 ];
             }
         }
@@ -44,7 +46,7 @@ class ReadingReplyParser
             $text = $trimmed;
         }
 
-        return $this->answer($text, $questionType, $spreadType);
+        return $this->answer($text, $questionType, $spreadType, $this->lightShadow($json['light_shadow'] ?? []));
     }
 
     /**
@@ -129,10 +131,11 @@ class ReadingReplyParser
      *   text: string,
      *   requests: list<array<string, mixed>>,
      *   question_type: ?string,
-     *   spread_type: ?string
+     *   spread_type: ?string,
+     *   light_shadow: list<array{slot?: int, row?: int, place?: int, value: string}>
      * }
      */
-    private function answer(string $text, ?string $questionType, ?string $spreadType): array
+    private function answer(string $text, ?string $questionType, ?string $spreadType, array $lightShadow = []): array
     {
         return [
             'status' => 'answer',
@@ -140,7 +143,51 @@ class ReadingReplyParser
             'requests' => [],
             'question_type' => $questionType,
             'spread_type' => $spreadType,
+            'light_shadow' => $lightShadow,
         ];
+    }
+
+    /**
+     * @return list<array{slot?: int, row?: int, place?: int, value: string}>
+     */
+    private function lightShadow(mixed $rows): array
+    {
+        if (! is_array($rows)) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $value = strtolower(trim((string) ($row['value'] ?? $row['polarity'] ?? $row['variant'] ?? '')));
+            if (in_array($value, ['shadow', 'negative', 'negatív', 'árnyék', 'arnyek'], true)) {
+                $value = 'shadow';
+            } elseif (in_array($value, ['light', 'positive', 'pozitív', 'pozitiv'], true)) {
+                $value = 'light';
+            } else {
+                continue;
+            }
+
+            $item = ['value' => $value];
+            if (is_numeric($row['slot'] ?? null)) {
+                $item['slot'] = max(1, (int) $row['slot']);
+            }
+            if (is_numeric($row['row'] ?? null)) {
+                $item['row'] = (int) $row['row'];
+            }
+            if (is_numeric($row['place'] ?? null)) {
+                $item['place'] = (int) $row['place'];
+            }
+            $items[] = $item;
+
+            if (count($items) >= 49) {
+                break;
+            }
+        }
+
+        return $items;
     }
 
     private function shortLabel(mixed $value): ?string

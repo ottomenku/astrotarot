@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CardPack;
 use App\Models\Game;
 use App\Support\CardPackCatalog;
+use App\Support\CelestialOracleCatalog;
 use App\Support\FeatureCatalog;
 
 class GameConfigService
@@ -90,6 +91,11 @@ class GameConfigService
                 'description_en' => (string) $rule->description_en,
                 'card_back' => $slotBack,
                 'info_mode' => $rule->info_mode,
+                'celestial_helper' => $rule->celestial_helper ?: 'none',
+                'light_shadow' => $rule->effectiveLightShadow($game),
+                'show_celestial_helper' => (bool) $rule->show_celestial_helper,
+                'send_celestial_helper' => (bool) $rule->send_celestial_helper
+                    && (string) ($game->astro_data_mode ?: Game::ASTRO_DATA_NONE) !== Game::ASTRO_DATA_NONE,
                 'row' => (int) $rule->row,
                 'place' => (int) $rule->place,
                 'draw_order' => (int) ($rule->draw_order ?: 0),
@@ -136,6 +142,10 @@ class GameConfigService
             'description_en' => (string) $game->description_en,
             'icon' => $game->iconUrl(),
             'has_question' => (bool) $game->has_question,
+            'light_shadow_mode' => (string) ($game->light_shadow_mode ?: Game::LIGHT_SHADOW_FULL_RANDOM),
+            'astro_data_mode' => (string) ($game->astro_data_mode ?: Game::ASTRO_DATA_NONE),
+            'spread_types' => is_array($game->spread_types) ? array_values($game->spread_types) : [],
+            'celestial_oracles' => CelestialOracleCatalog::all(),
             'slots' => $slots,
             'pack_base' => asset(CardPackCatalog::publicPrefix()),
             'packs' => $packs,
@@ -213,6 +223,10 @@ class GameConfigService
             'description_en' => '',
             'icon' => null,
             'has_question' => true,
+            'light_shadow_mode' => Game::LIGHT_SHADOW_FULL_RANDOM,
+            'astro_data_mode' => Game::ASTRO_DATA_NONE,
+            'spread_types' => [],
+            'celestial_oracles' => CelestialOracleCatalog::all(),
             'slots' => [],
             'pack_base' => asset(CardPackCatalog::publicPrefix()),
             'packs' => [],

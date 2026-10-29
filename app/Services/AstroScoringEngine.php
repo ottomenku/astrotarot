@@ -209,6 +209,196 @@ final class AstroScoringEngine
         ];
     }
 
+    /** A tíz égi orákulum-bolygó alaptermészete: 1 pozitív, -1 negatív, 0 semleges. */
+    private const ORACLE_PLANETS = [
+        'nap' => 1,
+        'hold' => 1,
+        'merkur' => 0,
+        'venusz' => 1,
+        'mars' => -1,
+        'jupiter' => 1,
+        'szaturnusz' => -1,
+        'uranusz' => -1,
+        'neptunusz' => 0,
+        'pluto' => -1,
+    ];
+
+    /**
+     * Bolygónként és jegyenként egész pozitív/negatív pont.
+     *
+     * Bolygó: alaptermészet ±3, a jegy ±2, minden jó fényszög +1, minden rossz −1.
+     * Jegy: saját polaritás ±3, plusz a benne álló bolygók pontjai.
+     *
+     * @param  array<int, array<string, mixed>>  $records
+     * @return array{
+     *     planets: list<array<string, mixed>>,
+     *     signs: list<array<string, mixed>>,
+     *     aspects: list<array{left: string, right: string, kind: string, points: int}>,
+     *     summary: array{planets: array{total: int, class: string}, signs: array{total: int, class: string}}
+     * }
+     */
+    public function polarity(array $records): array
+    {
+        $planets = [];
+        foreach ($records as $record) {
+            $prepared = $this->preparePlanet($record);
+            if ($prepared !== null) {
+                $planets[] = $prepared;
+            }
+        }
+
+        $aspects = $this->attachPolarityAspects($planets);
+
+        $output = [];
+        $bySign = [];
+        foreach ($planets as $planet) {
+            $naturePoints = $planet['nature'] * 3;
+            $signPoints = $planet['sign_positive'] ? 2 : -2;
+            $aspectPoints = array_sum(array_column($planet['aspects'], 'points'));
+            $total = $naturePoints + $signPoints + $aspectPoints;
+            $output[] = [
+                'name' => $planet['name'],
+                'nature_key' => $planet['nature'] > 0 ? 'positive' : ($planet['nature'] < 0 ? 'negative' : 'neutral'),
+                'nature_points' => $naturePoints,
+                'sign_key' => $planet['sign_key'],
+                'sign_name' => $planet['sign_name'],
+                'sign_positive' => $planet['sign_positive'],
+                'sign_points' => $signPoints,
+                'aspects' => $planet['aspects'],
+                'total' => $total,
+                'class' => $this->polarityClass($total),
+            ];
+            $bySign[$planet['sign_key']][] = [
+                'name' => $planet['name'],
+                'points' => $total,
+            ];
+        }
+
+        $signs = [];
+        foreach (self::SIGNS as $key => $sign) {
+            $positive = str_starts_with($sign['polarity'], 'pozitív');
+            $base = $positive ? 3 : -3;
+            $inside = $bySign[$key] ?? [];
+            $total = $base + array_sum(array_column($inside, 'points'));
+            $signs[] = [
+                'sign_key' => $key,
+                'sign_name' => $sign['name'],
+                'positive' => $positive,
+                'base_points' => $base,
+                'planets' => $inside,
+                'total' => $total,
+                'class' => $this->polarityClass($total),
+            ];
+        }
+
+        return [
+            'planets' => $output,
+            'signs' => $signs,
+            'aspects' => $aspects,
+            'summary' => [
+                'planets' => $this->polarityTotal($output),
+                'signs' => $this->polarityTotal($signs),
+            ],
+        ];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return array{total: int, class: string}
+     */
+    private function polarityTotal(array $rows): array
+    {
+        $total = (int) array_sum(array_column($rows, 'total'));
+
+        return [
+            'total' => $total,
+            'class' => $this->polarityClass($total),
+        ];
+    }
+
+    /** @param array<string, mixed> $record */
+    private function preparePlanet(array $record): ?array
+    {
+        $objectInput = $record['objektum'] ?? $record['object'] ?? null;
+        $signInput = $record['jegy'] ?? $record['sign'] ?? null;
+        $degreeInput = $record['fok'] ?? $record['degree'] ?? null;
+        if (! is_string($objectInput) || ! is_string($signInput) || ! is_numeric($degreeInput)) {
+            return null;
+        }
+
+        $objectKey = $this->objectKey($objectInput);
+        if (! array_key_exists($objectKey, self::ORACLE_PLANETS)) {
+            return null;
+        }
+
+        $signKey = $this->signKey($signInput);
+        $sign = self::SIGNS[$signKey];
+        $degree = (float) $degreeInput;
+
+        return [
+            'name' => $objectInput,
+            'object_key' => $objectKey,
+            'sign_key' => $signKey,
+            'sign_name' => $sign['name'],
+            'sign_positive' => str_starts_with($sign['polarity'], 'pozitív'),
+            'longitude' => $sign['start'] + $degree,
+            'nature' => self::ORACLE_PLANETS[$objectKey],
+            'aspects' => [],
+        ];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $planets
+     * @return list<array{left: string, right: string, kind: string, points: int}>
+     */
+    private function attachPolarityAspects(array &$planets): array
+    {
+        $found = [];
+        $count = count($planets);
+        for ($i = 0; $i < $count; $i++) {
+            for ($j = $i + 1; $j < $count; $j++) {
+                $distance = $this->angularDistance($planets[$i]['longitude'], $planets[$j]['longitude']);
+                $match = $this->matchAspect($distance, $planets[$i]['object_key'], $planets[$j]['object_key']);
+                if ($match === null) {
+                    continue;
+                }
+
+                $points = match ($match['name']) {
+                    'szextil', 'trigon' => 1,
+                    'kvadrát', 'kvinkunx', 'oppozíció' => -1,
+                    default => 0,
+                };
+                $kind = match ($match['name']) {
+                    'szextil' => 'sextile',
+                    'trigon' => 'trine',
+                    'kvadrát' => 'square',
+                    'kvinkunx' => 'quincunx',
+                    'oppozíció' => 'opposition',
+                    default => 'conjunction',
+                };
+                $found[] = [
+                    'left' => $planets[$i]['name'],
+                    'right' => $planets[$j]['name'],
+                    'kind' => $kind,
+                    'points' => $points,
+                ];
+                if ($points === 0) {
+                    continue;
+                }
+
+                $planets[$i]['aspects'][] = ['kind' => $kind, 'with' => $planets[$j]['name'], 'points' => $points];
+                $planets[$j]['aspects'][] = ['kind' => $kind, 'with' => $planets[$i]['name'], 'points' => $points];
+            }
+        }
+
+        return $found;
+    }
+
+    private function polarityClass(int $total): string
+    {
+        return $total < 0 ? 'negative' : 'positive';
+    }
+
     /** @param array<string, mixed> $record */
     private function prepareRecord(array $record, int $index): array
     {

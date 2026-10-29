@@ -38,7 +38,7 @@ class ReadingSkyLookup
 
         try {
             if ($kind === 'projection') {
-                return array_merge($base, $this->projection($request));
+                return array_merge($base, $this->projection($request, $user));
             }
 
             $moment = $this->moment((string) ($request['moment'] ?? 'now'), $user);
@@ -46,10 +46,11 @@ class ReadingSkyLookup
                 return array_merge($base, $moment);
             }
 
+            $where = $this->chartCoordinates($moment['label'], $user);
             $chart = $this->ephemeris->calculate([
                 'datetime_utc' => $moment['datetime_utc'],
-                'lat' => (float) config('ephemeris.default_lat'),
-                'lon' => (float) config('ephemeris.default_lon'),
+                'lat' => $where['lat'],
+                'lon' => $where['lon'],
             ]);
 
             $include = $kind === 'houses'
@@ -62,7 +63,7 @@ class ReadingSkyLookup
             return array_merge($base, [
                 'moment' => $moment['label'],
                 'datetime_utc' => $moment['datetime_utc'],
-                'location' => 'default_site_coordinates',
+                'location' => $where['location'],
                 'data' => $this->present($chart, $include),
             ]);
         } catch (Throwable $e) {
@@ -92,6 +93,17 @@ class ReadingSkyLookup
             }
             if (in_array('signs', $include, true)) {
                 $data['signs'] = $rows;
+                $signs = $chart['scoring']['jegyek'] ?? null;
+                if (is_array($signs)) {
+                    $data['sign_polarity'] = array_values(array_map(function (array $sign): array {
+                        return [
+                            'key' => (string) ($sign['kulcs'] ?? ''),
+                            'name' => (string) ($sign['nev'] ?? ''),
+                            'points' => $sign['pont'] ?? null,
+                            'polarity' => (string) ($sign['besorolas'] ?? ''),
+                        ];
+                    }, array_filter($signs, 'is_array')));
+                }
             }
         }
 
@@ -119,7 +131,7 @@ class ReadingSkyLookup
      * @param  array<string, mixed>  $request
      * @return array<string, mixed>
      */
-    private function projection(array $request): array
+    private function projection(array $request, ?User $user): array
     {
         $from = trim((string) ($request['from'] ?? ''));
         $until = trim((string) ($request['until'] ?? ''));
@@ -130,6 +142,7 @@ class ReadingSkyLookup
             $until = Carbon::parse($from)->utc()->addDays(30)->format('Y-m-d\TH:i:s\Z');
         }
 
+        $where = $this->chartCoordinates('projection', $user);
         $result = $this->ephemeris->project([
             'body' => (string) ($request['body'] ?? ''),
             'event' => (string) ($request['event'] ?? ''),
@@ -138,13 +151,13 @@ class ReadingSkyLookup
             'house' => $request['house'] ?? null,
             'from' => $from,
             'until' => $until,
-            'lat' => (float) config('ephemeris.default_lat'),
-            'lon' => (float) config('ephemeris.default_lon'),
+            'lat' => $where['lat'],
+            'lon' => $where['lon'],
         ]);
 
         return [
             'moment' => 'projection',
-            'location' => 'default_site_coordinates',
+            'location' => $where['location'],
             'data' => $result,
         ];
     }
@@ -162,6 +175,10 @@ class ReadingSkyLookup
                 'datetime_utc' => $now->format('Y-m-d\TH:i:s\Z'),
                 'label' => 'now',
             ];
+        }
+
+        if ($moment === 'relations') {
+            return ['error' => 'relations_unknown'];
         }
 
         if ($moment === 'birth') {
@@ -184,6 +201,36 @@ class ReadingSkyLookup
         return [
             'datetime_utc' => $parsed->format('Y-m-d\TH:i:s\Z'),
             'label' => $parsed->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Birth charts use the birth place. Every other moment uses the residence when it is known.
+     *
+     * @return array{lat: float, lon: float, location: string}
+     */
+    public function chartCoordinates(string $momentLabel, ?User $user): array
+    {
+        if ($momentLabel === 'birth' && $user?->birth_latitude !== null && $user?->birth_longitude !== null) {
+            return [
+                'lat' => (float) $user->birth_latitude,
+                'lon' => (float) $user->birth_longitude,
+                'location' => 'birth_place',
+            ];
+        }
+
+        if ($momentLabel !== 'birth' && $user?->residence_latitude !== null && $user?->residence_longitude !== null) {
+            return [
+                'lat' => (float) $user->residence_latitude,
+                'lon' => (float) $user->residence_longitude,
+                'location' => 'residence',
+            ];
+        }
+
+        return [
+            'lat' => (float) config('ephemeris.default_lat'),
+            'lon' => (float) config('ephemeris.default_lon'),
+            'location' => 'default_site_coordinates',
         ];
     }
 
@@ -236,6 +283,8 @@ class ReadingSkyLookup
             'degree' => $body['degree'] ?? null,
             'house' => $body['house'] ?? null,
             'retrograde' => (bool) ($body['retrograde'] ?? false),
+            'polarity' => (string) ($body['polaritas_besorolas'] ?? ''),
+            'polarity_points' => $body['polaritas_pont'] ?? null,
             'fixed_star' => $body['fixed_star'] ?? null,
         ];
     }

@@ -216,8 +216,9 @@ class AppSettings
             'Ha kell adat, és ebben a fázisban még kérhetsz (nem kaptál még ADAT üzenetet, vagy a remaining_requests nagyobb, mint 0):',
             '{"status":"need_data","question_type":"...","spread_type":"...","requests":[...]}',
             'Ha megvan a válasz:',
-            '{"status":"answer","question_type":"...","spread_type":"...","text":"..."}',
+            '{"status":"answer","question_type":"...","spread_type":"...","text":"...","light_shadow":[{"slot":1,"row":1,"place":1,"value":"light"}]}',
             'A text mező a kész olvasat, az ALAPPROMPT szerint. Egy fázisban legfeljebb 3 adatkérés lehet. A harmadik adatkészlet után a következő válaszod status=answer.',
+            $this->lightShadowProtocol('hu'),
             'Egyszerre legfeljebb 4 kérés mehet. A kind értékei:',
             '1) chart — pillanatkép. moment: "now", "birth" vagy ISO idő. include: planets, signs, aspects, fixed_stars, houses közül a szükségesek.',
             'planets: bolygó, jegy, fok, ház, retrográd, közeli állócsillag. signs: bolygók jegye. aspects: fényszög két égitest között (conjunction, sextile, square, trine, quincunx, opposition). fixed_stars: állócsillagok helye. houses: házcsúcsok, bennük a bolygók és állócsillagok, és a kapott fényszögek.',
@@ -228,7 +229,7 @@ class AppSettings
             'Példa: {"id":"3","kind":"projection","body":"Mars","event":"aspect","aspect":"square","with":"Saturn","from":"2026-10-20T00:00:00Z","until":"2026-12-20T00:00:00Z"}',
             'Példa retrográdra: {"id":"4","kind":"projection","body":"Mercury","event":"retrograde","from":"2026-10-20T00:00:00Z","until":"2027-01-20T00:00:00Z"}',
             'A moment=birth csak akkor teljesül, ha a FELHASZNALO részben van születési idő. Ha egy kérés error mezővel jön vissza, ne találd ki a hiányzó eget: dolgozz abból, ami megérkezett.',
-            'A helyadatok az oldal alapértelmezett koordinátái, nem feltétlenül a születési hely. A házakat ennek tudatában használd.',
+            'A születési pillanat házai a születési hely koordinátáit használják, ha a FELHASZNALO részben van születési hely. A jelenlegi és egyéb pillanatok a tartózkodási helyet használják, ha az meg van adva. Ha nincs hely, az oldal alapértelmezett koordinátái érvényesek.',
             'Ne találj ki bolygóhelyzetet, fényszöget, állócsillagot vagy lapot, ami nincs a kapott adatokban.',
             'A pontosítás és a bővebb kifejtés nem új kérdés, hanem új FORDULO ugyanebben a párbeszédben. Azon belül újra kérhetsz adatot, ismét legfeljebb háromszor.',
         ]);
@@ -244,8 +245,9 @@ class AppSettings
             'If you need data, and this phase still allows it (no DATA message yet, or remaining_requests is greater than 0):',
             '{"status":"need_data","question_type":"...","spread_type":"...","requests":[...]}',
             'When the reading is ready:',
-            '{"status":"answer","question_type":"...","spread_type":"...","text":"..."}',
+            '{"status":"answer","question_type":"...","spread_type":"...","text":"...","light_shadow":[{"slot":1,"row":1,"place":1,"value":"light"}]}',
             'The text field is the finished reading, written by the BASE rules. One phase allows at most 3 data requests. After the third dataset your next reply must be status=answer.',
+            $this->lightShadowProtocol('en'),
             'Send at most 4 requests at once. kind values:',
             '1) chart — a snapshot. moment: "now", "birth", or an ISO time. include any of: planets, signs, aspects, fixed_stars, houses.',
             'planets: body, sign, degree, house, retrograde, nearby fixed star. signs: bodies in signs. aspects: angle between two bodies (conjunction, sextile, square, trine, quincunx, opposition). fixed_stars: star positions. houses: cusps, planets and fixed stars inside, and the aspects they receive.',
@@ -256,7 +258,7 @@ class AppSettings
             'Example: {"id":"3","kind":"projection","body":"Mars","event":"aspect","aspect":"square","with":"Saturn","from":"2026-10-20T00:00:00Z","until":"2026-12-20T00:00:00Z"}',
             'Retrograde example: {"id":"4","kind":"projection","body":"Mercury","event":"retrograde","from":"2026-10-20T00:00:00Z","until":"2027-01-20T00:00:00Z"}',
             'moment=birth works only when USER contains a birth time. If a request comes back with error, do not invent the missing sky: work from what arrived.',
-            'Location data uses the site default coordinates, not necessarily the birthplace. Treat houses with that in mind.',
+            'Birth-moment houses use the birth-place coordinates when USER contains a birth place. Current and other moments use the residence when it is given. Otherwise the site default coordinates apply.',
             'Do not invent a planet position, aspect, fixed star or card that is not in the supplied data.',
             'A clarification or a deeper expansion is not a new question. It is another TURN in the same dialogue, and that turn may request data again, at most three times.',
         ]);
@@ -304,6 +306,15 @@ class AppSettings
             'Do not invent names that contradict the provided data.',
             'Do not promise medical, legal, or financial certainty.',
         ]);
+    }
+
+    public function lightShadowProtocol(string $locale): string
+    {
+        if ($locale === 'en') {
+            return 'When a card in SPREAD_DATA says its light-shadow value must be decided from celestial data (light-shadow: yes), the displayable answer (status=answer) must include a light_shadow array. One item per such card: {"slot":1,"row":1,"place":1,"value":"light"}. slot is that card\'s 1-based number in the list. value is only "light" or "shadow". Decide from the sky data you received, not at random. Where the card says light-shadow: no, keep the given fate imprint and do not overwrite it. Do not put light_shadow on a need_data reply.';
+        }
+
+        return 'Ha egy lapnál a KIRAKAS azt írja, hogy a light-shadow értéket az égi adatok alapján kell meghatározni (light-shadow: igen), a megjeleníthető kész válasz (status=answer) JSON-jába tedd a light_shadow tömböt. Minden ilyen lap egy elem: {"slot":1,"row":1,"place":1,"value":"light"}. A slot a lap sorszáma a listában, 1-től. A value csak "light" vagy "shadow" lehet. A döntést a kapott égi adatokból hozd, ne véletlenszerűen. Ahol light-shadow: nem, a megadott sorslenyomatot használd, és ne írd felül. A need_data válaszba ne tegyél light_shadow mezőt.';
     }
 
     public function defaultTermsHu(): string

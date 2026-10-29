@@ -9,6 +9,8 @@ use App\Services\CreditService;
 use App\Services\FeatureAccessService;
 use App\Services\PackResolutionService;
 use App\Services\TarotReadingService;
+use App\Models\GameRule;
+use App\Support\CelestialOracleCatalog;
 use App\Support\FeatureCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,6 +62,9 @@ class ReadingController extends Controller
             'cards.*.blurb' => ['nullable', 'string', 'max:1200'],
             'cards.*.variant' => ['nullable', 'string', 'max:32'],
             'cards.*.polarity' => ['nullable', 'string', 'max:32'],
+            'cards.*.light_shadow_request' => ['nullable', 'boolean'],
+            'cards.*.celestial_helper' => ['nullable', 'string', 'max:32'],
+            'cards.*.celestial_polarity' => ['nullable', 'string', 'max:16'],
             'cards.*.deck' => ['nullable', 'string', 'max:64'],
             'cards.*.slot_title' => ['nullable', 'string', 'max:120'],
             'cards.*.info_mode' => ['nullable', 'string', 'max:32'],
@@ -157,6 +162,7 @@ class ReadingController extends Controller
             'source' => $source,
             'mode' => $mode,
             'session_id' => $result['session_id'] ?? null,
+            'light_shadow' => $result['light_shadow'] ?? [],
             'credits' => $balance,
         ]);
     }
@@ -175,7 +181,7 @@ class ReadingController extends Controller
         $rules = $game->rules->values();
 
         foreach ($cards as $index => $card) {
-            $rule = $rules->get($index);
+            $rule = $this->ruleForCard($rules, $card, $index);
             if ($rule === null) {
                 continue;
             }
@@ -189,8 +195,44 @@ class ReadingController extends Controller
                 $index,
                 (string) ($card['deck'] ?? ''),
             );
+            $mode = $rule->effectiveLightShadow($game);
+            $cards[$index]['light_shadow_mode'] = $mode;
+            $cards[$index]['light_shadow_request'] = $mode === GameRule::LIGHT_SHADOW_LLM;
+            $helper = (string) ($card['celestial_helper'] ?? '');
+            if (! CelestialOracleCatalog::known($helper)) {
+                $helper = '';
+            }
+            $sendHelper = (bool) $rule->send_celestial_helper
+                && (string) ($game->astro_data_mode ?: Game::ASTRO_DATA_NONE) !== Game::ASTRO_DATA_NONE
+                && $helper !== '';
+            $cards[$index]['celestial_helper'] = $sendHelper ? $helper : '';
+            $cards[$index]['include_celestial_helper'] = $sendHelper;
+            if ($sendHelper) {
+                $polarity = strtolower((string) ($card['celestial_polarity'] ?? ''));
+                $cards[$index]['celestial_polarity'] = in_array($polarity, ['shadow', 'negative', 'negatív'], true)
+                    ? 'shadow'
+                    : 'positive';
+            }
         }
 
         return array_values($cards);
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, \App\Models\GameRule>  $rules
+     * @param  array<string, mixed>  $card
+     */
+    private function ruleForCard($rules, array $card, int $index): ?\App\Models\GameRule
+    {
+        $row = (int) ($card['row'] ?? 0);
+        $place = (int) ($card['place'] ?? 0);
+        if ($row > 0 && $place > 0) {
+            $match = $rules->first(fn ($rule) => (int) $rule->row === $row && (int) $rule->place === $place);
+            if ($match !== null) {
+                return $match;
+            }
+        }
+
+        return $rules->get($index);
     }
 }

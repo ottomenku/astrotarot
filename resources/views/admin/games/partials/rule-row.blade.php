@@ -17,6 +17,8 @@
         $selectedPackId = is_array($match) ? (string) ($match['id'] ?? '') : '';
     }
     $selectedBackId = (string) ($rule['card_back_id'] ?? '');
+    $selectedHelper = (string) ($rule['celestial_helper'] ?? 'none');
+    $selectedLightShadow = (string) ($rule['light_shadow'] ?? 'none');
 @endphp
 <div class="rule-card" data-rule-row>
     <button type="button" class="admin-icon-btn is-red rule-remove" data-remove-rule title="{{ __('admin.games.remove_rule') }}" aria-label="{{ __('admin.games.remove_rule') }}">{!! \App\Support\AdminIcons::trash() !!}</button>
@@ -36,6 +38,50 @@
         <div class="field" data-lang="en">
             <label>{{ __('admin.games.slot_title_en') }}</label>
             <input name="rules[{{ $index }}][title_en]" value="{{ $rule['title_en'] ?? '' }}" required>
+        </div>
+    </div>
+    <div class="row">
+        <div class="field">
+            <label>{{ __('admin.games.celestial_helper') }}</label>
+            <select name="rules[{{ $index }}][celestial_helper]">
+                <option value="none" @selected($selectedHelper === 'none')>{{ __('admin.games.helper_none') }}</option>
+                <option value="random" @selected($selectedHelper === 'random')>{{ __('admin.games.helper_random') }}</option>
+                @foreach (\App\Support\CelestialOracleCatalog::all() as $oracle)
+                    <option value="{{ $oracle['id'] }}" @selected($selectedHelper === $oracle['id'])>{{ $oracle['hu'] }} / {{ $oracle['en'] }}</option>
+                @endforeach
+            </select>
+            <p class="muted">{{ __('admin.games.celestial_helper_hint') }}</p>
+        </div>
+        <div class="field">
+            <label>{{ __('admin.games.slot_light_shadow') }}</label>
+            <select name="rules[{{ $index }}][light_shadow]">
+                @foreach ([
+                    'none' => 'slot_light_none',
+                    'random' => 'slot_light_random',
+                    'random60' => 'slot_light_random60',
+                    'random70' => 'slot_light_random70',
+                    'astro' => 'slot_light_astro',
+                    'llm' => 'slot_light_llm',
+                ] as $value => $label)
+                    <option value="{{ $value }}" @selected($selectedLightShadow === $value)>{{ __('admin.games.'.$label) }}</option>
+                @endforeach
+            </select>
+            <p class="muted">{{ __('admin.games.slot_light_shadow_hint') }}</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="field">
+            <label>
+                <input type="checkbox" name="rules[{{ $index }}][show_celestial_helper]" value="1" @checked(! empty($rule['show_celestial_helper']))>
+                {{ __('admin.games.show_celestial_helper') }}
+            </label>
+        </div>
+        <div class="field">
+            <label>
+                <input type="checkbox" name="rules[{{ $index }}][send_celestial_helper]" value="1" @checked(! empty($rule['send_celestial_helper']))>
+                {{ __('admin.games.send_celestial_helper') }}
+            </label>
+            <p class="muted">{{ __('admin.games.send_celestial_helper_hint') }}</p>
         </div>
     </div>
     <div class="row">

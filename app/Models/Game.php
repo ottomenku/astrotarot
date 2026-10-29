@@ -10,6 +10,57 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Game extends Model
 {
+    public const LIGHT_SHADOW_FULL_ASTRO = 'full-astro';
+
+    public const LIGHT_SHADOW_ORACLE_ASTRO = 'oracle-astro';
+
+    public const LIGHT_SHADOW_FULL_RANDOM = 'full-random';
+
+    /** @var list<string> */
+    public const LIGHT_SHADOW_MODES = [
+        self::LIGHT_SHADOW_FULL_ASTRO,
+        self::LIGHT_SHADOW_ORACLE_ASTRO,
+        self::LIGHT_SHADOW_FULL_RANDOM,
+    ];
+
+    public const ASTRO_DATA_NONE = 'none';
+
+    public const ASTRO_DATA_NOW = 'now';
+
+    public const ASTRO_DATA_PERSONAL = 'personal';
+
+    public const ASTRO_DATA_RELATIONS = 'relations';
+
+    public const ASTRO_DATA_ASK = 'ask';
+
+    /** @var list<string> */
+    public const ASTRO_DATA_MODES = [
+        self::ASTRO_DATA_NONE,
+        self::ASTRO_DATA_NOW,
+        self::ASTRO_DATA_PERSONAL,
+        self::ASTRO_DATA_RELATIONS,
+        self::ASTRO_DATA_ASK,
+    ];
+
+    public const SPREAD_YES_NO = 'YES_NO';
+
+    public const SPREAD_TIMING = 'TIMING';
+
+    public const SPREAD_RELATIONSHIP = 'RELATIONSHIP';
+
+    public const SPREAD_DILEMMA = 'DILEMMA';
+
+    public const SPREAD_GENERAL = 'GENERAL';
+
+    /** @var list<string> */
+    public const SPREAD_TYPES = [
+        self::SPREAD_YES_NO,
+        self::SPREAD_TIMING,
+        self::SPREAD_RELATIONSHIP,
+        self::SPREAD_DILEMMA,
+        self::SPREAD_GENERAL,
+    ];
+
     /** @use HasFactory<GameFactory> */
     use HasFactory;
 
@@ -23,6 +74,9 @@ class Game extends Model
         'has_question',
         'prompt_hu',
         'prompt_en',
+        'light_shadow_mode',
+        'astro_data_mode',
+        'spread_types',
         'is_default',
         'is_active',
         'sort_order',
@@ -32,6 +86,7 @@ class Game extends Model
     {
         return [
             'has_question' => 'boolean',
+            'spread_types' => 'array',
             'is_default' => 'boolean',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
@@ -91,6 +146,21 @@ class Game extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderByDesc('is_default')->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function requestsCelestialLightShadow(?string $packType): bool
+    {
+        $mode = (string) ($this->light_shadow_mode ?: self::LIGHT_SHADOW_FULL_RANDOM);
+
+        if ($mode === self::LIGHT_SHADOW_FULL_ASTRO) {
+            return true;
+        }
+
+        if ($mode === self::LIGHT_SHADOW_ORACLE_ASTRO) {
+            return $packType === CardPack::TYPE_ORACLE;
+        }
+
+        return false;
     }
 
     public function makeDefault(): void

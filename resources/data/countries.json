@@ -1,0 +1,967 @@
+[
+    {
+        "code": "AF",
+        "hu": "Afganisztán",
+        "en": "Afghanistan"
+    },
+    {
+        "code": "AL",
+        "hu": "Albánia",
+        "en": "Albania"
+    },
+    {
+        "code": "DZ",
+        "hu": "Algéria",
+        "en": "Algeria"
+    },
+    {
+        "code": "US",
+        "hu": "Amerikai Egyesült Államok",
+        "en": "United States of America"
+    },
+    {
+        "code": "AD",
+        "hu": "Andorra",
+        "en": "Andorra"
+    },
+    {
+        "code": "AO",
+        "hu": "Angola",
+        "en": "Angola"
+    },
+    {
+        "code": "AG",
+        "hu": "Antigua és Barbuda",
+        "en": "Antigua and Barbuda"
+    },
+    {
+        "code": "AR",
+        "hu": "Argentína",
+        "en": "Argentina"
+    },
+    {
+        "code": "AU",
+        "hu": "Ausztrália",
+        "en": "Australia"
+    },
+    {
+        "code": "AT",
+        "hu": "Ausztria",
+        "en": "Austria"
+    },
+    {
+        "code": "AZ",
+        "hu": "Azerbajdzsán",
+        "en": "Azerbaijan"
+    },
+    {
+        "code": "BS",
+        "hu": "Bahama-szigetek",
+        "en": "Bahamas"
+    },
+    {
+        "code": "BH",
+        "hu": "Bahrein",
+        "en": "Bahrain"
+    },
+    {
+        "code": "BD",
+        "hu": "Banglades",
+        "en": "Bangladesh"
+    },
+    {
+        "code": "BB",
+        "hu": "Barbados",
+        "en": "Barbados"
+    },
+    {
+        "code": "BE",
+        "hu": "Belgium",
+        "en": "Belgium"
+    },
+    {
+        "code": "BZ",
+        "hu": "Belize",
+        "en": "Belize"
+    },
+    {
+        "code": "BJ",
+        "hu": "Benin",
+        "en": "Benin"
+    },
+    {
+        "code": "BT",
+        "hu": "Bhután",
+        "en": "Bhutan"
+    },
+    {
+        "code": "GW",
+        "hu": "Bissau-Guinea",
+        "en": "Guinea-Bissau"
+    },
+    {
+        "code": "BO",
+        "hu": "Bolívia",
+        "en": "Bolivia, Plurinational State of"
+    },
+    {
+        "code": "BA",
+        "hu": "Bosznia-Hercegovina",
+        "en": "Bosnia and Herzegovina"
+    },
+    {
+        "code": "BW",
+        "hu": "Botswana",
+        "en": "Botswana"
+    },
+    {
+        "code": "BR",
+        "hu": "Brazília",
+        "en": "Brazil"
+    },
+    {
+        "code": "BN",
+        "hu": "Brunei",
+        "en": "Brunei Darussalam"
+    },
+    {
+        "code": "BG",
+        "hu": "Bulgária",
+        "en": "Bulgaria"
+    },
+    {
+        "code": "BF",
+        "hu": "Burkina Faso",
+        "en": "Burkina Faso"
+    },
+    {
+        "code": "BI",
+        "hu": "Burundi",
+        "en": "Burundi"
+    },
+    {
+        "code": "CL",
+        "hu": "Chile",
+        "en": "Chile"
+    },
+    {
+        "code": "CY",
+        "hu": "Ciprus",
+        "en": "Cyprus"
+    },
+    {
+        "code": "KM",
+        "hu": "Comore-szigetek",
+        "en": "Comoros"
+    },
+    {
+        "code": "CR",
+        "hu": "Costa Rica",
+        "en": "Costa Rica"
+    },
+    {
+        "code": "TD",
+        "hu": "Csád",
+        "en": "Chad"
+    },
+    {
+        "code": "CZ",
+        "hu": "Csehország",
+        "en": "Czechia"
+    },
+    {
+        "code": "DK",
+        "hu": "Dánia",
+        "en": "Denmark"
+    },
+    {
+        "code": "ZA",
+        "hu": "Dél-afrikai Köztársaság",
+        "en": "South Africa"
+    },
+    {
+        "code": "SS",
+        "hu": "Dél-Szudán",
+        "en": "South Sudan"
+    },
+    {
+        "code": "KR",
+        "hu": "Dél-Korea (Koreai Köztársaság)",
+        "en": "Korea, Republic of"
+    },
+    {
+        "code": "DM",
+        "hu": "Dominikai Közösség",
+        "en": "Dominica"
+    },
+    {
+        "code": "DO",
+        "hu": "Dominikai Köztársaság",
+        "en": "Dominican Republic"
+    },
+    {
+        "code": "DJ",
+        "hu": "Dzsibuti",
+        "en": "Djibouti"
+    },
+    {
+        "code": "EC",
+        "hu": "Ecuador",
+        "en": "Ecuador"
+    },
+    {
+        "code": "GQ",
+        "hu": "Egyenlítői-Guinea",
+        "en": "Equatorial Guinea"
+    },
+    {
+        "code": "AE",
+        "hu": "Egyesült Arab Emírségek",
+        "en": "United Arab Emirates"
+    },
+    {
+        "code": "GB",
+        "hu": "Egyesült Királyság",
+        "en": "United Kingdom of Great Britain and Northern Ireland"
+    },
+    {
+        "code": "EG",
+        "hu": "Egyiptom",
+        "en": "Egypt"
+    },
+    {
+        "code": "CI",
+        "hu": "Elefántcsontpart",
+        "en": "Côte d'Ivoire"
+    },
+    {
+        "code": "SV",
+        "hu": "Salvador",
+        "en": "El Salvador"
+    },
+    {
+        "code": "ER",
+        "hu": "Eritrea",
+        "en": "Eritrea"
+    },
+    {
+        "code": "KP",
+        "hu": "Észak-Korea (Koreai NDK)",
+        "en": "Korea, Democratic People's Republic of"
+    },
+    {
+        "code": "EE",
+        "hu": "Észtország",
+        "en": "Estonia"
+    },
+    {
+        "code": "ET",
+        "hu": "Etiópia",
+        "en": "Ethiopia"
+    },
+    {
+        "code": "BY",
+        "hu": "Fehéroroszország",
+        "en": "Belarus"
+    },
+    {
+        "code": "FJ",
+        "hu": "Fidzsi",
+        "en": "Fiji"
+    },
+    {
+        "code": "FI",
+        "hu": "Finnország",
+        "en": "Finland"
+    },
+    {
+        "code": "FR",
+        "hu": "Franciaország",
+        "en": "France"
+    },
+    {
+        "code": "PH",
+        "hu": "Fülöp-szigetek",
+        "en": "Philippines"
+    },
+    {
+        "code": "GA",
+        "hu": "Gabon",
+        "en": "Gabon"
+    },
+    {
+        "code": "GM",
+        "hu": "Gambia",
+        "en": "Gambia"
+    },
+    {
+        "code": "GH",
+        "hu": "Ghána",
+        "en": "Ghana"
+    },
+    {
+        "code": "GR",
+        "hu": "Görögország",
+        "en": "Greece"
+    },
+    {
+        "code": "GD",
+        "hu": "Grenada",
+        "en": "Grenada"
+    },
+    {
+        "code": "GE",
+        "hu": "Grúzia",
+        "en": "Georgia"
+    },
+    {
+        "code": "GT",
+        "hu": "Guatemala",
+        "en": "Guatemala"
+    },
+    {
+        "code": "GN",
+        "hu": "Guinea",
+        "en": "Guinea"
+    },
+    {
+        "code": "GY",
+        "hu": "Guyana",
+        "en": "Guyana"
+    },
+    {
+        "code": "HT",
+        "hu": "Haiti",
+        "en": "Haiti"
+    },
+    {
+        "code": "NL",
+        "hu": "Hollandia",
+        "en": "Netherlands"
+    },
+    {
+        "code": "HN",
+        "hu": "Honduras",
+        "en": "Honduras"
+    },
+    {
+        "code": "HR",
+        "hu": "Horvátország",
+        "en": "Croatia"
+    },
+    {
+        "code": "IN",
+        "hu": "India",
+        "en": "India"
+    },
+    {
+        "code": "ID",
+        "hu": "Indonézia",
+        "en": "Indonesia"
+    },
+    {
+        "code": "IQ",
+        "hu": "Irak",
+        "en": "Iraq"
+    },
+    {
+        "code": "IR",
+        "hu": "Irán",
+        "en": "Iran, Islamic Republic of"
+    },
+    {
+        "code": "IE",
+        "hu": "Írország",
+        "en": "Ireland"
+    },
+    {
+        "code": "IS",
+        "hu": "Izland",
+        "en": "Iceland"
+    },
+    {
+        "code": "IL",
+        "hu": "Izrael",
+        "en": "Israel"
+    },
+    {
+        "code": "JM",
+        "hu": "Jamaica",
+        "en": "Jamaica"
+    },
+    {
+        "code": "JP",
+        "hu": "Japán",
+        "en": "Japan"
+    },
+    {
+        "code": "YE",
+        "hu": "Jemen",
+        "en": "Yemen"
+    },
+    {
+        "code": "JO",
+        "hu": "Jordánia",
+        "en": "Jordan"
+    },
+    {
+        "code": "KH",
+        "hu": "Kambodzsa",
+        "en": "Cambodia"
+    },
+    {
+        "code": "CM",
+        "hu": "Kamerun",
+        "en": "Cameroon"
+    },
+    {
+        "code": "CA",
+        "hu": "Kanada",
+        "en": "Canada"
+    },
+    {
+        "code": "QA",
+        "hu": "Katar",
+        "en": "Qatar"
+    },
+    {
+        "code": "KZ",
+        "hu": "Kazahsztán",
+        "en": "Kazakhstan"
+    },
+    {
+        "code": "TL",
+        "hu": "Kelet-Timor",
+        "en": "Timor-Leste"
+    },
+    {
+        "code": "KE",
+        "hu": "Kenya",
+        "en": "Kenya"
+    },
+    {
+        "code": "CN",
+        "hu": "Kína",
+        "en": "China"
+    },
+    {
+        "code": "KG",
+        "hu": "Kirgizisztán",
+        "en": "Kyrgyzstan"
+    },
+    {
+        "code": "KI",
+        "hu": "Kiribati",
+        "en": "Kiribati"
+    },
+    {
+        "code": "CO",
+        "hu": "Kolumbia",
+        "en": "Colombia"
+    },
+    {
+        "code": "CD",
+        "hu": "Kongói Demokratikus Köztársaság (Zaire)",
+        "en": "Congo, Democratic Republic of the"
+    },
+    {
+        "code": "CG",
+        "hu": "Kongói Köztársaság (Kongó)",
+        "en": "Congo"
+    },
+    {
+        "code": "CF",
+        "hu": "Közép-Afrika",
+        "en": "Central African Republic"
+    },
+    {
+        "code": "CU",
+        "hu": "Kuba",
+        "en": "Cuba"
+    },
+    {
+        "code": "KW",
+        "hu": "Kuvait",
+        "en": "Kuwait"
+    },
+    {
+        "code": "LA",
+        "hu": "Laosz",
+        "en": "Lao People's Democratic Republic"
+    },
+    {
+        "code": "PL",
+        "hu": "Lengyelország",
+        "en": "Poland"
+    },
+    {
+        "code": "LS",
+        "hu": "Lesotho",
+        "en": "Lesotho"
+    },
+    {
+        "code": "LV",
+        "hu": "Lettország",
+        "en": "Latvia"
+    },
+    {
+        "code": "LB",
+        "hu": "Libanon",
+        "en": "Lebanon"
+    },
+    {
+        "code": "LR",
+        "hu": "Libéria",
+        "en": "Liberia"
+    },
+    {
+        "code": "LY",
+        "hu": "Líbia",
+        "en": "Libya"
+    },
+    {
+        "code": "LI",
+        "hu": "Liechtenstein",
+        "en": "Liechtenstein"
+    },
+    {
+        "code": "LT",
+        "hu": "Litvánia",
+        "en": "Lithuania"
+    },
+    {
+        "code": "LU",
+        "hu": "Luxemburg",
+        "en": "Luxembourg"
+    },
+    {
+        "code": "MK",
+        "hu": "Észak-Macedónia",
+        "en": "North Macedonia"
+    },
+    {
+        "code": "MG",
+        "hu": "Madagaszkár",
+        "en": "Madagascar"
+    },
+    {
+        "code": "HU",
+        "hu": "Magyarország",
+        "en": "Hungary"
+    },
+    {
+        "code": "MY",
+        "hu": "Malajzia",
+        "en": "Malaysia"
+    },
+    {
+        "code": "MW",
+        "hu": "Malawi",
+        "en": "Malawi"
+    },
+    {
+        "code": "MV",
+        "hu": "Maldív-szigetek",
+        "en": "Maldives"
+    },
+    {
+        "code": "ML",
+        "hu": "Mali",
+        "en": "Mali"
+    },
+    {
+        "code": "MT",
+        "hu": "Málta",
+        "en": "Malta"
+    },
+    {
+        "code": "MA",
+        "hu": "Marokkó",
+        "en": "Morocco"
+    },
+    {
+        "code": "MH",
+        "hu": "Marshall-szigetek",
+        "en": "Marshall Islands"
+    },
+    {
+        "code": "MR",
+        "hu": "Mauritánia",
+        "en": "Mauritania"
+    },
+    {
+        "code": "MU",
+        "hu": "Mauritius",
+        "en": "Mauritius"
+    },
+    {
+        "code": "MX",
+        "hu": "Mexikó",
+        "en": "Mexico"
+    },
+    {
+        "code": "MM",
+        "hu": "Mianmar",
+        "en": "Myanmar"
+    },
+    {
+        "code": "FM",
+        "hu": "Mikronézia",
+        "en": "Micronesia, Federated States of"
+    },
+    {
+        "code": "MD",
+        "hu": "Moldova",
+        "en": "Moldova, Republic of"
+    },
+    {
+        "code": "MC",
+        "hu": "Monaco",
+        "en": "Monaco"
+    },
+    {
+        "code": "MN",
+        "hu": "Mongólia",
+        "en": "Mongolia"
+    },
+    {
+        "code": "ME",
+        "hu": "Montenegró",
+        "en": "Montenegro"
+    },
+    {
+        "code": "MZ",
+        "hu": "Mozambik",
+        "en": "Mozambique"
+    },
+    {
+        "code": "NA",
+        "hu": "Namíbia",
+        "en": "Namibia"
+    },
+    {
+        "code": "NR",
+        "hu": "Nauru",
+        "en": "Nauru"
+    },
+    {
+        "code": "DE",
+        "hu": "Németország",
+        "en": "Germany"
+    },
+    {
+        "code": "NP",
+        "hu": "Nepál",
+        "en": "Nepal"
+    },
+    {
+        "code": "NI",
+        "hu": "Nicaragua",
+        "en": "Nicaragua"
+    },
+    {
+        "code": "NE",
+        "hu": "Niger",
+        "en": "Niger"
+    },
+    {
+        "code": "NG",
+        "hu": "Nigéria",
+        "en": "Nigeria"
+    },
+    {
+        "code": "NO",
+        "hu": "Norvégia",
+        "en": "Norway"
+    },
+    {
+        "code": "IT",
+        "hu": "Olaszország",
+        "en": "Italy"
+    },
+    {
+        "code": "OM",
+        "hu": "Omán",
+        "en": "Oman"
+    },
+    {
+        "code": "RU",
+        "hu": "Oroszország",
+        "en": "Russian Federation"
+    },
+    {
+        "code": "AM",
+        "hu": "Örményország",
+        "en": "Armenia"
+    },
+    {
+        "code": "PK",
+        "hu": "Pakisztán",
+        "en": "Pakistan"
+    },
+    {
+        "code": "PW",
+        "hu": "Palau",
+        "en": "Palau"
+    },
+    {
+        "code": "PA",
+        "hu": "Panama",
+        "en": "Panama"
+    },
+    {
+        "code": "PG",
+        "hu": "Pápua Új-Guinea",
+        "en": "Papua New Guinea"
+    },
+    {
+        "code": "PY",
+        "hu": "Paraguay",
+        "en": "Paraguay"
+    },
+    {
+        "code": "PE",
+        "hu": "Peru",
+        "en": "Peru"
+    },
+    {
+        "code": "PT",
+        "hu": "Portugália",
+        "en": "Portugal"
+    },
+    {
+        "code": "RO",
+        "hu": "Románia",
+        "en": "Romania"
+    },
+    {
+        "code": "RW",
+        "hu": "Ruanda",
+        "en": "Rwanda"
+    },
+    {
+        "code": "KN",
+        "hu": "Saint Kitts és Nevis",
+        "en": "Saint Kitts and Nevis"
+    },
+    {
+        "code": "LC",
+        "hu": "Saint Lucia",
+        "en": "Saint Lucia"
+    },
+    {
+        "code": "VC",
+        "hu": "Saint Vincent és a Grenadine-szigetek",
+        "en": "Saint Vincent and the Grenadines"
+    },
+    {
+        "code": "SB",
+        "hu": "Salamon-szigetek",
+        "en": "Solomon Islands"
+    },
+    {
+        "code": "SM",
+        "hu": "San Marino",
+        "en": "San Marino"
+    },
+    {
+        "code": "ST",
+        "hu": "São Tomé és Príncipe",
+        "en": "Sao Tome and Principe"
+    },
+    {
+        "code": "SC",
+        "hu": "Seychelle-szigetek",
+        "en": "Seychelles"
+    },
+    {
+        "code": "SL",
+        "hu": "Sierra Leone",
+        "en": "Sierra Leone"
+    },
+    {
+        "code": "ES",
+        "hu": "Spanyolország",
+        "en": "Spain"
+    },
+    {
+        "code": "LK",
+        "hu": "Srí Lanka",
+        "en": "Sri Lanka"
+    },
+    {
+        "code": "SR",
+        "hu": "Suriname",
+        "en": "Suriname"
+    },
+    {
+        "code": "CH",
+        "hu": "Svájc",
+        "en": "Switzerland"
+    },
+    {
+        "code": "SE",
+        "hu": "Svédország",
+        "en": "Sweden"
+    },
+    {
+        "code": "WS",
+        "hu": "Szamoa",
+        "en": "Samoa"
+    },
+    {
+        "code": "SA",
+        "hu": "Szaúd-Arábia",
+        "en": "Saudi Arabia"
+    },
+    {
+        "code": "SN",
+        "hu": "Szenegál",
+        "en": "Senegal"
+    },
+    {
+        "code": "RS",
+        "hu": "Szerbia",
+        "en": "Serbia"
+    },
+    {
+        "code": "SG",
+        "hu": "Szingapúr",
+        "en": "Singapore"
+    },
+    {
+        "code": "SY",
+        "hu": "Szíria",
+        "en": "Syrian Arab Republic"
+    },
+    {
+        "code": "SK",
+        "hu": "Szlovákia",
+        "en": "Slovakia"
+    },
+    {
+        "code": "SI",
+        "hu": "Szlovénia",
+        "en": "Slovenia"
+    },
+    {
+        "code": "SO",
+        "hu": "Szomália",
+        "en": "Somalia"
+    },
+    {
+        "code": "SD",
+        "hu": "Szudán",
+        "en": "Sudan"
+    },
+    {
+        "code": "SZ",
+        "hu": "Szváziföld",
+        "en": "Eswatini"
+    },
+    {
+        "code": "TJ",
+        "hu": "Tádzsikisztán",
+        "en": "Tajikistan"
+    },
+    {
+        "code": "TZ",
+        "hu": "Tanzánia",
+        "en": "Tanzania, United Republic of"
+    },
+    {
+        "code": "TH",
+        "hu": "Thaiföld",
+        "en": "Thailand"
+    },
+    {
+        "code": "TG",
+        "hu": "Togo",
+        "en": "Togo"
+    },
+    {
+        "code": "TO",
+        "hu": "Tonga",
+        "en": "Tonga"
+    },
+    {
+        "code": "TR",
+        "hu": "Törökország",
+        "en": "Türkiye"
+    },
+    {
+        "code": "TT",
+        "hu": "Trinidad és Tobago",
+        "en": "Trinidad and Tobago"
+    },
+    {
+        "code": "TN",
+        "hu": "Tunézia",
+        "en": "Tunisia"
+    },
+    {
+        "code": "TV",
+        "hu": "Tuvalu",
+        "en": "Tuvalu"
+    },
+    {
+        "code": "TM",
+        "hu": "Türkmenisztán",
+        "en": "Turkmenistan"
+    },
+    {
+        "code": "UG",
+        "hu": "Uganda",
+        "en": "Uganda"
+    },
+    {
+        "code": "NZ",
+        "hu": "Új-Zéland",
+        "en": "New Zealand"
+    },
+    {
+        "code": "UA",
+        "hu": "Ukrajna",
+        "en": "Ukraine"
+    },
+    {
+        "code": "UY",
+        "hu": "Uruguay",
+        "en": "Uruguay"
+    },
+    {
+        "code": "UZ",
+        "hu": "Üzbegisztán",
+        "en": "Uzbekistan"
+    },
+    {
+        "code": "VU",
+        "hu": "Vanuatu",
+        "en": "Vanuatu"
+    },
+    {
+        "code": "VE",
+        "hu": "Venezuela",
+        "en": "Venezuela, Bolivarian Republic of"
+    },
+    {
+        "code": "VN",
+        "hu": "Vietnám",
+        "en": "Viet Nam"
+    },
+    {
+        "code": "ZM",
+        "hu": "Zambia",
+        "en": "Zambia"
+    },
+    {
+        "code": "ZW",
+        "hu": "Zimbabwe",
+        "en": "Zimbabwe"
+    },
+    {
+        "code": "CV",
+        "hu": "Zöld-foki Köztársaság",
+        "en": "Cabo Verde"
+    }
+]

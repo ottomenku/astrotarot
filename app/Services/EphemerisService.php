@@ -146,9 +146,10 @@ class EphemerisService
             $analysis = $this->scoring->analyze($records);
         } catch (Throwable $e) {
             Log::warning('Astro scoring failed', ['error' => $e->getMessage()]);
+            $data['objects'] = $objects;
             $data['scoring'] = null;
 
-            return $data;
+            return $this->attachPolarity($data, $records);
         }
 
         foreach ($analysis['records'] as $offset => $scored) {
@@ -184,7 +185,7 @@ class EphemerisService
             'model' => $analysis['model'],
         ];
 
-        return $data;
+        return $this->attachPolarity($data, $records);
     }
 
     private function clampDegree(float $degree): float
@@ -198,5 +199,150 @@ class EphemerisService
         }
 
         return $degree;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  list<array<string, mixed>>  $records
+     * @return array<string, mixed>
+     */
+    private function attachPolarity(array $data, array $records): array
+    {
+        $polarity = $this->scoring->polarity($records);
+        $byName = [];
+        foreach ($polarity['planets'] as $planet) {
+            $byName[$planet['name']] = $planet;
+        }
+
+        $objects = $data['objects'] ?? [];
+        foreach ($objects as $index => $object) {
+            if (! is_array($object)) {
+                continue;
+            }
+            $planet = $byName[$object['name'] ?? ''] ?? null;
+            if ($planet === null) {
+                continue;
+            }
+            $objects[$index]['polaritas_pont'] = $planet['total'];
+            $objects[$index]['polaritas_besorolas'] = $planet['class'];
+            $objects[$index]['polaritas_magyarazat'] = $this->explainPlanet($planet);
+        }
+        $data['objects'] = $objects;
+
+        $signs = [];
+        foreach ($polarity['signs'] as $sign) {
+            $signs[] = [
+                'kulcs' => $sign['sign_key'],
+                'nev' => $this->signLabel($sign['sign_key'], $sign['sign_name']),
+                'pont' => $sign['total'],
+                'besorolas' => $sign['class'],
+                'magyarazat' => $this->explainSign($sign),
+            ];
+        }
+
+        $scoring = is_array($data['scoring'] ?? null) ? $data['scoring'] : [];
+        $scoring['jegyek'] = $signs;
+        $scoring['fenyszogek'] = $polarity['aspects'];
+        $scoring['polaritas_osszesites'] = [
+            'bolygok' => [
+                'pont' => $polarity['summary']['planets']['total'],
+                'besorolas' => $polarity['summary']['planets']['class'],
+            ],
+            'jegyek' => [
+                'pont' => $polarity['summary']['signs']['total'],
+                'besorolas' => $polarity['summary']['signs']['class'],
+            ],
+        ];
+        $data['scoring'] = $scoring;
+
+        return $data;
+    }
+
+    /** @param  array<string, mixed>  $planet */
+    private function explainPlanet(array $planet): string
+    {
+        $parts = [
+            __('admin.ephemeris.polarity_planet_'.$planet['nature_key'], [
+                'points' => $this->signed((int) $planet['nature_points']),
+            ]),
+            __('admin.ephemeris.'.($planet['sign_positive'] ? 'polarity_sign_bonus_positive' : 'polarity_sign_bonus_negative'), [
+                'sign' => $this->signLabel((string) $planet['sign_key'], (string) $planet['sign_name']),
+                'points' => $this->signed((int) $planet['sign_points']),
+            ]),
+        ];
+
+        $aspects = $planet['aspects'] ?? [];
+        if ($aspects === []) {
+            $parts[] = __('admin.ephemeris.polarity_no_aspects');
+        } else {
+            foreach ($aspects as $aspect) {
+                $parts[] = __('admin.ephemeris.polarity_aspect', [
+                    'aspect' => __('admin.ephemeris.aspect_'.$aspect['kind']),
+                    'with' => $aspect['with'],
+                    'points' => $this->signed((int) $aspect['points']),
+                ]);
+            }
+        }
+
+        $parts[] = __('admin.ephemeris.polarity_total', [
+            'total' => $this->signed((int) $planet['total']),
+        ]);
+
+        return implode(' ', $parts);
+    }
+
+    /** @param  array<string, mixed>  $sign */
+    private function explainSign(array $sign): string
+    {
+        $parts = [
+            __('admin.ephemeris.'.($sign['positive'] ? 'polarity_sign_base_positive' : 'polarity_sign_base_negative'), [
+                'points' => $this->signed((int) $sign['base_points']),
+            ]),
+        ];
+
+        $planets = $sign['planets'] ?? [];
+        if ($planets === []) {
+            $parts[] = __('admin.ephemeris.polarity_sign_empty');
+        } else {
+            $list = [];
+            foreach ($planets as $planet) {
+                $list[] = $planet['name'].' '.$this->signed((int) $planet['points']);
+            }
+            $parts[] = __('admin.ephemeris.polarity_sign_planets', [
+                'list' => implode(', ', $list),
+            ]);
+        }
+
+        $parts[] = __('admin.ephemeris.polarity_total', [
+            'total' => $this->signed((int) $sign['total']),
+        ]);
+
+        return implode(' ', $parts);
+    }
+
+    private function signLabel(string $key, string $fallback): string
+    {
+        $labels = [
+            'kos' => ['hu' => 'Kos', 'en' => 'Aries'],
+            'bika' => ['hu' => 'Bika', 'en' => 'Taurus'],
+            'ikrek' => ['hu' => 'Ikrek', 'en' => 'Gemini'],
+            'rak' => ['hu' => 'Rák', 'en' => 'Cancer'],
+            'oroszlan' => ['hu' => 'Oroszlán', 'en' => 'Leo'],
+            'szuz' => ['hu' => 'Szűz', 'en' => 'Virgo'],
+            'merleg' => ['hu' => 'Mérleg', 'en' => 'Libra'],
+            'skorpio' => ['hu' => 'Skorpió', 'en' => 'Scorpio'],
+            'nyilas' => ['hu' => 'Nyilas', 'en' => 'Sagittarius'],
+            'bak' => ['hu' => 'Bak', 'en' => 'Capricorn'],
+            'vizonto' => ['hu' => 'Vízöntő', 'en' => 'Aquarius'],
+            'halak' => ['hu' => 'Halak', 'en' => 'Pisces'],
+        ];
+        $locale = app()->getLocale() === 'en' ? 'en' : 'hu';
+
+        return $labels[$key][$locale] ?? $fallback;
+    }
+
+    private function signed(int $value): string
+    {
+        return $value > 0 ? '+'.$value : (string) $value;
     }
 }

@@ -21,6 +21,28 @@ class GameRule extends Model
         self::INFO_NONE,
     ];
 
+    public const LIGHT_SHADOW_NONE = 'none';
+
+    public const LIGHT_SHADOW_RANDOM = 'random';
+
+    public const LIGHT_SHADOW_RANDOM60 = 'random60';
+
+    public const LIGHT_SHADOW_RANDOM70 = 'random70';
+
+    public const LIGHT_SHADOW_ASTRO = 'astro';
+
+    public const LIGHT_SHADOW_LLM = 'llm';
+
+    /** @var list<string> */
+    public const LIGHT_SHADOW_VALUES = [
+        self::LIGHT_SHADOW_NONE,
+        self::LIGHT_SHADOW_RANDOM,
+        self::LIGHT_SHADOW_RANDOM60,
+        self::LIGHT_SHADOW_RANDOM70,
+        self::LIGHT_SHADOW_ASTRO,
+        self::LIGHT_SHADOW_LLM,
+    ];
+
     protected $fillable = [
         'game_id',
         'pack_slug',
@@ -33,6 +55,10 @@ class GameRule extends Model
         'description_en',
         'card_back_id',
         'info_mode',
+        'celestial_helper',
+        'light_shadow',
+        'show_celestial_helper',
+        'send_celestial_helper',
         'row',
         'place',
         'draw_order',
@@ -41,10 +67,29 @@ class GameRule extends Model
     protected function casts(): array
     {
         return [
+            'show_celestial_helper' => 'boolean',
+            'send_celestial_helper' => 'boolean',
             'row' => 'integer',
             'place' => 'integer',
             'draw_order' => 'integer',
         ];
+    }
+
+    /**
+     * A stored slot value wins. An empty value keeps the older spread-level mode.
+     */
+    public function effectiveLightShadow(?Game $game): string
+    {
+        $mode = (string) ($this->light_shadow ?? '');
+        if (in_array($mode, self::LIGHT_SHADOW_VALUES, true)) {
+            return $mode;
+        }
+
+        if ($game !== null && $game->requestsCelestialLightShadow((string) $this->pack_type)) {
+            return self::LIGHT_SHADOW_LLM;
+        }
+
+        return self::LIGHT_SHADOW_RANDOM;
     }
 
     public function game(): BelongsTo

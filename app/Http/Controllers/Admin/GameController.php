@@ -7,6 +7,7 @@ use App\Models\CardPack;
 use App\Models\Game;
 use App\Models\GameRule;
 use App\Support\CardPackCatalog;
+use App\Support\CelestialOracleCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -74,6 +75,10 @@ class GameController extends Controller
                 'description_en' => $rule->description_en,
                 'card_back_id' => $rule->card_back_id,
                 'info_mode' => $rule->info_mode,
+                'celestial_helper' => $rule->celestial_helper ?: 'none',
+                'light_shadow' => $rule->light_shadow ?: $rule->effectiveLightShadow($game),
+                'show_celestial_helper' => (bool) $rule->show_celestial_helper,
+                'send_celestial_helper' => (bool) $rule->send_celestial_helper,
                 'row' => $rule->row,
                 'place' => $rule->place,
                 'draw_order' => $rule->draw_order,
@@ -168,6 +173,10 @@ class GameController extends Controller
             'description_en' => ['nullable', 'string', 'max:2000'],
             'icon' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'has_question' => ['sometimes', 'boolean'],
+            'light_shadow_mode' => ['nullable', 'string', Rule::in(Game::LIGHT_SHADOW_MODES)],
+            'astro_data_mode' => ['nullable', 'string', Rule::in(Game::ASTRO_DATA_MODES)],
+            'spread_types' => ['nullable', 'array'],
+            'spread_types.*' => ['string', Rule::in(Game::SPREAD_TYPES)],
             'prompt_hu' => ['nullable', 'string', 'max:20000'],
             'prompt_en' => ['nullable', 'string', 'max:20000'],
             'is_default' => ['sometimes', 'boolean'],
@@ -192,6 +201,10 @@ class GameController extends Controller
                 Rule::exists('card_packs', 'id')->where('type', CardPack::TYPE_CARD_BACK),
             ],
             'rules.*.info_mode' => ['nullable', 'string', Rule::in(GameRule::INFO_MODES)],
+            'rules.*.celestial_helper' => ['nullable', 'string', Rule::in(CelestialOracleCatalog::choices())],
+            'rules.*.light_shadow' => ['nullable', 'string', Rule::in(GameRule::LIGHT_SHADOW_VALUES)],
+            'rules.*.show_celestial_helper' => ['sometimes', 'boolean'],
+            'rules.*.send_celestial_helper' => ['sometimes', 'boolean'],
             'rules.*.row' => ['required', 'integer', 'min:1', 'max:12'],
             'rules.*.place' => ['required', 'integer', 'min:1', 'max:7'],
             'rules.*.draw_order' => ['nullable', 'integer', 'min:1', 'max:49'],
@@ -205,6 +218,20 @@ class GameController extends Controller
             $data['slug'] = 'jatek-'.Str::lower(Str::random(6));
         }
         $data['has_question'] = $request->boolean('has_question');
+        $lightShadowMode = (string) ($data['light_shadow_mode'] ?? '');
+        $data['light_shadow_mode'] = in_array($lightShadowMode, Game::LIGHT_SHADOW_MODES, true)
+            ? $lightShadowMode
+            : Game::LIGHT_SHADOW_FULL_RANDOM;
+        $astroDataMode = (string) ($data['astro_data_mode'] ?? '');
+        $data['astro_data_mode'] = in_array($astroDataMode, Game::ASTRO_DATA_MODES, true)
+            ? $astroDataMode
+            : Game::ASTRO_DATA_NONE;
+        $spreadTypes = array_values(array_unique(array_map('strval', $data['spread_types'] ?? [])));
+        $spreadTypes = array_values(array_filter(
+            $spreadTypes,
+            fn (string $type): bool => in_array($type, Game::SPREAD_TYPES, true),
+        ));
+        $data['spread_types'] = $spreadTypes === [] ? null : $spreadTypes;
         $data['is_default'] = $request->boolean('is_default');
         $data['is_active'] = $request->boolean('is_active');
         $data['prompt_hu'] = (string) ($data['prompt_hu'] ?? '');
@@ -369,6 +396,12 @@ class GameController extends Controller
 
         $backId = (int) ($rule['card_back_id'] ?? 0);
         $slotKey = trim((string) ($rule['slot_key'] ?? ''));
+        $helper = (string) ($rule['celestial_helper'] ?? '');
+        if (! in_array($helper, CelestialOracleCatalog::choices(), true)) {
+            $helper = 'none';
+        }
+        $lightShadow = (string) ($rule['light_shadow'] ?? '');
+        $lightShadow = in_array($lightShadow, GameRule::LIGHT_SHADOW_VALUES, true) ? $lightShadow : null;
 
         return [
             'pack_slug' => $slug,
@@ -381,6 +414,10 @@ class GameController extends Controller
             'description_en' => trim((string) ($rule['description_en'] ?? '')) ?: null,
             'card_back_id' => $backId > 0 ? $backId : null,
             'info_mode' => $infoMode,
+            'celestial_helper' => $helper,
+            'light_shadow' => $lightShadow,
+            'show_celestial_helper' => filter_var($rule['show_celestial_helper'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'send_celestial_helper' => filter_var($rule['send_celestial_helper'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'row' => (int) $rule['row'],
             'place' => (int) $rule['place'],
             'draw_order' => (int) $rule['draw_order'],

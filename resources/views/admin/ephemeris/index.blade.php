@@ -37,6 +37,9 @@
                     <input id="lon" type="number" step="any" name="lon" value="{{ old('lon', $input['lon']) }}" required>
                 </div>
                 <div class="field">
+                    <p style="margin:.4rem 0 0">{{ __('admin.ephemeris.coordinates_place', ['place' => $locationLabel]) }}</p>
+                </div>
+                <div class="field">
                     <label for="sidereal">{{ __('admin.ephemeris.sidereal') }}</label>
                     <select id="sidereal" name="sidereal">
                         <option value="0" @selected(! $input['sidereal'])>Tropical</option>
@@ -55,70 +58,31 @@
         @endif
 
         @if ($result)
-            @if (! empty($result['scoring']['summary']))
-                @php
-                    $summary = $result['scoring']['summary'];
-                    $summaryClean = $result['scoring']['summary_clean'] ?? null;
-                    $tarotPositions = $result['scoring']['tarot_helyek']['positions'] ?? null;
-                @endphp
+            @php
+                $scoring = is_array($result['scoring'] ?? null) ? $result['scoring'] : [];
+                $signScores = $scoring['jegyek'] ?? null;
+                $aspectRows = is_array($scoring['fenyszogek'] ?? null) ? $scoring['fenyszogek'] : [];
+                $polaritySummary = is_array($scoring['polaritas_osszesites'] ?? null) ? $scoring['polaritas_osszesites'] : null;
+            @endphp
+
+            @if (is_array($polaritySummary))
                 <section style="margin-bottom:1.25rem">
                     <h2 style="font-size:1.1rem;margin-bottom:.75rem">{{ __('admin.ephemeris.summary') }}</h2>
                     <div class="row">
-                        <div class="field">
-                            <strong>{{ __('admin.ephemeris.element_dominance') }}</strong><br>
-                            {{ $summary['elem_dominancia']['nev'] ?? '—' }}
-                            ({{ $summary['elem_dominancia']['ertek'] ?? '—' }})
-                        </div>
-                        <div class="field">
-                            <strong>{{ __('admin.ephemeris.modality_dominance') }}</strong><br>
-                            {{ $summary['minoseg_dominancia']['nev'] ?? '—' }}
-                            ({{ $summary['minoseg_dominancia']['ertek'] ?? '—' }})
-                        </div>
-                        <div class="field">
-                            <strong>{{ __('admin.ephemeris.tone_summary') }}</strong><br>
-                            {{ $summary['pozitiv_negativ']['nev'] ?? '—' }}
-                            ({{ __('admin.ephemeris.tone_net') }}: {{ $summary['pozitiv_negativ']['netto_ertek'] ?? '—' }})
-                        </div>
+                        @foreach (['bolygok' => 'summary_planets', 'jegyek' => 'summary_signs'] as $key => $label)
+                            @php
+                                $row = is_array($polaritySummary[$key] ?? null) ? $polaritySummary[$key] : ['pont' => 0, 'besorolas' => 'positive'];
+                                $points = (int) ($row['pont'] ?? 0);
+                                $class = ($row['besorolas'] ?? 'positive') === 'negative' ? 'negative' : 'positive';
+                            @endphp
+                            <div class="field">
+                                <strong>{{ __('admin.ephemeris.'.$label) }}</strong><br>
+                                {{ $points > 0 ? '+' : '' }}{{ $points }}
+                                · {{ __('admin.ephemeris.polarity_'.$class) }}
+                            </div>
+                        @endforeach
                     </div>
                 </section>
-
-                @if ($summaryClean)
-                    <section style="margin-bottom:1.25rem">
-                        <h2 style="font-size:1.1rem;margin-bottom:.75rem">{{ __('admin.ephemeris.summary_clean') }}</h2>
-                        <div class="row">
-                            <div class="field">
-                                <strong>{{ __('admin.ephemeris.element_dominance') }}</strong><br>
-                                {{ $summaryClean['elem_dominancia']['nev'] ?? '—' }}
-                                ({{ $summaryClean['elem_dominancia']['ertek'] ?? '—' }})
-                            </div>
-                            <div class="field">
-                                <strong>{{ __('admin.ephemeris.modality_dominance') }}</strong><br>
-                                {{ $summaryClean['minoseg_dominancia']['nev'] ?? '—' }}
-                                ({{ $summaryClean['minoseg_dominancia']['ertek'] ?? '—' }})
-                            </div>
-                            <div class="field">
-                                <strong>{{ __('admin.ephemeris.tone_summary') }}</strong><br>
-                                {{ $summaryClean['pozitiv_negativ']['nev'] ?? '—' }}
-                                ({{ __('admin.ephemeris.tone_net') }}: {{ $summaryClean['pozitiv_negativ']['netto_ertek'] ?? '—' }})
-                            </div>
-                        </div>
-                    </section>
-                @endif
-
-                @if (is_array($tarotPositions) && $tarotPositions !== [])
-                    <section style="margin-bottom:1.25rem">
-                        <h2 style="font-size:1.1rem;margin-bottom:.75rem">{{ __('admin.ephemeris.tarot_slots') }}</h2>
-                        <div class="row">
-                            @foreach ($tarotPositions as $position)
-                                <div class="field" title="{{ $position['magyarazat'] ?? '' }}">
-                                    <strong>{{ $position['hely'] ?? '—' }}. {{ $position['nev'] ?? '' }}</strong><br>
-                                    {{ $position['besorolas'] ?? '—' }}
-                                    ({{ $position['ertek'] ?? '—' }})
-                                </div>
-                            @endforeach
-                        </div>
-                    </section>
-                @endif
             @endif
 
             <table>
@@ -127,39 +91,31 @@
                         <th>{{ __('admin.ephemeris.object') }}</th>
                         <th>{{ __('admin.ephemeris.sign') }}</th>
                         <th>{{ __('admin.ephemeris.degree') }}</th>
+                        <th>{{ __('admin.ephemeris.house') }}</th>
                         <th>{{ __('admin.ephemeris.fixed_star') }}</th>
-                        <th>{{ __('admin.ephemeris.element') }}</th>
-                        <th>{{ __('admin.ephemeris.modality') }}</th>
-                        <th>{{ __('admin.ephemeris.sign_polarity') }}</th>
                         <th>{{ __('admin.ephemeris.tone') }}</th>
+                        <th>{{ __('admin.ephemeris.explanation') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($result['objects'] as $object)
-                        <tr title="{{ $object['magyarazat'] ?? '' }}">
+                        <tr>
                             <td>{{ $object['name'] }}</td>
                             <td>{{ $object['sign'] }}</td>
                             <td>{{ number_format((float) $object['degree'], 4) }}°</td>
+                            <td>{{ isset($object['house']) ? (int) $object['house'] : '—' }}</td>
                             <td>{{ $object['fixed_star'] ?? '—' }}</td>
                             <td>
-                                @if (isset($object['elem']))
-                                    {{ $object['elem'] }} ({{ number_format((float) $object['elem_ertek'], 2) }})
+                                @if (isset($object['polaritas_pont']))
+                                    {{ (int) $object['polaritas_pont'] > 0 ? '+' : '' }}{{ (int) $object['polaritas_pont'] }}
+                                    · {{ __('admin.ephemeris.polarity_'.(($object['polaritas_besorolas'] ?? 'positive') === 'negative' ? 'negative' : 'positive')) }}
                                 @else
                                     —
                                 @endif
                             </td>
                             <td>
-                                @if (isset($object['minoseg']))
-                                    {{ $object['minoseg'] }} ({{ number_format((float) $object['minoseg_ertek'], 2) }})
-                                @else
-                                    —
-                                @endif
-                            </td>
-                            <td>{{ $object['jegy_polaritas'] ?? '—' }}</td>
-                            <td>
-                                @if (isset($object['pozitiv_negativ_besorolas']))
-                                    {{ $object['pozitiv_negativ_besorolas'] }}
-                                    ({{ number_format((float) $object['pozitiv_negativ_ertek'], 2) }})
+                                @if (! empty($object['polaritas_magyarazat']))
+                                    <textarea readonly rows="3" style="width:100%;min-width:16rem;box-sizing:border-box">{{ $object['polaritas_magyarazat'] }}</textarea>
                                 @else
                                     —
                                 @endif
@@ -168,6 +124,66 @@
                     @endforeach
                 </tbody>
             </table>
+
+            <h2 style="font-size:1.1rem;margin:1.25rem 0 .75rem">{{ __('admin.ephemeris.aspects') }}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>{{ __('admin.ephemeris.object') }}</th>
+                        <th>{{ __('admin.ephemeris.aspects') }}</th>
+                        <th>{{ __('admin.ephemeris.object') }}</th>
+                        <th>{{ __('admin.ephemeris.tone') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($aspectRows as $aspect)
+                        @php
+                            $aspectPoints = (int) ($aspect['points'] ?? 0);
+                            $aspectClass = $aspectPoints < 0 ? 'negative' : 'positive';
+                        @endphp
+                        <tr>
+                            <td>{{ $aspect['left'] ?? '—' }}</td>
+                            <td>{{ __('admin.ephemeris.aspect_'.($aspect['kind'] ?? 'conjunction')) }}</td>
+                            <td>{{ $aspect['right'] ?? '—' }}</td>
+                            <td>
+                                {{ $aspectPoints > 0 ? '+' : '' }}{{ $aspectPoints }}
+                                · {{ __('admin.ephemeris.polarity_'.$aspectClass) }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4">{{ __('admin.ephemeris.polarity_no_aspects') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            @if (is_array($signScores) && $signScores !== [])
+                <h2 style="font-size:1.1rem;margin:1.25rem 0 .75rem">{{ __('admin.ephemeris.signs') }}</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{{ __('admin.ephemeris.sign') }}</th>
+                            <th>{{ __('admin.ephemeris.tone') }}</th>
+                            <th>{{ __('admin.ephemeris.explanation') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($signScores as $sign)
+                            <tr>
+                                <td>{{ $sign['nev'] ?? '—' }}</td>
+                                <td>
+                                    {{ (int) ($sign['pont'] ?? 0) > 0 ? '+' : '' }}{{ (int) ($sign['pont'] ?? 0) }}
+                                    · {{ __('admin.ephemeris.polarity_'.(($sign['besorolas'] ?? 'positive') === 'negative' ? 'negative' : 'positive')) }}
+                                </td>
+                                <td>
+                                    <textarea readonly rows="3" style="width:100%;min-width:16rem;box-sizing:border-box">{{ $sign['magyarazat'] ?? '' }}</textarea>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
         @endif
     </main>
 @endsection
