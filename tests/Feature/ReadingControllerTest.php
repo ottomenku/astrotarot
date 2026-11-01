@@ -126,11 +126,111 @@ class ReadingControllerTest extends TestCase
         $this->assertStringContainsString('1. sor 1. lap', $log->user_prompt);
         $this->assertStringContainsString('1. sor 2. lap', $log->user_prompt);
         $this->assertStringContainsString('asztrológiai adat:', $log->user_prompt);
-        $this->assertStringContainsString('elem: tűz', $log->user_prompt);
-        $this->assertStringContainsString('minőség: szilárd', $log->user_prompt);
+        $this->assertStringContainsString('katalógus: tudást kereső ember', $log->user_prompt);
+        $this->assertStringContainsString('Ebben a körben asztrológiai képlet nincs.', $log->user_prompt);
+        $this->assertStringNotContainsString('elem: tűz', $log->user_prompt);
+        $this->assertStringNotContainsString('minőség: szilárd', $log->user_prompt);
         $this->assertStringContainsString('need_data', $log->system_prompt);
         $this->assertStringContainsString('10–12 mondat', $log->user_prompt);
         $this->assertNotEmpty($response->json('session_id'));
+    }
+
+    public function test_openai_agent_keeps_the_standing_prompt_and_sends_the_cards(): void
+    {
+        config([
+            'services.openai.use_agent' => true,
+            'services.openai.api_key' => 'test-key',
+            'services.openai.base_url' => 'https://api.openai.com/v1',
+            'services.openai.agent_model' => 'gpt-5.4-mini',
+            'services.openai.driver' => 'openai',
+            'services.openai.timeout' => 5,
+        ]);
+
+        $game = Game::query()->where('slug', 'astro-tarot')->firstOrFail();
+        $follow = false;
+        $seen = [];
+
+        Http::preventStrayRequests();
+        Http::fake(function ($request) use (&$seen, &$follow) {
+            $path = (string) parse_url($request->url(), PHP_URL_PATH);
+            $seen[] = ['method' => $request->method(), 'path' => $path, 'data' => $request->data()];
+
+            if (str_ends_with($path, '/events')) {
+                $follow = true;
+
+                return Http::response(['ok' => true], 202);
+            }
+            if (str_contains($path, '/items')) {
+                return Http::response([
+                    'data' => [[
+                        'id' => $follow ? 'msg_follow' : 'msg_first',
+                        'role' => 'assistant',
+                        'content' => [[
+                            'type' => 'output_text',
+                            'text' => $follow ? 'Pontosítás kész.' : 'Első olvasat.',
+                        ]],
+                    ]],
+                ]);
+            }
+            if (str_contains($path, '/agents/sessions/')) {
+                return Http::response(['id' => 'sess_test', 'status' => 'idle']);
+            }
+            if ($path === '/v1/agents/sessions') {
+                return Http::response(['id' => 'sess_test', 'status' => 'in_progress'], 201);
+            }
+            if ($path === '/v1/agents') {
+                return Http::response(['id' => 'agent_test'], 201);
+            }
+
+            return Http::response(['error' => ['message' => 'unexpected '.$path]], 500);
+        });
+
+        $first = $this->postJson(route('reading'), $this->validPayload([
+            'game_id' => $game->id,
+        ]));
+
+        $first->assertOk()
+            ->assertJsonPath('reading', 'Első olvasat.')
+            ->assertJsonPath('source.model', 'gpt-5.4-mini');
+
+        $created = collect($seen)->first(fn ($call) => $call['path'] === '/v1/agents' && $call['method'] === 'POST');
+        $opened = collect($seen)->first(fn ($call) => $call['path'] === '/v1/agents/sessions');
+        $this->assertIsArray($created);
+        $this->assertStringContainsString('10–12 mondat', (string) $created['data']['instructions']);
+        $this->assertStringContainsString('need_data', (string) $created['data']['instructions']);
+        $this->assertStringContainsString('keresd a neten', (string) $created['data']['instructions']);
+        $this->assertSame('web_search', $created['data']['tools'][0]['type']);
+        $this->assertCount(1, $created['data']['tools']);
+        $this->assertIsArray($opened);
+        $this->assertStringContainsString('Mars', (string) $opened['data']['input']);
+        $this->assertStringContainsString('Húzott lapok:', (string) $opened['data']['input']);
+        $this->assertStringContainsString('katalógus: tudást kereső ember', (string) $opened['data']['input']);
+        $this->assertStringContainsString('Ebben a körben asztrológiai képlet nincs.', (string) $opened['data']['input']);
+        $this->assertStringNotContainsString('positions:', (string) $opened['data']['input']);
+        $this->assertStringContainsString('Mit tegyek most a kapcsolatommal?', (string) $opened['data']['input']);
+        $this->assertStringNotContainsString('10–12 mondat', (string) $opened['data']['input']);
+        $this->assertStringContainsString($game->prompt('hu'), (string) data_get($opened, 'data.agent.instructions'));
+        $this->assertStringContainsString($game->prompt('hu'), (string) $opened['data']['input']);
+
+        $log = ReadingLog::query()->first();
+        $this->assertStringNotContainsString('10–12 mondat', (string) $log->user_prompt);
+        $this->assertStringContainsString('Mars', (string) $log->user_prompt);
+
+        $seen = [];
+        $this->postJson(route('reading'), $this->validPayload([
+            'game_id' => $game->id,
+            'mode' => 'clarify',
+            'session_id' => $first->json('session_id'),
+            'follow_up' => 'Mit jelent ez pontosan?',
+            'previous_reading' => 'Első olvasat.',
+        ]))->assertOk()->assertJsonPath('reading', 'Pontosítás kész.');
+
+        $event = collect($seen)->first(fn ($call) => str_ends_with($call['path'], '/events'));
+        $this->assertIsArray($event);
+        $sent = json_encode($event['data'], JSON_UNESCAPED_UNICODE);
+        $this->assertStringContainsString('Mit jelent ez pontosan?', $sent);
+        $this->assertStringNotContainsString('Húzott lapok:', $sent);
+        $this->assertStringNotContainsString('10–12 mondat', $sent);
     }
 
     public function test_reading_sends_game_prompt_places_and_moment_scoring(): void
@@ -170,28 +270,15 @@ class ReadingControllerTest extends TestCase
         $this->assertStringContainsString('1. sor 2. lap — Tarot figura', $log->user_prompt);
         $this->assertStringContainsString('asztrológiai adat:', $log->user_prompt);
         $this->assertStringContainsString('jelentés:', $log->user_prompt);
-        $this->assertStringContainsString('Asztrológiai adat: nincs. Ne kérj égi adatot.', $log->user_prompt);
+        $this->assertStringContainsString('katalógus: tudást kereső ember', $log->user_prompt);
+        $this->assertStringContainsString('Ebben a körben asztrológiai képlet nincs.', $log->user_prompt);
+        $this->assertStringNotContainsString('positions:', $log->user_prompt);
         $this->assertStringNotContainsString('elem: tűz (11.5)', $log->user_prompt);
         $this->assertStringNotContainsString('Most írd meg az olvasatot', $log->user_prompt);
     }
 
     public function test_spread_settings_add_types_sky_data_and_the_celestial_helper(): void
     {
-        $this->mock(\App\Services\ReadingSkyLookup::class, function ($mock) {
-            $mock->shouldReceive('fulfill')->once()->andReturn([[
-                'id' => 'now',
-                'datetime_utc' => '2026-10-29T12:00:00Z',
-                'data' => [
-                    'planets' => [[
-                        'name' => 'Mars',
-                        'sign' => 'Scorpio',
-                        'degree' => 12,
-                        'house' => 8,
-                        'polarity' => 'negative',
-                    ]],
-                ],
-            ]]);
-        });
         $this->fakeOpenAi('A segítő Mars.');
 
         $game = Game::query()->where('slug', 'astro-tarot')->firstOrFail();
@@ -215,10 +302,11 @@ class ReadingControllerTest extends TestCase
 
         $log = ReadingLog::query()->first();
         $this->assertStringContainsString('Beállított kirakás típusok: YES_NO, TIMING', $log->user_prompt);
-        $this->assertStringContainsString('Képlet now 2026-10-29T12:00:00Z', $log->user_prompt);
-        $this->assertStringContainsString('Mars Scorpio 12° h8 negative', $log->user_prompt);
+        $this->assertStringContainsString('Ebben a körben asztrológiai képlet nincs.', $log->user_prompt);
+        $this->assertStringNotContainsString('positions:', $log->user_prompt);
+        $this->assertStringContainsString($game->prompt('hu'), $log->user_prompt);
         $this->assertStringContainsString('égi segítő: Mars (mars), polaritás shadow', $log->user_prompt);
-        $this->assertStringContainsString('elem: tűz', $log->user_prompt);
+        $this->assertStringNotContainsString('elem: tűz', $log->user_prompt);
         $this->assertMatchesRegularExpression('/lap sorszám: 1[\s\S]*light-shadow: nem/', $log->user_prompt);
     }
 
@@ -510,9 +598,9 @@ class ReadingControllerTest extends TestCase
                 ->push([
                     'choices' => [[
                         'message' => ['content' => json_encode([
-                            'status' => 'need_data',
-                            'question_type' => 'kapcsolat',
-                            'spread_type' => 'döntés',
+                            'status' => 'answer',
+                            'text' => 'Előzetes olvasat.',
+                            'need' => 'birth',
                             'requests' => [[
                                 'id' => '1',
                                 'kind' => 'chart',
@@ -547,16 +635,42 @@ class ReadingControllerTest extends TestCase
         $first = $this->actingAs($user)->postJson(route('reading'), $this->validPayload());
 
         $first->assertOk()
-            ->assertJsonPath('reading', 'A születési idő után ez a kész olvasat.');
+            ->assertJsonPath('reading', 'Előzetes olvasat.')
+            ->assertJsonPath('need', 'birth');
 
         $log = ReadingLog::query()->first();
         $this->assertStringContainsString('Kertész vagyok.', $log->user_prompt);
         $this->assertStringContainsString('Születési idő (Europe/Budapest):', $log->user_prompt);
         $this->assertStringContainsString('Nem: nő', $log->user_prompt);
-        $this->assertSame(2, \App\Models\ReadingTurn::query()->where('role', 'assistant')->count());
-        $this->assertSame(1, \App\Models\ReadingTurn::query()->where('kind', 'data')->count());
+        $this->assertSame(1, \App\Models\ReadingTurn::query()->where('role', 'assistant')->count());
+        $this->assertSame(0, \App\Models\ReadingTurn::query()->where('kind', 'data')->count());
 
         $sessionId = $first->json('session_id');
+
+        $this->mock(\App\Services\ReadingSkyLookup::class, function ($mock) {
+            $mock->shouldReceive('chartCoordinates')->andReturn([
+                'lat' => 47.4979,
+                'lon' => 19.0402,
+                'location' => 'default_site_coordinates',
+            ]);
+            $mock->shouldReceive('chartLines')->once()->andReturn([
+                'positions' => 'Sun,Leo,1.0,5,N',
+                'aspects' => '',
+            ]);
+            $mock->shouldReceive('fulfill')->andReturn([]);
+        });
+
+        $refined = $this->actingAs($user)->postJson(route('reading'), $this->validPayload([
+            'mode' => 'refine',
+            'session_id' => $sessionId,
+            'refine' => [
+                'need' => 'birth',
+                'birth_at' => '1990-05-01 12:30:00',
+            ],
+        ]));
+        $refined->assertOk()
+            ->assertJsonPath('reading', 'A születési idő után ez a kész olvasat.');
+        $this->assertStringContainsString('positions: Sun,Leo,1.0,5,N', ReadingLog::query()->latest('id')->first()->user_prompt);
 
         $follow = $this->actingAs($user)->postJson(route('reading'), $this->validPayload([
             'mode' => 'clarify',

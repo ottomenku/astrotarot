@@ -11,7 +11,8 @@ class ReadingReplyParser
      *   requests: list<array<string, mixed>>,
      *   question_type: ?string,
      *   spread_type: ?string,
-     *   light_shadow: list<array{slot?: int, row?: int, place?: int, value: string}>
+     *   light_shadow: list<array{slot?: int, row?: int, place?: int, value: string}>,
+     *   need: ?string
      * }
      */
     public function parse(string $raw): array
@@ -36,7 +37,8 @@ class ReadingReplyParser
                     'requests' => $requests,
                     'question_type' => $questionType,
                     'spread_type' => $spreadType,
-                    'light_shadow' => [],
+                    'light_shadow' => $this->lightShadow($json['light_shadow'] ?? []),
+                    'need' => $this->needValue($json, $requests),
                 ];
             }
         }
@@ -46,7 +48,16 @@ class ReadingReplyParser
             $text = $trimmed;
         }
 
-        return $this->answer($text, $questionType, $spreadType, $this->lightShadow($json['light_shadow'] ?? []));
+        $requests = $this->requests($json['requests'] ?? []);
+
+        return $this->answer(
+            $text,
+            $questionType,
+            $spreadType,
+            $this->lightShadow($json['light_shadow'] ?? []),
+            $this->needValue($json, $requests),
+            $requests,
+        );
     }
 
     /**
@@ -132,19 +143,60 @@ class ReadingReplyParser
      *   requests: list<array<string, mixed>>,
      *   question_type: ?string,
      *   spread_type: ?string,
-     *   light_shadow: list<array{slot?: int, row?: int, place?: int, value: string}>
+     *   light_shadow: list<array{slot?: int, row?: int, place?: int, value: string}>,
+     *   need: ?string
      * }
      */
-    private function answer(string $text, ?string $questionType, ?string $spreadType, array $lightShadow = []): array
+    private function answer(string $text, ?string $questionType, ?string $spreadType, array $lightShadow = [], ?string $need = null, array $requests = []): array
     {
         return [
             'status' => 'answer',
             'text' => $text,
-            'requests' => [],
+            'requests' => $requests,
             'question_type' => $questionType,
             'spread_type' => $spreadType,
             'light_shadow' => $lightShadow,
+            'need' => $need,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $json
+     * @param  list<array<string, mixed>>  $requests
+     */
+    private function needValue(array $json, array $requests): ?string
+    {
+        $need = strtolower(trim((string) ($json['need'] ?? '')));
+        if (in_array($need, ['birth', 'relation', 'projection'], true)) {
+            return $need;
+        }
+
+        $foundBirth = false;
+        $foundRelation = false;
+        $foundProjection = false;
+        foreach ($requests as $request) {
+            if (($request['kind'] ?? '') === 'projection') {
+                $foundProjection = true;
+            }
+            $moment = (string) ($request['moment'] ?? '');
+            if ($moment === 'birth') {
+                $foundBirth = true;
+            }
+            if ($moment === 'relation' || $moment === 'relations') {
+                $foundRelation = true;
+            }
+        }
+        if ($foundBirth) {
+            return 'birth';
+        }
+        if ($foundRelation) {
+            return 'relation';
+        }
+        if ($foundProjection) {
+            return 'projection';
+        }
+
+        return null;
     }
 
     /**

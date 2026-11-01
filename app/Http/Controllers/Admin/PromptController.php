@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\AppSettings;
+use App\Services\OpenAIReadingAgent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,7 +21,7 @@ class PromptController extends Controller
         ]);
     }
 
-    public function update(Request $request, AppSettings $settings): RedirectResponse
+    public function update(Request $request, AppSettings $settings, OpenAIReadingAgent $agents): RedirectResponse
     {
         $data = $request->validate([
             'system_prompt_hu' => ['required', 'string', 'min:20', 'max:20000'],
@@ -38,10 +39,10 @@ class PromptController extends Controller
 
         return redirect()
             ->route('admin.prompts.edit')
-            ->with('status', __('admin.prompts.saved'));
+            ->with('status', __('admin.prompts.saved').$this->agentNote($agents->sync()));
     }
 
-    public function reset(AppSettings $settings): RedirectResponse
+    public function reset(AppSettings $settings, OpenAIReadingAgent $agents): RedirectResponse
     {
         $settings->putMany([
             AppSettings::SYSTEM_PROMPT_HU => $settings->defaultSystemPromptHu(),
@@ -52,6 +53,11 @@ class PromptController extends Controller
 
         return redirect()
             ->route('admin.prompts.edit')
-            ->with('status', __('admin.prompts.reset'));
+            ->with('status', __('admin.prompts.reset').$this->agentNote($agents->sync()));
+    }
+
+    private function agentNote(?bool $synced): string
+    {
+        return $synced === false ? ' '.__('admin.prompts.agent_failed') : '';
     }
 }

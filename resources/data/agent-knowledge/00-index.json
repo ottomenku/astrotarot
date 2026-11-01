@@ -1,0 +1,17 @@
+{
+    "name": "AstroTarot agent knowledge",
+    "version": "2026-11-01",
+    "use": "A rendszer- és az alapprompt az agent utasítása, nyelvenként egy agent. A többi fájl a közös tudástár. A kirakások szövege nincs itt: azt az üzenet küldi a kérdéssel. Ezek a fájlok nem élő efemerida.",
+    "files": {
+        "01-prompts.json": "Agentutasítás. Nem a vektoros tudástárba való, hanem a rendszer- és az alapprompt mezőbe.",
+        "02-tarot-major-arcana.json": "22 nagy arkánum, a program katalógusjelentésével.",
+        "03-tarot-minor-arcana.json": "56 kis arkánum és a négy szín.",
+        "04-astrology-framework.json": "Négy elem, három minőség, polaritáspontok, a kompakt égi sor olvasata.",
+        "05-astrology-planets.json": "Tíz bolygó: előjel, elem, uralom, életterület.",
+        "06-astrology-signs.json": "Tizenkét jegy.",
+        "07-astrology-houses.json": "Tizenkét ház.",
+        "08-astrology-aspects.json": "Hat fényszög, a program orbisával és pontjával.",
+        "09-astrology-points.json": "ASC, DESC, MC, Fortune, csomópontok, Lilith.",
+        "10-astrology-fixed-stars.json": "A húsz állócsillag, amelyet a program 1 fokon belül jelez."
+    }
+}

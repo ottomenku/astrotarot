@@ -56,7 +56,7 @@ Ezt olvassa: `EphemerisService`, `EphemerisChartContext`.
 
 `config/services.php` saját blokkjai:
 
-- `openai` — driver (`openai` vagy `ollama`), kulcs, URL, modell, timeout, tartalék OpenAI, kis és nagy Ollama-modell. Olvassa: `OpenAIClient`, az admin Tesztmód.
+- `openai` — driver (`openai` vagy `ollama`), kulcs, URL, modell, timeout, tartalék OpenAI, kis és nagy Ollama-modell, `use_agent` és `agent_model`. Az agent a fix rendszer- és alappromptot tárolja. Olvassa: `OpenAIClient`, `OpenAIReadingAgent`, az admin Tesztmód.
 - `google`, `facebook` — Socialite kliensazonosítók. Olvassa: `SocialAuthController`.
 
 `config/app.php`
@@ -161,7 +161,7 @@ A `Game` light-shadow módja (`full-astro`, `oracle-astro`, `full-random`) megmo
 | Osztály | Mit csinál | Ki hívja |
 | --- | --- | --- |
 | `AppSettings` | `settings` olvasás/írás, cache `app.settings.bag`. Rendszerprompt, alapprompt, jogi szöveg, site, regisztráció, LLM-útvonal, fizetős funkciók, kérdés hossza. | admin beállítások, prompt, jogi oldal, middleware, olvasás |
-| `TarotReadingService` | egy olvasás fordulói. Nyitó üzenet: alapprompt, kirakásprompt, kirakás adatai, felhasználó (kérdés, születés, nem, bemutatkozás). Legfeljebb 3 égi adatkérés, utána válasz. Tisztázás és bővítés ugyanannak a sessionnek a következő fordulója. | `ReadingController` |
+| `TarotReadingService` | egy olvasás fordulói. OpenAI útvonalon a rendszerprompt és az alapprompt a mentett agenten van; a hívás a húzott lapokat, az asztrológiát és a kérdést küldi, a kirakáspromptot csak az első fordulóban. Ollama útvonalon a teljes prompt megy ki minden hívásban. Legfeljebb 3 égi adatkérés, utána válasz. Tisztázás és bővítés ugyanannak a sessionnek a következő fordulója. | `ReadingController` |
 | `ReadingReplyParser` | a modell JSON-jából `need_data` vagy `answer`, legfeljebb 4 kérés | `TarotReadingService` |
 | `ReadingSkyLookup` | a kért bolygó-, jegy-, fényszög-, állócsillag-, ház- és vetületadat. Születés hiányában a születési kérés hibát ad, a modell nem találhat ki eget. | `TarotReadingService` |
 | `EphemerisService` | elindítja a Pythont: `calculate()` pillanatkép, `project()` időablak (fényszög, ház, retrográd) | `ReadingSkyLookup`, `CardDrawProfileService`, admin efemerisz |
@@ -169,7 +169,8 @@ A `Game` light-shadow módja (`full-astro`, `oracle-astro`, `full-random`) megmo
 | `CardDrawProfileService` | a mai ég domináns eleme, minősége, hangulata a húzás polaritásához. A kész profilt percenként röviden cache-eli. | `HomeController` |
 | `AstroScoringEngine` | elem, minőség, pozitív/negatív pont a bolygóállásból | `EphemerisService::enrichWithScoring()` |
 | `TarotPositionPolarity` | a kirakás helyeinek light/shadow besorolása a pontszámokból | `EphemerisService`, a húzás profilja |
-| `OpenAIClient` | chat hívás OpenAI vagy Ollama felé, tartalékkal | `TarotReadingService`, `reading:check` |
+| `OpenAIClient` | chat hívás OpenAI vagy Ollama felé, tartalékkal. Az Ollama és a tesztmód ezt használja. | `TarotReadingService`, `reading:check` |
+| `OpenAIReadingAgent` | létrehozza vagy frissíti az OpenAI agentet (`POST /v1/agents`, modell `gpt-5.4-mini`, mert a `gpt-4o-mini` nem fogadható). A session csak a változó adatot kapja, a további forduló csak az új üzenetet. | `TarotReadingService`, `PromptController` |
 | `LlmChatResult` | a chat válaszának burkolója (szöveg, modell, honnan jött) | `OpenAIClient` |
 | `GameConfigService` | a kiválasztott kirakás JSON-ja a főoldalnak: helyek, paklik, hátlap, light-shadow mód | `HomeController` |
 | `PackResolutionService` | játék alap paklija, prémium felülírás, hátlap, engedélyezett deck | `GameConfigService`, `ReadingController`, `PackPreferenceController` |

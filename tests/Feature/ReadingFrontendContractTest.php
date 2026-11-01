@@ -52,7 +52,9 @@ class ReadingFrontendContractTest extends TestCase
             ->assertSee('data-llm-enabled="1"', false)
             ->assertSee('data-reset', false)
             ->assertSee('data-reading-followup-send', false)
-            ->assertSee('data-reading-followup-expand', false);
+            ->assertSee('data-reading-followup-expand', false)
+            ->assertSee('data-reading-offer', false)
+            ->assertSee('data-reading-offer-yes', false);
     }
 
     public function test_reading_javascript_maps_backend_errors(): void
@@ -81,5 +83,8 @@ class ReadingFrontendContractTest extends TestCase
         $this->assertStringContainsString("credentials: 'same-origin'", $js);
         $this->assertStringContainsString('response.status === 419', $js);
         $this->assertStringContainsString("querySelectorAll('[data-reset]')", $js);
+        $this->assertStringContainsString("mode === 'refine'", $js);
+        $this->assertStringContainsString('function showReadingOffer(', $js);
+        $this->assertStringContainsString('offerBirth', $js);
     }
 }

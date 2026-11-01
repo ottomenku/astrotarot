@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ReadingLog;
+use App\Services\ReadingCostEstimate;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -48,6 +49,7 @@ class ReadingLogController extends Controller
 
         return view('admin.readings.show', [
             'log' => $reading,
+            'cost' => app(ReadingCostEstimate::class)->forLog($reading),
         ]);
     }
 }

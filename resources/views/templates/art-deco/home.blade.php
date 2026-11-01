@@ -240,6 +240,35 @@
             <p class="reading-inline-kicker" data-reading-kicker></p>
             <h2 class="reading-inline-title" data-reading-title></h2>
             <div class="reading-inline-body" data-reading-body></div>
+            <div class="reading-offer" data-reading-offer hidden>
+                <p class="reading-offer-text" data-reading-offer-text></p>
+                <div class="reading-offer-form" data-reading-offer-form hidden>
+                    <label class="reading-offer-label"><span data-offer-when-label></span>
+                        <input type="datetime-local" data-offer-at>
+                    </label>
+                    <label class="reading-offer-label"><span data-offer-country-label></span>
+                        <input type="text" data-offer-country maxlength="80">
+                    </label>
+                    <label class="reading-offer-label"><span data-offer-city-label></span>
+                        <input type="text" data-offer-city maxlength="120">
+                    </label>
+                    <label class="reading-offer-label"><span data-offer-gender-label></span>
+                        <select data-offer-gender>
+                            <option value=""></option>
+                            <option value="female" data-offer-gender-female></option>
+                            <option value="male" data-offer-gender-male></option>
+                            <option value="other" data-offer-gender-other></option>
+                        </select>
+                    </label>
+                    <label class="reading-offer-label"><span data-offer-intro-label></span>
+                        <textarea data-offer-intro rows="3" maxlength="500"></textarea>
+                    </label>
+                </div>
+                <div class="reading-followup-actions">
+                    <button type="button" class="reading-followup-send" data-reading-offer-yes></button>
+                    <button type="button" class="reading-followup-expand" data-reading-offer-no></button>
+                </div>
+            </div>
             <p class="reading-inline-source" data-reading-source hidden></p>
             <div class="reading-followup" data-reading-followup hidden>
                 <label class="reading-followup-label" for="reading-followup-input" data-reading-followup-label>Pontosítást kérek…</label>

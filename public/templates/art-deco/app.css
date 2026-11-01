@@ -300,6 +300,15 @@ a.auth-modal-close { color:var(--gold); }
 .legal-page h1 { margin:0 0 18px; color:var(--gold-pale); font:italic clamp(26px,4vw,36px)/1.2 Georgia,serif; }
 .legal-body { white-space:pre-wrap; color:#cfc9d6; font:15px/1.65 Georgia,serif; }
 
+.reading-offer { margin-top:18px; padding-top:16px; border-top:1px solid rgba(217,184,110,.22); }
+.reading-offer[hidden] { display:none !important; }
+.reading-offer-text { margin:0 0 12px; color:var(--gold-pale); font:italic 15px/1.45 Georgia,serif; }
+.reading-offer-form { display:grid; gap:10px; margin-bottom:12px; }
+.reading-offer-form[hidden] { display:none !important; }
+.reading-offer-label { display:grid; gap:4px; color:var(--gold); font:11px Georgia,serif; letter-spacing:.4px; }
+.reading-offer-label input,
+.reading-offer-label select,
+.reading-offer-label textarea { width:100%; padding:10px 12px; border:1px solid rgba(217,184,110,.35); background:rgba(8,9,18,.72); color:var(--gold-pale); font:14px/1.4 Georgia,serif; }
 .reading-followup { margin-top:22px; padding-top:18px; border-top:1px solid rgba(217,184,110,.22); }
 .reading-followup[hidden] { display:none !important; }
 .reading-followup-label { display:block; margin:0 0 8px; color:var(--gold); font:10px Georgia,serif; letter-spacing:1.2px; text-transform:uppercase; }

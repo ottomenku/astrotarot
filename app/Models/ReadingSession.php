@@ -16,6 +16,8 @@ class ReadingSession extends Model
         'locale',
         'question',
         'cards',
+        'llm_session_id',
+        'llm_reply_id',
     ];
 
     protected function casts(): array

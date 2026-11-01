@@ -1,0 +1,206 @@
+{
+    "id": "astrology-fixed-stars",
+    "rule": "Only a conjunction within 1 degree. The star does not open a row.",
+    "records": [
+        {
+            "id": "aldebaran",
+            "kind": "fixed-star",
+            "text": "Aldebaran (Bika szeme). Hagyományos olvasat: becsület, őrzés, a gyors indulat veszélye. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Aldebaran formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Aldebaran",
+            "place_hu": "Bika szeme",
+            "meaning_hu": "becsület, őrzés, a gyors indulat veszélye",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "regulus",
+            "kind": "fixed-star",
+            "text": "Regulus (Oroszlán szíve). Hagyományos olvasat: vezetés, hírnév, a gőg miatti hirtelen esés. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Regulus formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Regulus",
+            "place_hu": "Oroszlán szíve",
+            "meaning_hu": "vezetés, hírnév, a gőg miatti hirtelen esés",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "spica",
+            "kind": "fixed-star",
+            "text": "Spica (Szűz keze). Hagyományos olvasat: adomány, mesterség, oltalom. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Spica formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Spica",
+            "place_hu": "Szűz keze",
+            "meaning_hu": "adomány, mesterség, oltalom",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "antares",
+            "kind": "fixed-star",
+            "text": "Antares (Skorpió szíve). Hagyományos olvasat: intenzitás, harc, a véglet. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Antares formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Antares",
+            "place_hu": "Skorpió szíve",
+            "meaning_hu": "intenzitás, harc, a véglet",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "fomalhaut",
+            "kind": "fixed-star",
+            "text": "Fomalhaut (déli őrző). Hagyományos olvasat: eszmény, magányos látomás, költészet. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Fomalhaut formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Fomalhaut",
+            "place_hu": "déli őrző",
+            "meaning_hu": "eszmény, magányos látomás, költészet",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "sirius",
+            "kind": "fixed-star",
+            "text": "Sirius (Nagy Kutya). Hagyományos olvasat: fény, hír, forró siker, amely kockázattal jár. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Sirius formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Sirius",
+            "place_hu": "Nagy Kutya",
+            "meaning_hu": "fény, hír, forró siker, amely kockázattal jár",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "algol",
+            "kind": "fixed-star",
+            "text": "Algol (Perszeusz). Hagyományos olvasat: éles erő, félelem, levágott fej; nem átok, hanem intenzitás, óvatosan. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Algol formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Algol",
+            "place_hu": "Perszeusz",
+            "meaning_hu": "éles erő, félelem, levágott fej; nem átok, hanem intenzitás, óvatosan",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "alcyone",
+            "kind": "fixed-star",
+            "text": "Alcyone (Plejádok). Hagyományos olvasat: látomás, gyász, a csoportból kiváló szem. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Alcyone formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Alcyone",
+            "place_hu": "Plejádok",
+            "meaning_hu": "látomás, gyász, a csoportból kiváló szem",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "castor",
+            "kind": "fixed-star",
+            "text": "Castor (Ikrek egyike). Hagyományos olvasat: értelem, írás, kettősség. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Castor formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Castor",
+            "place_hu": "Ikrek egyike",
+            "meaning_hu": "értelem, írás, kettősség",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "pollux",
+            "kind": "fixed-star",
+            "text": "Pollux (Ikrek másika). Hagyományos olvasat: bátorság, verseny, kézműves erő. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Pollux formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Pollux",
+            "place_hu": "Ikrek másika",
+            "meaning_hu": "bátorság, verseny, kézműves erő",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "procyon",
+            "kind": "fixed-star",
+            "text": "Procyon (Kis Kutya). Hagyományos olvasat: gyors emelkedés, élénk elme, rövid gyújtás. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Procyon formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Procyon",
+            "place_hu": "Kis Kutya",
+            "meaning_hu": "gyors emelkedés, élénk elme, rövid gyújtás",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "betelgeuse",
+            "kind": "fixed-star",
+            "text": "Betelgeuse (Orion válla). Hagyományos olvasat: hírnév, harci siker, hirtelen fordulat. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Betelgeuse formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Betelgeuse",
+            "place_hu": "Orion válla",
+            "meaning_hu": "hírnév, harci siker, hirtelen fordulat",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "rigel",
+            "kind": "fixed-star",
+            "text": "Rigel (Orion lába). Hagyományos olvasat: tanítás, rang, technikai tudás. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Rigel formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Rigel",
+            "place_hu": "Orion lába",
+            "meaning_hu": "tanítás, rang, technikai tudás",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "bellatrix",
+            "kind": "fixed-star",
+            "text": "Bellatrix (Orion). Hagyományos olvasat: gyors tett, küzdelem, harcos készenlét. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Bellatrix formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Bellatrix",
+            "place_hu": "Orion",
+            "meaning_hu": "gyors tett, küzdelem, harcos készenlét",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "alnilam",
+            "kind": "fixed-star",
+            "text": "Alnilam (Orion öve). Hagyományos olvasat: kitartó munka általi hír, a középen álló feladat. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Alnilam formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Alnilam",
+            "place_hu": "Orion öve",
+            "meaning_hu": "kitartó munka általi hír, a középen álló feladat",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "alphard",
+            "kind": "fixed-star",
+            "text": "Alphard (Hydra). Hagyományos olvasat: magányos érzelem, erős belső hő. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Alphard formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Alphard",
+            "place_hu": "Hydra",
+            "meaning_hu": "magányos érzelem, erős belső hő",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "vega",
+            "kind": "fixed-star",
+            "text": "Vega (Lant). Hagyományos olvasat: kisugárzás, művészet, jelenlét. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Vega formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Vega",
+            "place_hu": "Lant",
+            "meaning_hu": "kisugárzás, művészet, jelenlét",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "deneb",
+            "kind": "fixed-star",
+            "text": "Deneb (Hattyú). Hagyományos olvasat: magas cél, út, kitartó erő. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Deneb formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Deneb",
+            "place_hu": "Hattyú",
+            "meaning_hu": "magas cél, út, kitartó erő",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "altair",
+            "kind": "fixed-star",
+            "text": "Altair (Sas). Hagyományos olvasat: merészség, sebesség, ideg. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Altair formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Altair",
+            "place_hu": "Sas",
+            "meaning_hu": "merészség, sebesség, ideg",
+            "orb": 1,
+            "only": "conjunction"
+        },
+        {
+            "id": "capella",
+            "kind": "fixed-star",
+            "text": "Capella (Szekeres). Hagyományos olvasat: tanulás, nyilvános hang, a tudásból szerzett érték. A program csak együttállást jelez, 1 fokos orbisszal, és a csillag nem nyit külön sort: a bolygó vagy pont fényszögsorában áll, conjunction Capella formában. Ha nincs a kapott sorban, ne említsd.",
+            "name": "Capella",
+            "place_hu": "Szekeres",
+            "meaning_hu": "tanulás, nyilvános hang, a tudásból szerzett érték",
+            "orb": 1,
+            "only": "conjunction"
+        }
+    ]
+}

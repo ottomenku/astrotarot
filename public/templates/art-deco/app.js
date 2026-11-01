@@ -50,7 +50,7 @@
   }
 
   function readingFeatureKey(mode) {
-    if (mode === 'clarify') return 'reading.clarify';
+    if (mode === 'clarify' || mode === 'refine') return 'reading.clarify';
     if (mode === 'expand') return 'reading.expand';
     return 'reading.initial';
   }
@@ -141,6 +141,20 @@
       followupSend: 'Elküld',
       followupExpand: 'Bővebb kifejtést kérek',
       followupNeedText: 'Írd be a pontosítást, mielőtt elküldöd.',
+      offerBirth: 'A pontosabb válaszhoz születési adat kell. Megadod? Ha nem, az eddigi olvasat jelenik meg.',
+      offerRelation: 'A pontosabb válaszhoz egy másik személy születési adata kell. Megadod? Ha nem, az eddigi olvasat jelenik meg.',
+      offerProjection: 'A pontosabb válaszhoz égi előrejelzés kell. A program kiszámolja. Elküldjem? Ez plusz kreditbe kerülhet.',
+      offerYes: 'Igen, pontosítsuk',
+      offerNo: 'Nem, maradjon az olvasat',
+      offerWhen: 'Időpont',
+      offerCountry: 'Ország',
+      offerCity: 'Város',
+      offerGender: 'Nem',
+      offerFemale: 'nő',
+      offerMale: 'férfi',
+      offerOther: 'egyéb',
+      offerIntro: 'Bemutatkozás',
+      offerNeedWhen: 'Az időpont hiányzik.',
       guestPrompt: 'Kattints ide, hogy személyre szabott válaszokat kaphass!',
       messageNeedAuth: 'A személyre szabott válaszhoz jelentkezz be vagy regisztrálj.',
       messageNeedCredits: 'Nincs elég kredited. A főmenü „Kreditek / Csomagok” pontjában kérhetsz újabbakat.',
@@ -208,6 +222,20 @@
       followupSend: 'Send',
       followupExpand: 'Ask for a deeper reading',
       followupNeedText: 'Write a clarification before sending.',
+      offerBirth: 'A more precise answer needs a birth time. Will you add it? If not, the reading so far is shown.',
+      offerRelation: 'A more precise answer needs another person’s birth data. Will you add it? If not, the reading so far is shown.',
+      offerProjection: 'A more precise answer needs a sky forecast. The program calculates it. Send it? This can cost extra credits.',
+      offerYes: 'Yes, refine it',
+      offerNo: 'No, keep this reading',
+      offerWhen: 'Time',
+      offerCountry: 'Country',
+      offerCity: 'City',
+      offerGender: 'Gender',
+      offerFemale: 'female',
+      offerMale: 'male',
+      offerOther: 'other',
+      offerIntro: 'Introduction',
+      offerNeedWhen: 'The time is missing.',
       guestPrompt: 'Click here to get personalized answers!',
       messageNeedAuth: 'Log in or sign up to receive personalized answers.',
       messageNeedCredits: 'You do not have enough credits. Request more under “Credits / Packages” in the main menu.',
@@ -296,6 +324,11 @@
     readingFollowupInput: root.querySelector('[data-reading-followup-input]'),
     readingFollowupSend: root.querySelector('[data-reading-followup-send]'),
     readingFollowupExpand: root.querySelector('[data-reading-followup-expand]'),
+    readingOffer: root.querySelector('[data-reading-offer]'),
+    readingOfferText: root.querySelector('[data-reading-offer-text]'),
+    readingOfferForm: root.querySelector('[data-reading-offer-form]'),
+    readingOfferYes: root.querySelector('[data-reading-offer-yes]'),
+    readingOfferNo: root.querySelector('[data-reading-offer-no]'),
     readingShare: root.querySelector('[data-reading-share]'),
     readingShareLabel: root.querySelector('[data-reading-share-label]'),
     sharePdf: root.querySelector('[data-share-pdf]'),
@@ -321,6 +354,7 @@
   let renderedDeckKey = '';
   /** @type {{question:string, cards:any[], reading:string, answers: {mode:string, label:string, text:string, source?:string}[]}|null} */
   let activeReading = null;
+  let pendingOffer = null;
   let lockedQuestion = '';
   let shareBusy = false;
   let polarityTimer = null;
@@ -952,6 +986,24 @@
     if (els.readingFollowupInput) els.readingFollowupInput.placeholder = text.followupPlaceholder;
     if (els.readingFollowupSend) els.readingFollowupSend.textContent = text.followupSend;
     if (els.readingFollowupExpand) els.readingFollowupExpand.textContent = text.followupExpand;
+    const offerWhen = root.querySelector('[data-offer-when-label]');
+    const offerCountry = root.querySelector('[data-offer-country-label]');
+    const offerCity = root.querySelector('[data-offer-city-label]');
+    const offerGender = root.querySelector('[data-offer-gender-label]');
+    const offerIntro = root.querySelector('[data-offer-intro-label]');
+    if (offerWhen) offerWhen.textContent = text.offerWhen;
+    if (offerCountry) offerCountry.textContent = text.offerCountry;
+    if (offerCity) offerCity.textContent = text.offerCity;
+    if (offerGender) offerGender.textContent = text.offerGender;
+    if (offerIntro) offerIntro.textContent = text.offerIntro;
+    const female = root.querySelector('[data-offer-gender-female]');
+    const male = root.querySelector('[data-offer-gender-male]');
+    const other = root.querySelector('[data-offer-gender-other]');
+    if (female) female.textContent = text.offerFemale;
+    if (male) male.textContent = text.offerMale;
+    if (other) other.textContent = text.offerOther;
+    if (els.readingOfferYes) els.readingOfferYes.textContent = text.offerYes;
+    if (els.readingOfferNo) els.readingOfferNo.textContent = text.offerNo;
     if (els.readingShareLabel) els.readingShareLabel.textContent = text.shareLabel;
     if (els.sharePdf) els.sharePdf.setAttribute('aria-label', text.sharePdf);
     if (els.sharePdf) els.sharePdf.setAttribute('title', text.sharePdf);
@@ -1554,13 +1606,75 @@
     }
     setReadingSource(null);
     if (els.readingFollowup) els.readingFollowup.hidden = true;
+    hideReadingOffer();
     showShareActions(false);
+  }
+
+  function hideReadingOffer() {
+    pendingOffer = null;
+    if (els.readingOffer) els.readingOffer.hidden = true;
+    if (els.readingBody) els.readingBody.hidden = false;
+  }
+
+  function showReadingOffer(data) {
+    const text = t();
+    const need = data.need;
+    pendingOffer = {
+      need,
+      requests: Array.isArray(data.requests) ? data.requests : [],
+      reading: data.reading || '',
+      sessionId: data.session_id || activeReading?.sessionId || '',
+    };
+    if (!els.readingOffer) return;
+    const personal = need === 'birth' || need === 'relation';
+    if (els.readingOfferText) {
+      els.readingOfferText.textContent = need === 'relation'
+        ? text.offerRelation
+        : (need === 'projection' ? text.offerProjection : text.offerBirth);
+    }
+    if (els.readingOfferForm) els.readingOfferForm.hidden = !personal;
+    if (els.readingBody) els.readingBody.hidden = personal;
+    els.readingOffer.hidden = false;
+    if (els.readingFollowup) els.readingFollowup.hidden = true;
+    showShareActions(false);
+  }
+
+  function offerPayload() {
+    if (!pendingOffer) return null;
+    const need = pendingOffer.need;
+    const refine = { need, requests: pendingOffer.requests };
+    if (need !== 'birth' && need !== 'relation') return refine;
+    const when = root.querySelector('[data-offer-at]')?.value || '';
+    if (!when) {
+      showToast(t().offerNeedWhen, false);
+      return null;
+    }
+    const country = root.querySelector('[data-offer-country]')?.value || '';
+    const city = root.querySelector('[data-offer-city]')?.value || '';
+    const gender = root.querySelector('[data-offer-gender]')?.value || '';
+    const intro = root.querySelector('[data-offer-intro]')?.value || '';
+    if (need === 'birth') {
+      refine.birth_at = when;
+      refine.birth_country = country;
+      refine.birth_city = city;
+      refine.gender = gender;
+      refine.introduction = intro;
+    } else {
+      refine.relation_at = when;
+      refine.relation_country = country;
+      refine.relation_city = city;
+      refine.relation_gender = gender;
+      refine.relation_introduction = intro;
+    }
+    return refine;
   }
 
   function setFollowupBusy(busy) {
     if (els.readingFollowupSend) els.readingFollowupSend.disabled = busy;
     if (els.readingFollowupExpand) els.readingFollowupExpand.disabled = busy;
     if (els.readingFollowupInput) els.readingFollowupInput.disabled = busy;
+    if (els.readingOfferYes) els.readingOfferYes.disabled = busy;
+    if (els.readingOfferNo) els.readingOfferNo.disabled = busy;
   }
 
   function appendReadingText(extra, mode = 'expand', source = null) {
@@ -1642,7 +1756,7 @@
     };
   }
 
-  async function requestReading({ mode = 'initial', followUp = '' } = {}) {
+  async function requestReading({ mode = 'initial', followUp = '', refine = null } = {}) {
     if (!readingUrl || selected.length !== SLOT_COUNT) return;
 
     const feature = featureState(readingFeatureKey(mode));
@@ -1710,10 +1824,11 @@
           mode,
           game_id: gameId || undefined,
           follow_up: followUp || undefined,
-          previous_reading: mode === 'initial' ? undefined : activeReading?.reading,
-          session_id: mode === 'initial' ? undefined : (activeReading?.sessionId || undefined),
+          previous_reading: mode === 'initial' ? undefined : (pendingOffer?.reading || activeReading?.reading),
+          session_id: mode === 'initial' ? undefined : (pendingOffer?.sessionId || activeReading?.sessionId || undefined),
           cards,
           astro: readingAstroPayload(),
+          refine: mode === 'refine' ? refine : undefined,
         }),
       });
 
@@ -1734,7 +1849,7 @@
         throw new Error(jsonErrorMessage(data, t().messageError));
       }
 
-      if (!data.reading) {
+      if (!data.reading && !data.need) {
         throw new Error(t().messageError);
       }
 
@@ -1743,18 +1858,30 @@
         activeReading = {
           question,
           cards: buildCardsPayload(),
-          reading: data.reading,
+          reading: data.reading || '',
           answers: [{
             mode: 'initial',
             label: answerLabel('initial'),
-            text: data.reading,
+            text: data.reading || '',
             source: data.source?.label || '',
           }],
           sessionId: data.session_id || '',
         };
         syncCompleteView();
         showReadingResult({
-          body: data.reading,
+          body: data.reading || '',
+          error: false,
+          showFollowup: !data.need,
+          source: data.source || null,
+        });
+        if (data.need) showReadingOffer(data);
+        hideToast();
+      } else if (mode === 'refine') {
+        hideReadingOffer();
+        if (els.readingBody) els.readingBody.hidden = false;
+        if (activeReading) activeReading.reading = data.reading || activeReading.reading;
+        showReadingResult({
+          body: data.reading || '',
           error: false,
           showFollowup: true,
           source: data.source || null,
@@ -1886,6 +2013,22 @@
         mode: 'expand',
         followUp: (els.readingFollowupInput?.value || '').trim(),
       });
+    });
+    els.readingOfferYes?.addEventListener('click', () => {
+      const refine = offerPayload();
+      if (!refine) return;
+      requestReading({ mode: 'refine', refine });
+    });
+    els.readingOfferNo?.addEventListener('click', () => {
+      const held = pendingOffer?.reading || '';
+      hideReadingOffer();
+      if (els.readingBody) {
+        els.readingBody.hidden = false;
+        els.readingBody.textContent = held;
+      }
+      if (activeReading) activeReading.reading = held;
+      if (els.readingFollowup) els.readingFollowup.hidden = !held;
+      showShareActions(Boolean(held));
     });
 
     els.sharePdf?.addEventListener('click', () => { downloadPdf(); });

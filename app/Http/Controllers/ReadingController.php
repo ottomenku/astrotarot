@@ -47,7 +47,20 @@ class ReadingController extends Controller
                 ? ['required', 'string', 'min:'.$minChars, 'max:280']
                 : ['nullable', 'string', 'max:280'],
             'locale' => ['nullable', 'string', 'in:hu,en'],
-            'mode' => ['nullable', 'string', 'in:initial,clarify,expand'],
+            'mode' => ['nullable', 'string', 'in:initial,clarify,expand,refine'],
+            'refine' => ['nullable', 'array'],
+            'refine.need' => ['nullable', 'string', 'in:birth,relation,projection'],
+            'refine.requests' => ['nullable', 'array'],
+            'refine.birth_at' => ['nullable', 'date'],
+            'refine.birth_country' => ['nullable', 'string', 'max:80'],
+            'refine.birth_city' => ['nullable', 'string', 'max:120'],
+            'refine.gender' => ['nullable', 'string', 'max:16'],
+            'refine.introduction' => ['nullable', 'string', 'max:500'],
+            'refine.relation_at' => ['nullable', 'date'],
+            'refine.relation_country' => ['nullable', 'string', 'max:80'],
+            'refine.relation_city' => ['nullable', 'string', 'max:120'],
+            'refine.relation_gender' => ['nullable', 'string', 'max:16'],
+            'refine.relation_introduction' => ['nullable', 'string', 'max:500'],
             'session_id' => ['nullable', 'uuid'],
             'previous_reading' => ['nullable', 'string', 'max:12000'],
             'follow_up' => ['nullable', 'string', 'max:500'],
@@ -75,7 +88,7 @@ class ReadingController extends Controller
 
         $mode = $data['mode'] ?? TarotReadingService::MODE_INITIAL;
         $featureKey = match ($mode) {
-            TarotReadingService::MODE_CLARIFY => FeatureCatalog::CLARIFY,
+            TarotReadingService::MODE_CLARIFY, TarotReadingService::MODE_REFINE => FeatureCatalog::CLARIFY,
             TarotReadingService::MODE_EXPAND => FeatureCatalog::EXPAND,
             default => FeatureCatalog::READING,
         };
@@ -92,6 +105,14 @@ class ReadingController extends Controller
                 'error' => app()->getLocale() === 'en'
                     ? 'Please write a clarification first.'
                     : 'Írd be a pontosítást.',
+            ], 422);
+        }
+
+        if ($mode === TarotReadingService::MODE_REFINE && trim((string) ($data['session_id'] ?? '')) === '') {
+            return response()->json([
+                'error' => app()->getLocale() === 'en'
+                    ? 'This reading session was not found.'
+                    : 'Ez a kifejtés nem található.',
             ], 422);
         }
 
@@ -126,6 +147,7 @@ class ReadingController extends Controller
                 'system_prompt' => $spreadPrompt !== '' ? $spreadPrompt : null,
                 'session_id' => $data['session_id'] ?? null,
                 'game_id' => $game?->id,
+                'refine' => $data['refine'] ?? null,
                 'ip' => $request->ip(),
                 'user_id' => $user?->id,
             ]);
@@ -163,6 +185,8 @@ class ReadingController extends Controller
             'mode' => $mode,
             'session_id' => $result['session_id'] ?? null,
             'light_shadow' => $result['light_shadow'] ?? [],
+            'need' => $result['need'] ?? null,
+            'requests' => $result['requests'] ?? [],
             'credits' => $balance,
         ]);
     }

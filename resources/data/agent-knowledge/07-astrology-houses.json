@@ -1,0 +1,138 @@
+{
+    "id": "astrology-houses",
+    "system": "Placidus",
+    "records": [
+        {
+            "id": "house-1",
+            "kind": "house",
+            "text": "1. ház. Természetes jegy: Kos. Minőség: fő. Házfajta: sarok. Életben: Én, test, megjelenés, az első benyomás. English: Self, body, appearance, the first impression. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 1,
+            "natural_sign_hu": "Kos",
+            "modality_hu": "fő",
+            "class_hu": "sarok",
+            "life_hu": "Én, test, megjelenés, az első benyomás.",
+            "life_en": "Self, body, appearance, the first impression."
+        },
+        {
+            "id": "house-2",
+            "kind": "house",
+            "text": "2. ház. Természetes jegy: Bika. Minőség: szilárd. Házfajta: követő. Életben: Pénz, birtok, tehetség, amit meg lehet tartani. English: Money, possessions, talent, what can be kept. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 2,
+            "natural_sign_hu": "Bika",
+            "modality_hu": "szilárd",
+            "class_hu": "követő",
+            "life_hu": "Pénz, birtok, tehetség, amit meg lehet tartani.",
+            "life_en": "Money, possessions, talent, what can be kept."
+        },
+        {
+            "id": "house-3",
+            "kind": "house",
+            "text": "3. ház. Természetes jegy: Ikrek. Minőség: változó. Házfajta: hanyatló. Életben: Testvér, beszéd, rövid út, tanulás, szomszédság. English: Siblings, speech, a short journey, study, the neighborhood. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 3,
+            "natural_sign_hu": "Ikrek",
+            "modality_hu": "változó",
+            "class_hu": "hanyatló",
+            "life_hu": "Testvér, beszéd, rövid út, tanulás, szomszédság.",
+            "life_en": "Siblings, speech, a short journey, study, the neighborhood."
+        },
+        {
+            "id": "house-4",
+            "kind": "house",
+            "text": "4. ház. Természetes jegy: Rák. Minőség: fő. Házfajta: sarok. Életben: Otthon, gyökér, egyik szülő, a nap vége, a belső alap. English: Home, root, one parent, the end of the day, the inner foundation. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 4,
+            "natural_sign_hu": "Rák",
+            "modality_hu": "fő",
+            "class_hu": "sarok",
+            "life_hu": "Otthon, gyökér, egyik szülő, a nap vége, a belső alap.",
+            "life_en": "Home, root, one parent, the end of the day, the inner foundation."
+        },
+        {
+            "id": "house-5",
+            "kind": "house",
+            "text": "5. ház. Természetes jegy: Oroszlán. Minőség: szilárd. Házfajta: követő. Életben: Gyermek, játék, szerelem, alkotás, kockázat. English: Children, play, romance, creation, risk. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 5,
+            "natural_sign_hu": "Oroszlán",
+            "modality_hu": "szilárd",
+            "class_hu": "követő",
+            "life_hu": "Gyermek, játék, szerelem, alkotás, kockázat.",
+            "life_en": "Children, play, romance, creation, risk."
+        },
+        {
+            "id": "house-6",
+            "kind": "house",
+            "text": "6. ház. Természetes jegy: Szűz. Minőség: változó. Házfajta: hanyatló. Életben: Munka, egészség, szolgálat, napi rend, kis állatok. English: Work, health, service, daily order, small animals. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 6,
+            "natural_sign_hu": "Szűz",
+            "modality_hu": "változó",
+            "class_hu": "hanyatló",
+            "life_hu": "Munka, egészség, szolgálat, napi rend, kis állatok.",
+            "life_en": "Work, health, service, daily order, small animals."
+        },
+        {
+            "id": "house-7",
+            "kind": "house",
+            "text": "7. ház. Természetes jegy: Mérleg. Minőség: fő. Házfajta: sarok. Életben: Társ, házasság, nyílt ellenfél, szerződés. A DESC háza. English: Partner, marriage, an open opponent, a contract. The house of the DESC. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 7,
+            "natural_sign_hu": "Mérleg",
+            "modality_hu": "fő",
+            "class_hu": "sarok",
+            "life_hu": "Társ, házasság, nyílt ellenfél, szerződés. A DESC háza.",
+            "life_en": "Partner, marriage, an open opponent, a contract. The house of the DESC."
+        },
+        {
+            "id": "house-8",
+            "kind": "house",
+            "text": "8. ház. Természetes jegy: Skorpió. Minőség: szilárd. Házfajta: követő. Életben: Közös vagyon, válság, szexualitás, adósság, átalakulás. English: Shared resources, crisis, sexuality, debt, transformation. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 8,
+            "natural_sign_hu": "Skorpió",
+            "modality_hu": "szilárd",
+            "class_hu": "követő",
+            "life_hu": "Közös vagyon, válság, szexualitás, adósság, átalakulás.",
+            "life_en": "Shared resources, crisis, sexuality, debt, transformation."
+        },
+        {
+            "id": "house-9",
+            "kind": "house",
+            "text": "9. ház. Természetes jegy: Nyilas. Minőség: változó. Házfajta: hanyatló. Életben: Hit, távoli út, jog, felső tanulás, idegen föld. English: Faith, a far journey, law, higher study, a foreign land. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 9,
+            "natural_sign_hu": "Nyilas",
+            "modality_hu": "változó",
+            "class_hu": "hanyatló",
+            "life_hu": "Hit, távoli út, jog, felső tanulás, idegen föld.",
+            "life_en": "Faith, a far journey, law, higher study, a foreign land."
+        },
+        {
+            "id": "house-10",
+            "kind": "house",
+            "text": "10. ház. Természetes jegy: Bak. Minőség: fő. Házfajta: sarok. Életben: Hivatás, státusz, nyilvános szerep, a másik szülő. Az MC háza. English: Vocation, status, a public role, the other parent. The house of the MC. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 10,
+            "natural_sign_hu": "Bak",
+            "modality_hu": "fő",
+            "class_hu": "sarok",
+            "life_hu": "Hivatás, státusz, nyilvános szerep, a másik szülő. Az MC háza.",
+            "life_en": "Vocation, status, a public role, the other parent. The house of the MC."
+        },
+        {
+            "id": "house-11",
+            "kind": "house",
+            "text": "11. ház. Természetes jegy: Vízöntő. Minőség: szilárd. Házfajta: követő. Életben: Barátok, csoport, remény, a jövő terve. English: Friends, a group, hope, a plan for the future. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 11,
+            "natural_sign_hu": "Vízöntő",
+            "modality_hu": "szilárd",
+            "class_hu": "követő",
+            "life_hu": "Barátok, csoport, remény, a jövő terve.",
+            "life_en": "Friends, a group, hope, a plan for the future."
+        },
+        {
+            "id": "house-12",
+            "kind": "house",
+            "text": "12. ház. Természetes jegy: Halak. Minőség: változó. Házfajta: hanyatló. Életben: Visszavonulás, rejtett ellenség, veszteség, magány, a láthatatlan. English: Retreat, a hidden enemy, loss, solitude, what is unseen. A program a házakat Placidus rendszerben számolja. A ház a benne álló bolygó életterülete, nem külön jó vagy rossz hely.",
+            "number": 12,
+            "natural_sign_hu": "Halak",
+            "modality_hu": "változó",
+            "class_hu": "hanyatló",
+            "life_hu": "Visszavonulás, rejtett ellenség, veszteség, magány, a láthatatlan.",
+            "life_en": "Retreat, a hidden enemy, loss, solitude, what is unseen."
+        }
+    ]
+}

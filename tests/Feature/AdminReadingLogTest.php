@@ -66,4 +66,33 @@ class AdminReadingLogTest extends TestCase
             ->assertSee('The Moon', false)
             ->assertDontSee('hidden system', false);
     }
+
+    public function test_full_log_shows_a_forint_cost_estimate(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $log = ReadingLog::query()->create([
+            'user_id' => $admin->id,
+            'locale' => 'hu',
+            'question' => 'Mit hoz a hét?',
+            'cards' => [],
+            'astro' => [],
+            'system_prompt' => str_repeat('á', 3000),
+            'user_prompt' => str_repeat('b', 3000),
+            'response' => str_repeat('c', 900),
+            'model' => 'gpt-5.4-mini',
+            'llm_provider' => 'openai',
+            'status' => 'success',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.readings.show', $log))
+            ->assertOk()
+            ->assertSee('Költségbecslés', false)
+            ->assertSee('Bemenet, kb. token', false)
+            ->assertSee('2 000', false)
+            ->assertSee('300', false)
+            ->assertSee('2 300', false)
+            ->assertSee('Ft', false)
+            ->assertSee('1 USD = 328 Ft', false);
+    }
 }

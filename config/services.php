@@ -55,6 +55,9 @@ return [
             $llmDriver === 'ollama' ? 300 : 120
         ),
         'fallback_to_openai' => filter_var(env('LLM_FALLBACK_OPENAI', false), FILTER_VALIDATE_BOOLEAN),
+        'use_agent' => filter_var(env('OPENAI_USE_AGENT', true), FILTER_VALIDATE_BOOLEAN),
+        'agent_model' => (string) env('OPENAI_AGENT_MODEL', 'gpt-5.4-mini'),
+        'vector_store_id' => trim((string) env('OPENAI_VECTOR_STORE_ID', '')),
         'cloud_base_url' => rtrim((string) env('OPENAI_CLOUD_BASE_URL', 'https://api.openai.com/v1'), '/'),
         'cloud_model' => (string) env('OPENAI_CLOUD_MODEL', 'gpt-4o-mini'),
         'ollama_base_url' => rtrim((string) env('OLLAMA_BASE_URL', 'http://127.0.0.1:11434/v1'), '/'),

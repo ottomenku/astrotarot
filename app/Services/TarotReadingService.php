@@ -7,6 +7,7 @@ use App\Models\ReadingLog;
 use App\Models\ReadingSession;
 use App\Models\User;
 use App\Support\CelestialOracleCatalog;
+use App\Support\TarotCardBrief;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
@@ -19,14 +20,18 @@ class TarotReadingService
 
     public const MODE_EXPAND = 'expand';
 
+    public const MODE_REFINE = 'refine';
+
     public const MAX_DATA_ROUNDS = 3;
 
     public function __construct(
         private readonly OpenAIClient $openAI,
+        private readonly OpenAIReadingAgent $agents,
         private readonly AppSettings $settings,
         private readonly FigureMeaningService $meanings,
         private readonly ReadingReplyParser $replies,
         private readonly ReadingSkyLookup $sky,
+        private readonly PlaceGeocoder $places,
     ) {}
 
     /**
@@ -62,7 +67,7 @@ class TarotReadingService
             throw new RuntimeException('A reading requires a question and 1–49 cards.');
         }
 
-        if ($mode !== self::MODE_INITIAL && $previousReading === '') {
+        if (! in_array($mode, [self::MODE_INITIAL, self::MODE_REFINE], true) && $previousReading === '') {
             throw new RuntimeException('A follow-up requires the previous reading.');
         }
 
@@ -77,9 +82,17 @@ class TarotReadingService
         $session = $this->session($payload, $reader, $locale, $question, $cards);
         $continuing = $mode !== self::MODE_INITIAL && $session->turns()->exists();
 
-        $userPrompt = $continuing
-            ? $this->turnMessage($locale, $mode, $followUp, $previousReading)
-            : $this->openingMessage($locale, $question, $cards, $astro, $spreadPrompt, $reader, $game, $mode, $followUp, $previousReading);
+        $useAgent = $this->agents->enabled() && ! ($continuing && ! filled($session->llm_session_id));
+        $userPrompt = $mode === self::MODE_REFINE
+            ? $this->refineMessage($locale, $payload, $reader)
+            : ($continuing
+                ? $this->turnMessage($locale, $mode, $followUp, $previousReading)
+                : ($useAgent
+                    ? $this->variableMessage($locale, $question, $cards, $astro, $spreadPrompt, $reader, $game, $mode, $followUp, $previousReading)
+                    : $this->openingMessage($locale, $question, $cards, $astro, $spreadPrompt, $reader, $game, $mode, $followUp, $previousReading)));
+        $agentExtra = $useAgent
+            ? $this->agentSessionInstructions($locale, $spreadPrompt, $cards)
+            : '';
 
         $this->remember($session, 'user', $continuing ? $mode : 'opening', $userPrompt);
 
@@ -121,11 +134,14 @@ class TarotReadingService
         $result = null;
         $text = '';
         $lightShadow = [];
+        $need = null;
+        $refineRequests = [];
         $rounds = 0;
+        $pendingInput = $userPrompt;
 
         try {
             while (true) {
-                $result = $this->complete($session, $systemPrompt, $requestedModel, $options, $log, $mode);
+                $result = $this->complete($session, $systemPrompt, $requestedModel, $options, $log, $mode, $pendingInput, $agentExtra);
                 $raw = trim((string) data_get($result->response->json(), 'choices.0.message.content', ''));
                 if ($raw === '') {
                     $log->update([
@@ -146,26 +162,39 @@ class TarotReadingService
                     $raw,
                 );
 
-                if ($parsed['status'] !== 'need_data') {
+                $parsedNeed = $parsed['need'] ?? null;
+                $offer = $mode === self::MODE_INITIAL && ($parsed['status'] === 'need_data' || $parsedNeed !== null);
+                if ($parsed['status'] !== 'need_data' && ! $offer) {
                     $text = $parsed['text'];
                     $lightShadow = is_array($parsed['light_shadow'] ?? null) ? $parsed['light_shadow'] : [];
+                    $need = null;
                     break;
                 }
 
-                if ($rounds >= self::MAX_DATA_ROUNDS) {
+                if ($offer) {
                     $text = $parsed['text'];
+                    $lightShadow = is_array($parsed['light_shadow'] ?? null) ? $parsed['light_shadow'] : [];
+                    $need = is_string($parsedNeed) ? $parsedNeed : null;
+                    $refineRequests = $parsed['requests'];
+                    break;
+                }
+
+                if ($rounds >= 1 || $rounds >= self::MAX_DATA_ROUNDS) {
+                    $text = $parsed['text'];
+                    $need = null;
                     break;
                 }
 
                 $rounds++;
                 $data = $this->sky->fulfill($parsed['requests'], $reader);
-                $this->remember($session, 'user', 'data', $this->dataMessage($locale, $data, $rounds));
+                $pendingInput = $this->dataMessage($locale, $data, $rounds);
+                $this->remember($session, 'user', 'data', $pendingInput);
             }
         } catch (RuntimeException $e) {
             throw $e;
         }
 
-        if ($text === '') {
+        if ($text === '' && $need === null) {
             $log->update([
                 'status' => 'error',
                 'error' => 'Empty model response',
@@ -207,6 +236,8 @@ class TarotReadingService
             ],
             'session_id' => $session->public_id,
             'light_shadow' => $lightShadow,
+            'need' => $need,
+            'requests' => $refineRequests,
         ];
     }
 
@@ -355,13 +386,17 @@ class TarotReadingService
         array $options,
         ReadingLog $log,
         string $mode,
+        string $pendingInput,
+        string $agentExtra,
     ): \App\Services\LlmChatResult {
         try {
-            $result = $this->openAI->complete(
-                $this->messages($session, $systemPrompt),
-                $requestedModel,
-                $options,
-            );
+            $result = $this->shouldUseAgent($session)
+                ? $this->agents->completeTurn($session, $pendingInput, $agentExtra)
+                : $this->openAI->complete(
+                    $this->messages($session, $systemPrompt),
+                    $requestedModel,
+                    $options,
+                );
         } catch (Throwable $e) {
             Log::error('Tarot reading OpenAI request failed', ['error' => $e->getMessage(), 'mode' => $mode]);
             $log->update([
@@ -388,9 +423,42 @@ class TarotReadingService
         return $result;
     }
 
+    private function shouldUseAgent(ReadingSession $session): bool
+    {
+        if (! $this->agents->enabled()) {
+            return false;
+        }
+
+        if (filled($session->llm_session_id)) {
+            return true;
+        }
+
+        return $session->turns()->count() <= 1;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $cards
+     */
+    private function agentSessionInstructions(string $locale, string $spreadPrompt, array $cards): string
+    {
+        $parts = [];
+        $spreadPrompt = trim($spreadPrompt);
+        if ($spreadPrompt !== '') {
+            $parts[] = ($locale === 'en' ? '## SPREAD' : '## KIRAKASPROMPT')."\n".$spreadPrompt;
+        }
+
+        $plain = $this->settings->systemPrompt($locale);
+        $withLightShadow = $this->withLightShadowProtocol($plain, $locale, $cards);
+        if ($withLightShadow !== $plain) {
+            $parts[] = trim(substr($withLightShadow, strlen(rtrim($plain))));
+        }
+
+        return trim(implode("\n\n", array_filter($parts, fn ($part) => $part !== '')));
+    }
+
     private function normalizeMode(string $mode): string
     {
-        return in_array($mode, [self::MODE_INITIAL, self::MODE_CLARIFY, self::MODE_EXPAND], true)
+        return in_array($mode, [self::MODE_INITIAL, self::MODE_CLARIFY, self::MODE_EXPAND, self::MODE_REFINE], true)
             ? $mode
             : self::MODE_INITIAL;
     }
@@ -431,7 +499,59 @@ class TarotReadingService
             $this->formatCards($locale, $cards),
             '',
             $this->spreadTypeBlock($locale, $game),
-            $this->astrologyBlock($locale, $astro, $reader, $game),
+            $mode === self::MODE_INITIAL
+                ? $this->firstRoundNote($locale)
+                : $this->astrologyBlock($locale, $astro, $reader, $game),
+            '',
+            $userHeader,
+            $this->userBlock($locale, $question, $reader),
+        ];
+
+        if ($mode !== self::MODE_INITIAL || $previousReading !== '' || $followUp !== '') {
+            $parts[] = '';
+            $parts[] = $this->turnMessage($locale, $mode, $followUp, $previousReading);
+        }
+
+        return implode("\n", $parts);
+    }
+
+    /**
+     * Cards and the question. The standing prompts stay on the saved agent.
+     * The first round carries card catalog text and no astrology chart.
+     *
+     * @param  list<array<string, mixed>>  $cards
+     * @param  array<string, mixed>  $astro
+     */
+    private function variableMessage(
+        string $locale,
+        string $question,
+        array $cards,
+        array $astro,
+        string $spreadPrompt,
+        ?User $reader,
+        ?Game $game,
+        string $mode,
+        string $followUp,
+        string $previousReading,
+    ): string {
+        $spreadHeader = $locale === 'en' ? '## SPREAD' : '## KIRAKASPROMPT';
+        $dataHeader = $locale === 'en' ? '## SPREAD_DATA' : '## KIRAKAS';
+        $emptySpread = $locale === 'en'
+            ? 'No extra spread instructions.'
+            : 'Nincs külön kirakásprompt.';
+        $userHeader = $locale === 'en' ? '## USER' : '## FELHASZNALO';
+        $parts = [
+            $spreadHeader,
+            $spreadPrompt !== '' ? $spreadPrompt : $emptySpread,
+            '',
+            $dataHeader,
+            $locale === 'en' ? 'Drawn cards:' : 'Húzott lapok:',
+            $this->formatCards($locale, $cards),
+            '',
+            $this->spreadTypeBlock($locale, $game),
+            $mode === self::MODE_INITIAL
+                ? $this->firstRoundNote($locale)
+                : $this->astrologyBlock($locale, $astro, $reader, $game),
             '',
             $userHeader,
             $this->userBlock($locale, $question, $reader),
@@ -685,6 +805,7 @@ class TarotReadingService
                 ($locale === 'en' ? 'slot: ' : 'lap sorszám: ').($index + 1),
                 ($locale === 'en' ? 'pack: ' : 'pakli: ').(string) ($card['deck'] ?? ''),
                 ($locale === 'en' ? 'figure: ' : 'figura: ').$figure.($figureId !== '' ? ' ('.$figureId.')' : ''),
+                ...TarotCardBrief::lines($locale, $figureId),
             ];
 
             $keyword = trim((string) ($card['keyword'] ?? ''));
@@ -705,8 +826,8 @@ class TarotReadingService
                     : 'light-shadow: nem, ez a lap nincs párosítva; a light és a shadow figura önálló lap';
             } elseif ($requestsLightShadow) {
                 $lines[] = $locale === 'en'
-                    ? 'light-shadow: yes, determine light or shadow from the celestial data and return it in the answer light_shadow array'
-                    : 'light-shadow: igen, az égi adatok alapján kérjük a light vagy shadow meghatározást, és a válasz light_shadow tömbjében küldd vissza';
+                    ? 'light-shadow: yes, decide light or shadow from this card\'s catalog light and shadow text, or from the web if that is missing, and return it in the answer light_shadow array'
+                    : 'light-shadow: igen, a lap katalógusának fény és árnyék szövegéből döntsd el, ha az hiányzik, a netről, és a válasz light_shadow tömbjében küldd vissza';
             } else {
                 $imprint = in_array($polarity, ['shadow', 'negative', 'negatív', 'korlátozó'], true) ? 'shadow' : 'light';
                 $lines[] = ($locale === 'en' ? 'polarity: ' : 'polaritás: ').$polarity.' ('.$tone.')';
@@ -754,6 +875,13 @@ class TarotReadingService
             : "Beállított kirakás típusok: {$list}. A spread_type ezek közül legyen.";
     }
 
+    private function firstRoundNote(string $locale): string
+    {
+        return $locale === 'en'
+            ? 'No astrology chart in this round. Card meanings are in the catalog lines under the drawn cards. Search the web for anything this message does not contain. You may ask once in the same reply: {"status":"answer","text":"...","need":"birth|relation|projection","requests":[...]}. The text is the reading shown if they decline. If they accept, work from the next DATA message and do not ask again.'
+            : 'Ebben a körben asztrológiai képlet nincs. A lapjelentés a húzott lapok katalógus soraiban van. Ami ebből az üzenetből hiányzik, azt keresd a neten. Ugyanebben a válaszban egyszer kérhetsz pontosítást: {"status":"answer","text":"...","need":"birth|relation|projection","requests":[...]}. A text az előzetes olvasat, ezt látja, ha nem pontosít. Ha elfogadja, a következő ## ADAT üzenetből dolgozz, és ne kérj új adatot.';
+    }
+
     /**
      * @param  array<string, mixed>  $astro
      */
@@ -796,9 +924,7 @@ class TarotReadingService
                 'include' => ['planets', 'signs', 'aspects'],
             ];
         } elseif ($wantsBirth) {
-            $lines[] = $locale === 'en'
-                ? 'Birth chart: not set.'
-                : 'Születési képlet: nincs megadva.';
+            $lines[] = 'user: none';
         }
 
         if (in_array($mode, [Game::ASTRO_DATA_RELATIONS, Game::ASTRO_DATA_ASK], true)) {
@@ -816,8 +942,8 @@ class TarotReadingService
 
         $lines[] = $mode === Game::ASTRO_DATA_ASK
             ? ($locale === 'en'
-                ? 'You may request more sky data, for example a projection, with status need_data.'
-                : 'Kérhetsz további égi adatot, például projekciót, status need_data válasszal.')
+                ? 'You may ask once, inside the same answer: {"status":"answer","text":"...","need":"birth|relation|projection","requests":[...]}. birth or relation asks the seeker for missing data. projection asks the program; put the projection in requests. The text is the reading they see if they decline. Do not ask again after that.'
+                : 'Egyszer kérhetsz, ugyanabban a válaszban: {"status":"answer","text":"...","need":"birth|relation|projection","requests":[...]}. A birth és a relation a hiányzó személyes adatot kéri. A projection a programtól kér, a kérés a requests mezőben legyen. A text az az olvasat, amit akkor lát, ha nem pontosít. Utána már ne kérj adatot.')
             : ($locale === 'en'
                 ? 'Do not request more sky data. Use only what is included here.'
                 : 'Ne kérj további égi adatot. Csak a fenti adatokat használd.');
@@ -832,12 +958,10 @@ class TarotReadingService
     {
         $error = (string) ($result['error'] ?? '');
         if ($error === 'relations_unknown') {
-            return $locale === 'en'
-                ? 'Relations time: not set.'
-                : 'Kapcsolati időpont: nincs megadva.';
+            return 'relation: none';
         }
         if ($error === 'birth_unknown') {
-            return $locale === 'en' ? 'Birth chart: not set.' : 'Születési képlet: nincs megadva.';
+            return 'user: none';
         }
         if ($error !== '') {
             $id = (string) ($result['id'] ?? '');
@@ -847,28 +971,103 @@ class TarotReadingService
                 : 'Égi adat nem elérhető ('.$id.').';
         }
 
-        $data = is_array($result['data'] ?? null) ? $result['data'] : [];
-        $bits = [];
-        foreach ($data['planets'] ?? [] as $planet) {
-            if (! is_array($planet)) {
-                continue;
-            }
-            $polarity = (string) ($planet['polarity'] ?? '');
-            $bits[] = trim(sprintf(
-                '%s %s %s° h%s%s',
-                (string) ($planet['name'] ?? ''),
-                (string) ($planet['sign'] ?? ''),
-                (string) ($planet['degree'] ?? ''),
-                (string) ($planet['house'] ?? ''),
-                $polarity !== '' ? ' '.$polarity : '',
-            ));
+        if ((string) ($result['kind'] ?? '') === 'projection' || (string) ($result['moment'] ?? '') === 'projection') {
+            $encoded = json_encode($result['data'] ?? [], JSON_UNESCAPED_UNICODE);
+
+            return 'projection '.(string) ($result['id'] ?? '')."\n".(is_string($encoded) ? $encoded : '');
+        }
+
+        $lines = is_array($result['lines'] ?? null) ? $result['lines'] : null;
+        if ($lines === null) {
+            $planets = is_array($result['data']['planets'] ?? null) ? $result['data']['planets'] : [];
+            $lines = (new ChartLineFormatter)->fromPresented($planets);
         }
 
         $id = (string) ($result['id'] ?? '');
-        $when = (string) ($result['datetime_utc'] ?? '');
-        $header = ($locale === 'en' ? 'Chart' : 'Képlet').' '.$id.' '.$when;
+        $label = match ($id) {
+            'birth' => 'user:',
+            'relations' => 'relation:',
+            default => 'now:',
+        };
 
-        return $header."\n".implode('; ', $bits);
+        return $label."\npositions: ".(string) ($lines['positions'] ?? '')."\naspects: ".(string) ($lines['aspects'] ?? '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function refineMessage(string $locale, array $payload, ?User $reader): string
+    {
+        $refine = is_array($payload['refine'] ?? null) ? $payload['refine'] : [];
+        $need = (string) ($refine['need'] ?? '');
+        $blocks = [];
+        $blocks[] = $locale === 'en' ? '## DATA' : '## ADAT';
+        $blocks[] = $locale === 'en'
+            ? 'The seeker accepted one clarification. Use this and answer. Do not ask for more data.'
+            : 'A kérdező egy pontosítást elfogadott. Ebből válaszolj. Ne kérj további adatot.';
+
+        if ($need === 'birth') {
+            $blocks[] = $this->suppliedChart($locale, 'user:', $refine, 'birth', $reader);
+        }
+        if ($need === 'relation') {
+            $blocks[] = $this->suppliedChart($locale, 'relation:', $refine, 'relation', $reader);
+        }
+
+        $requests = is_array($refine['requests'] ?? null) ? $refine['requests'] : [];
+        if ($requests !== []) {
+            foreach ($this->sky->fulfill($requests, $reader) as $result) {
+                $blocks[] = $this->formatSkyResult($locale, $result);
+            }
+        }
+
+        return implode("\n", $blocks);
+    }
+
+    /**
+     * @param  array<string, mixed>  $refine
+     */
+    private function suppliedChart(string $locale, string $label, array $refine, string $prefix, ?User $reader): string
+    {
+        $when = trim((string) ($refine[$prefix.'_at'] ?? ''));
+        $country = trim((string) ($refine[$prefix.'_country'] ?? ''));
+        $city = trim((string) ($refine[$prefix.'_city'] ?? ''));
+        $gender = $this->genderLabel($locale, (string) ($refine[$prefix === 'birth' ? 'gender' : 'relation_gender'] ?? ''));
+        $intro = trim((string) ($refine[$prefix === 'birth' ? 'introduction' : 'relation_introduction'] ?? ''));
+        if ($when === '') {
+            return $label."\nnone";
+        }
+
+        try {
+            $utc = \Carbon\Carbon::parse($when, 'Europe/Budapest')->utc()->format('Y-m-d\TH:i:s\Z');
+        } catch (\Throwable) {
+            return $label."\nnone";
+        }
+
+        $coords = $this->places->coordinates($country, $city);
+        if ($coords === null) {
+            $fallback = $this->sky->chartCoordinates($prefix === 'birth' ? 'birth' : 'projection', $reader);
+            $lat = $fallback['lat'];
+            $lon = $fallback['lon'];
+        } else {
+            $lat = $coords['latitude'];
+            $lon = $coords['longitude'];
+        }
+
+        try {
+            $lines = $this->sky->chartLines($utc, $lat, $lon);
+        } catch (\Throwable) {
+            return $label."\nnone";
+        }
+
+        $text = $label."\npositions: ".$lines['positions']."\naspects: ".$lines['aspects'];
+        if ($gender !== '') {
+            $text .= "\n".($locale === 'en' ? 'Gender: ' : 'Nem: ').$gender;
+        }
+        if ($intro !== '') {
+            $text .= "\n".($locale === 'en' ? 'Introduction: ' : 'Bemutatkozás: ').$intro;
+        }
+
+        return $text;
     }
 
     /**

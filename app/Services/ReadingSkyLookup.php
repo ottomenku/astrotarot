@@ -8,7 +8,10 @@ use Throwable;
 
 class ReadingSkyLookup
 {
-    public function __construct(private readonly EphemerisService $ephemeris) {}
+    public function __construct(
+        private readonly EphemerisService $ephemeris,
+        private readonly ChartLineFormatter $lines,
+    ) {}
 
     /**
      * @param  list<array<string, mixed>>  $requests
@@ -65,6 +68,7 @@ class ReadingSkyLookup
                 'datetime_utc' => $moment['datetime_utc'],
                 'location' => $where['location'],
                 'data' => $this->present($chart, $include),
+                'lines' => $this->lines->fromChart($chart),
             ]);
         } catch (Throwable $e) {
             return array_merge($base, [
@@ -160,6 +164,20 @@ class ReadingSkyLookup
             'location' => $where['location'],
             'data' => $result,
         ];
+    }
+
+    /**
+     * @return array{positions: string, aspects: string}
+     */
+    public function chartLines(string $datetimeUtc, float $lat, float $lon): array
+    {
+        $chart = $this->ephemeris->calculate([
+            'datetime_utc' => $datetimeUtc,
+            'lat' => $lat,
+            'lon' => $lon,
+        ]);
+
+        return $this->lines->fromChart($chart);
     }
 
     /**

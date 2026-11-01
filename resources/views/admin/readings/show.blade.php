@@ -34,6 +34,22 @@
                 <label>{{ __('admin.readings.model') }}</label>
                 <p>{{ $log->sourceLabel() ?: ($log->model ?: '—') }}</p>
             </div>
+            <div class="field">
+                <label>{{ __('admin.readings.cost') }}</label>
+                <p>
+                    {{ __('admin.readings.cost_input') }}: {{ number_format($cost['input_tokens'], 0, ',', ' ') }}<br>
+                    {{ __('admin.readings.cost_output') }}: {{ number_format($cost['output_tokens'], 0, ',', ' ') }}<br>
+                    {{ __('admin.readings.cost_total') }}: {{ number_format($cost['total_tokens'], 0, ',', ' ') }}<br>
+                    @if ($cost['local'])
+                        {{ __('admin.readings.cost_local') }}
+                    @elseif ($cost['huf_label'] !== '')
+                        {{ __('admin.readings.cost_huf') }}: {{ $cost['huf_label'] }}
+                    @else
+                        {{ __('admin.readings.cost_unknown') }}
+                    @endif
+                </p>
+                <p class="muted">{{ __('admin.readings.cost_note', ['rate' => \App\Services\ReadingCostEstimate::USD_HUF]) }}</p>
+            </div>
         </div>
 
         <div class="field">
