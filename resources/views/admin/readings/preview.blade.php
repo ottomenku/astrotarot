@@ -24,15 +24,9 @@
             </div>
         </div>
 
-        <div class="field">
-            <label>{{ __('admin.readings.question') }}</label>
-            <p>{{ $log->question }}</p>
-        </div>
+        @include('admin.readings._feedback')
 
-        <div class="field">
-            <label>{{ __('admin.readings.response') }}</label>
-            <pre style="white-space:pre-wrap">{{ $log->response ?: '—' }}</pre>
-        </div>
+        @include('admin.readings._thread', ['technical' => false])
 
         <div class="field">
             <label>{{ __('admin.readings.drawn_cards') }}</label>

@@ -119,21 +119,42 @@
                 <p class="muted">{{ __('admin.games.light_shadow_hint') }}</p>
             </div>
 
-            <div class="field">
-                <label for="astro_data_mode">{{ __('admin.games.astro_data_mode') }}</label>
-                <select id="astro_data_mode" name="astro_data_mode">
-                    @foreach ([
-                        'none' => 'astro_data_none',
-                        'now' => 'astro_data_now',
-                        'personal' => 'astro_data_personal',
-                        'relations' => 'astro_data_relations',
-                        'ask' => 'astro_data_ask',
-                    ] as $value => $label)
-                        <option value="{{ $value }}" @selected(old('astro_data_mode', $game->astro_data_mode ?: 'none') === $value)>{{ __('admin.games.'.$label) }}</option>
-                    @endforeach
-                </select>
+            <fieldset class="field" data-astro-modes>
+                <legend>{{ __('admin.games.astro_data_mode') }}</legend>
+                @php
+                    $selectedModes = old('astro_data_modes', $game->astroModes());
+                    $selectedModes = is_array($selectedModes) ? $selectedModes : [];
+                @endphp
+                <label>
+                    <input type="checkbox" name="astro_data_modes[]" value="none" data-astro-none @checked($selectedModes === [])>
+                    {{ __('admin.games.astro_data_none') }}
+                </label>
+                @foreach ([
+                    'now' => 'astro_data_now',
+                    'personal' => 'astro_data_personal',
+                    'relations' => 'astro_data_relations',
+                    'projections' => 'astro_data_projections',
+                ] as $value => $label)
+                    <label>
+                        <input type="checkbox" name="astro_data_modes[]" value="{{ $value }}" data-astro-send @checked(in_array($value, $selectedModes, true))>
+                        {{ __('admin.games.'.$label) }}
+                    </label>
+                @endforeach
                 <p class="muted">{{ __('admin.games.astro_data_hint') }}</p>
-            </div>
+            </fieldset>
+            <script>
+                document.querySelectorAll('[data-astro-modes]').forEach((box) => {
+                    const none = box.querySelector('[data-astro-none]');
+                    const sends = [...box.querySelectorAll('[data-astro-send]')];
+                    none?.addEventListener('change', () => {
+                        if (none.checked) sends.forEach((input) => { input.checked = false; });
+                    });
+                    sends.forEach((input) => input.addEventListener('change', () => {
+                        if (input.checked && none) none.checked = false;
+                        if (none && sends.every((item) => !item.checked)) none.checked = true;
+                    }));
+                });
+            </script>
 
             <fieldset class="field">
                 <legend>{{ __('admin.games.spread_types') }}</legend>
@@ -142,11 +163,14 @@
                     $selectedTypes = is_array($selectedTypes) ? $selectedTypes : [];
                 @endphp
                 @foreach ([
-                    'YES_NO' => 'spread_yes_no',
-                    'TIMING' => 'spread_timing',
-                    'RELATIONSHIP' => 'spread_relationship',
-                    'DILEMMA' => 'spread_dilemma',
-                    'GENERAL' => 'spread_general',
+                    'BINARY' => 'category_binary',
+                    'CHOICE' => 'category_choice',
+                    'TIMING' => 'category_timing',
+                    'EXPLORATORY' => 'category_exploratory',
+                    'FORECAST' => 'category_forecast',
+                    'ANALYSIS' => 'category_analysis',
+                    'RELATION' => 'category_relation',
+                    'N/A' => 'category_na',
                 ] as $value => $label)
                     <label style="display:block;margin:.25rem 0">
                         <input type="checkbox" name="spread_types[]" value="{{ $value }}" @checked(in_array($value, $selectedTypes, true))>
@@ -154,6 +178,30 @@
                     </label>
                 @endforeach
                 <p class="muted">{{ __('admin.games.spread_types_hint') }}</p>
+            </fieldset>
+
+            <fieldset class="field">
+                <legend>{{ __('admin.games.spread_dimensions') }}</legend>
+                @php
+                    $selectedDimensions = old('spread_dimensions', $game->spread_dimensions ?? []);
+                    $selectedDimensions = is_array($selectedDimensions) ? $selectedDimensions : [];
+                @endphp
+                @foreach ([
+                    'REL' => 'dimension_rel',
+                    'SOC' => 'dimension_soc',
+                    'CAR' => 'dimension_car',
+                    'FIN' => 'dimension_fin',
+                    'HLT' => 'dimension_hlt',
+                    'LEG' => 'dimension_leg',
+                    'SPL' => 'dimension_spl',
+                    'N/A' => 'dimension_na',
+                ] as $value => $label)
+                    <label style="display:block;margin:.25rem 0">
+                        <input type="checkbox" name="spread_dimensions[]" value="{{ $value }}" @checked(in_array($value, $selectedDimensions, true))>
+                        {{ __('admin.games.'.$label) }}
+                    </label>
+                @endforeach
+                <p class="muted">{{ __('admin.games.spread_dimensions_hint') }}</p>
             </fieldset>
 
             <div class="field" data-lang="hu">
@@ -211,8 +259,6 @@
                 'info_mode' => '',
                 'celestial_helper' => 'none',
                 'light_shadow' => 'none',
-                'show_celestial_helper' => false,
-                'send_celestial_helper' => false,
                 'row' => 1,
                 'place' => 1,
                 'draw_order' => 1,

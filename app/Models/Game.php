@@ -31,7 +31,7 @@ class Game extends Model
 
     public const ASTRO_DATA_RELATIONS = 'relations';
 
-    public const ASTRO_DATA_ASK = 'ask';
+    public const ASTRO_DATA_PROJECTION = 'projections';
 
     /** @var list<string> */
     public const ASTRO_DATA_MODES = [
@@ -39,26 +39,71 @@ class Game extends Model
         self::ASTRO_DATA_NOW,
         self::ASTRO_DATA_PERSONAL,
         self::ASTRO_DATA_RELATIONS,
-        self::ASTRO_DATA_ASK,
+        self::ASTRO_DATA_PROJECTION,
     ];
 
-    public const SPREAD_YES_NO = 'YES_NO';
+    /** @var list<string> */
+    public const ASTRO_DATA_SENDS = [
+        self::ASTRO_DATA_NOW,
+        self::ASTRO_DATA_PERSONAL,
+        self::ASTRO_DATA_RELATIONS,
+        self::ASTRO_DATA_PROJECTION,
+    ];
+
+    public const SPREAD_BINARY = 'BINARY';
+
+    public const SPREAD_CHOICE = 'CHOICE';
 
     public const SPREAD_TIMING = 'TIMING';
 
-    public const SPREAD_RELATIONSHIP = 'RELATIONSHIP';
+    public const SPREAD_EXPLORATORY = 'EXPLORATORY';
 
-    public const SPREAD_DILEMMA = 'DILEMMA';
+    public const SPREAD_FORECAST = 'FORECAST';
 
-    public const SPREAD_GENERAL = 'GENERAL';
+    public const SPREAD_ANALYSIS = 'ANALYSIS';
+
+    public const SPREAD_RELATION = 'RELATION';
+
+    public const SPREAD_NA = 'N/A';
 
     /** @var list<string> */
     public const SPREAD_TYPES = [
-        self::SPREAD_YES_NO,
+        self::SPREAD_BINARY,
+        self::SPREAD_CHOICE,
         self::SPREAD_TIMING,
-        self::SPREAD_RELATIONSHIP,
-        self::SPREAD_DILEMMA,
-        self::SPREAD_GENERAL,
+        self::SPREAD_EXPLORATORY,
+        self::SPREAD_FORECAST,
+        self::SPREAD_ANALYSIS,
+        self::SPREAD_RELATION,
+        self::SPREAD_NA,
+    ];
+
+    public const DIMENSION_REL = 'REL';
+
+    public const DIMENSION_SOC = 'SOC';
+
+    public const DIMENSION_CAR = 'CAR';
+
+    public const DIMENSION_FIN = 'FIN';
+
+    public const DIMENSION_HLT = 'HLT';
+
+    public const DIMENSION_LEG = 'LEG';
+
+    public const DIMENSION_SPL = 'SPL';
+
+    public const DIMENSION_NA = 'N/A';
+
+    /** @var list<string> */
+    public const DIMENSIONS = [
+        self::DIMENSION_REL,
+        self::DIMENSION_SOC,
+        self::DIMENSION_CAR,
+        self::DIMENSION_FIN,
+        self::DIMENSION_HLT,
+        self::DIMENSION_LEG,
+        self::DIMENSION_SPL,
+        self::DIMENSION_NA,
     ];
 
     /** @use HasFactory<GameFactory> */
@@ -75,8 +120,9 @@ class Game extends Model
         'prompt_hu',
         'prompt_en',
         'light_shadow_mode',
-        'astro_data_mode',
+        'astro_data_modes',
         'spread_types',
+        'spread_dimensions',
         'is_default',
         'is_active',
         'sort_order',
@@ -86,11 +132,31 @@ class Game extends Model
     {
         return [
             'has_question' => 'boolean',
+            'astro_data_modes' => 'array',
             'spread_types' => 'array',
+            'spread_dimensions' => 'array',
             'is_default' => 'boolean',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function astroModes(): array
+    {
+        $stored = is_array($this->astro_data_modes) ? $this->astro_data_modes : [];
+
+        return array_values(array_filter(
+            $stored,
+            fn ($code): bool => is_string($code) && in_array($code, self::ASTRO_DATA_SENDS, true),
+        ));
+    }
+
+    public function sendsAstro(string $code): bool
+    {
+        return in_array($code, $this->astroModes(), true);
     }
 
     public function rules(): HasMany

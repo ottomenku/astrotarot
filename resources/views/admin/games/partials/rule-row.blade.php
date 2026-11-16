@@ -71,21 +71,6 @@
     </div>
     <div class="row">
         <div class="field">
-            <label>
-                <input type="checkbox" name="rules[{{ $index }}][show_celestial_helper]" value="1" @checked(! empty($rule['show_celestial_helper']))>
-                {{ __('admin.games.show_celestial_helper') }}
-            </label>
-        </div>
-        <div class="field">
-            <label>
-                <input type="checkbox" name="rules[{{ $index }}][send_celestial_helper]" value="1" @checked(! empty($rule['send_celestial_helper']))>
-                {{ __('admin.games.send_celestial_helper') }}
-            </label>
-            <p class="muted">{{ __('admin.games.send_celestial_helper_hint') }}</p>
-        </div>
-    </div>
-    <div class="row">
-        <div class="field">
             <label>{{ __('admin.games.slot_key') }}</label>
             <input name="rules[{{ $index }}][slot_key]" value="{{ $rule['slot_key'] ?? '' }}" maxlength="64">
         </div>

@@ -36,6 +36,7 @@
 
         <h2 class="credits-section-title">{{ __('messages.account_profile') }}</h2>
         <p class="credits-lead"><a class="credits-back" href="{{ route('account.introduction') }}">{{ __('messages.intro_menu') }}</a></p>
+        <p class="credits-lead"><a class="credits-back" href="{{ route('account.astro') }}">{{ __('messages.astro_menu') }}</a></p>
         <dl class="account-dl">
             <div>
                 <dt>{{ __('messages.account_field_name') }}</dt>

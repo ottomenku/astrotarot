@@ -23,6 +23,7 @@
                     <th>{{ __('admin.readings.created') }}</th>
                     <th>{{ __('admin.readings.user') }}</th>
                     <th>{{ __('admin.readings.question') }}</th>
+                    <th>{{ __('admin.readings.feedback_rating') }}</th>
                     <th></th>
                 </tr>
             </thead>
@@ -40,6 +41,18 @@
                             @endif
                         </td>
                         <td>{{ \Illuminate\Support\Str::limit($log->question, 80) }}</td>
+                        <td>
+                            @if ($log->readingSession?->feedback_rating !== null)
+                                {{ $log->readingSession->feedback_rating }}/5
+                                @if (filled($log->readingSession->feedback_verdict))
+                                    <div class="muted">{{ __('admin.readings.verdicts.'.$log->readingSession->feedback_verdict) }}</div>
+                                @endif
+                            @elseif (filled($log->readingSession?->feedback_verdict))
+                                {{ __('admin.readings.verdicts.'.$log->readingSession->feedback_verdict) }}
+                            @else
+                                <span class="muted">—</span>
+                            @endif
+                        </td>
                         <td class="admin-actions">
                             <a class="admin-icon-btn is-blue" href="{{ route('admin.readings.preview', $log) }}" title="{{ __('admin.readings.preview') }}">{!! \App\Support\AdminIcons::eye() !!}</a>
                             <a class="admin-icon-btn is-red" href="{{ route('admin.readings.show', $log) }}" title="{{ __('admin.readings.view') }}">{!! \App\Support\AdminIcons::eye() !!}</a>
@@ -47,7 +60,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="muted">{{ __('admin.readings.empty') }}</td>
+                        <td colspan="6" class="muted">{{ __('admin.readings.empty') }}</td>
                     </tr>
                 @endforelse
             </tbody>

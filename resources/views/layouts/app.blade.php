@@ -28,6 +28,7 @@
         .flash { background: #e8f5e9; border: 1px solid #a5d6a7; padding: .75rem 1rem; border-radius: .35rem; margin-bottom: 1rem; }
         .error { background: #fdecea; border: 1px solid #f5c2c0; padding: .75rem 1rem; border-radius: .35rem; margin-bottom: 1rem; color: #8a1f11; }
         .muted { color: var(--muted); }
+        .llm-trace { white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.45 ui-monospace, Consolas, monospace; margin: 0; }
         .admin-nav { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
         .admin-nav a { text-decoration: none; }
         .admin-nav a.active { font-weight: 700; text-decoration: underline; }

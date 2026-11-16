@@ -55,22 +55,39 @@ class AdminSettingsTest extends TestCase
         $custom = trim(str_repeat('Egyedi prompt. ', 4));
 
         $this->actingAs($admin)
+            ->get(route('admin.prompts.edit'))
+            ->assertOk()
+            ->assertSee('Kategória válaszok', false)
+            ->assertSee('Időpont:', false)
+            ->assertSee('name="category_answers_hu[TIMING]"', false);
+
+        $answers = $settings->defaultCategoryAnswersHu();
+        $answers['TIMING'] = 'Adj egy konkrét napot a PROJECTION blokkból.';
+        $answersEn = $settings->defaultCategoryAnswersEn();
+
+        $this->actingAs($admin)
             ->put(route('admin.prompts.update'), [
                 'system_prompt_hu' => $custom,
                 'system_prompt_en' => $custom,
                 'base_prompt_hu' => $custom,
                 'base_prompt_en' => $custom,
+                'classify_prompt_hu' => $custom,
+                'classify_prompt_en' => $custom,
+                'category_answers_hu' => $answers,
+                'category_answers_en' => $answersEn,
             ])
             ->assertRedirect(route('admin.prompts.edit'));
 
         $this->assertSame($custom, $settings->systemPrompt('hu'));
         $this->assertSame($custom, $settings->basePrompt('hu'));
+        $this->assertSame('Adj egy konkrét napot a PROJECTION blokkból.', $settings->categoryAnswers('hu')['TIMING']);
 
         $this->actingAs($admin)
             ->post(route('admin.prompts.reset'))
             ->assertRedirect(route('admin.prompts.edit'));
 
         $this->assertSame($settings->defaultSystemPromptHu(), $settings->systemPrompt('hu'));
+        $this->assertSame($settings->defaultCategoryAnswersHu()['TIMING'], $settings->categoryAnswers('hu')['TIMING']);
     }
 
     public function test_admin_can_update_legal_texts(): void

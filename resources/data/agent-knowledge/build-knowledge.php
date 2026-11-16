@@ -318,7 +318,7 @@ Az időszak legfeljebb 120 nap. A válasz ablakokat ad, nem igen-nem ítéletet.
 
 A light_shadow csak annál a lapnál kell, ahol az üzenet light-shadow: igen. value csak light vagy shadow. A slot a lap sorszáma 1-től. A 0 polaritás light. Ahol light-shadow: nem, a kapott sorslenyomatot használd.
 
-A question_type rövid címke. A spread_type a felsoroltak egyike, ha az üzenet ad listát: YES_NO, TIMING, RELATIONSHIP, DILEMMA, GENERAL.
+A question_type rövid címke. A spread_type a felsorolt kategória, ha az üzenet ad listát: BINARY, CHOICE, TIMING, EXPLORATORY, FORECAST, ANALYSIS, RELATION, N/A. A dimension a felsorolt életterület, ha az üzenet ad listát: REL, SOC, CAR, FIN, HLT, LEG, SPL, N/A. N/A nem besorolható.
 
 Az égi sor a program számítása. Sorrend: Nap, Hold, Merkúr, Vénusz, Mars, Jupiter, Szaturnusz, Uránusz, Neptunusz, Plútó, ASC, DESC, Fortune. Fok egy tizedesig. R vagy N csak a bolygóknál. A fényszög egy párja egyszer szerepel. Az állócsillag csak együttállásként, azon a testen, amelyhez 1 fokon belül esik. A user: none és a relation: none hiány. Ne találj ki helyzetet, fényszöget, csillagot vagy lapot, amely nincs a kapott adatokban.
 TXT;
@@ -350,7 +350,7 @@ The window is at most 120 days. The reply is time windows, not a yes or no. Afte
 
 light_shadow is required only for a card whose message says light-shadow: yes. value is only light or shadow. slot is the card number from 1. A polarity of 0 is light. Where the message says light-shadow: no, keep the fate imprint you were given.
 
-question_type is a short label. spread_type is one of the listed values when the message gives them: YES_NO, TIMING, RELATIONSHIP, DILEMMA, GENERAL.
+question_type is a short label. spread_type is one of the listed categories when the message gives them: BINARY, CHOICE, TIMING, EXPLORATORY, FORECAST, ANALYSIS, RELATION, N/A. dimension is one of the listed life areas when the message gives them: REL, SOC, CAR, FIN, HLT, LEG, SPL, N/A. N/A means unclassified.
 
 The sky lines are the program’s calculation. Order: Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, ASC, DESC, Fortune. Degree to one decimal. R or N only on planets. Each aspect pair appears once. A fixed star is only a conjunction, on the body it touches within 1 degree. user: none and relation: none mean the data is missing. Do not invent a position, aspect, star or card that is not in the supplied data.
 TXT;

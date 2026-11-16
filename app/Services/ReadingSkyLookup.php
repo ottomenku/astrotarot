@@ -223,6 +223,19 @@ class ReadingSkyLookup
     }
 
     /**
+     * @param  array<string, mixed>  $chart
+     * @return array<string, mixed>
+     */
+    public function chartFor(string $datetimeUtc, float $lat, float $lon): array
+    {
+        return $this->ephemeris->calculate([
+            'datetime_utc' => $datetimeUtc,
+            'lat' => $lat,
+            'lon' => $lon,
+        ]);
+    }
+
+    /**
      * Birth charts use the birth place. Every other moment uses the residence when it is known.
      *
      * @return array{lat: float, lon: float, location: string}

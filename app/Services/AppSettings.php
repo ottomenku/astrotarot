@@ -17,6 +17,14 @@ class AppSettings
 
     public const BASE_PROMPT_EN = 'base_prompt_en';
 
+    public const CLASSIFY_PROMPT_HU = 'classify_prompt_hu';
+
+    public const CLASSIFY_PROMPT_EN = 'classify_prompt_en';
+
+    public const CATEGORY_ANSWERS_HU = 'category_answers_hu';
+
+    public const CATEGORY_ANSWERS_EN = 'category_answers_en';
+
     public const SITE_ENABLED = 'site_enabled';
 
     public const REGISTRATION_ENABLED = 'registration_enabled';
@@ -159,6 +167,17 @@ class AppSettings
         );
     }
 
+    public function classifyPrompt(string $locale): string
+    {
+        return $this->localizedPrompt(
+            $locale,
+            self::CLASSIFY_PROMPT_EN,
+            self::CLASSIFY_PROMPT_HU,
+            $this->defaultClassifyPromptEn(),
+            $this->defaultClassifyPromptHu(),
+        );
+    }
+
     private function localizedPrompt(
         string $locale,
         string $enKey,
@@ -209,58 +228,28 @@ class AppSettings
     public function defaultSystemPromptHu(): string
     {
         return implode("\n", [
-            'Ez a rendszerprompt a weblap és közted lévő adatprotokoll. A stílust, a szerepet, a hosszt és a válaszadás szabályait a felhasználói üzenet ALAPPROMPT része mondja meg. A kirakás helyeinek jelentése a KIRAKASPROMPT, a kihúzott lapok a KIRAKAS, a kérdés és a személyes adatok a FELHASZNALO részben vannak.',
+            'Ez a rendszerprompt a weblap és közted lévő válaszprotokoll. A stílust, a szerepet, a hosszt és a válaszadás szabályait a felhasználói üzenet ALAPPROMPT része mondja meg. A kirakás helyeinek jelentése a KIRAKASPROMPT, a kihúzott lapok a KIRAKAS, a kérdés a FELHASZNALO részben van. Az égi képlet, ha a kirakás kéri, ugyanebben az üzenetben van: NOW, USER, RELATION vagy PROJECTION.',
             'A weblap minden fordulót elment, és a következő hívásban a teljes eddigi párbeszédet visszaküldi. Ne feltételezz rejtett memóriát.',
             'Minden válaszod egyetlen JSON objektum. Ne tegyél köré markdownot, és ne írj a JSON-on kívül szöveget.',
-            'Először nevezd meg a kérdés és a kirakás típusát (question_type, spread_type), rövid címkével. Utána döntsd el, kell-e további égi adat a kész olvasathoz.',
-            'Ha kell adat, és ebben a fázisban még kérhetsz (nem kaptál még ADAT üzenetet, vagy a remaining_requests nagyobb, mint 0):',
-            '{"status":"need_data","question_type":"...","spread_type":"...","requests":[...]}',
-            'Ha megvan a válasz:',
             '{"status":"answer","question_type":"...","spread_type":"...","text":"...","light_shadow":[{"slot":1,"row":1,"place":1,"value":"light"}]}',
-            'A text mező a kész olvasat, az ALAPPROMPT szerint. Egy fázisban legfeljebb 3 adatkérés lehet. A harmadik adatkészlet után a következő válaszod status=answer.',
+            'A text mező a kész olvasat, az ALAPPROMPT szerint. Más státust ne küldj, és adatot ne kérj. A lap neve és jelentése a KIRAKAS részben van. Az égi mester és az égi segítő asztroadata a NOW képletben van, ha a kirakás NOW adatot küld. Ha nincs égi blokk, csak a lapjelentésből dolgozz. Ha az üzenet megadja a kategóriát, a spread_type az legyen.',
             $this->lightShadowProtocol('hu'),
-            'Egyszerre legfeljebb 4 kérés mehet. A kind értékei:',
-            '1) chart — pillanatkép. moment: "now", "birth" vagy ISO idő. include: planets, signs, aspects, fixed_stars, houses közül a szükségesek.',
-            'planets: bolygó, jegy, fok, ház, retrográd, közeli állócsillag. signs: bolygók jegye. aspects: fényszög két égitest között (conjunction, sextile, square, trine, quincunx, opposition). fixed_stars: állócsillagok helye. houses: házcsúcsok, bennük a bolygók és állócsillagok, és a kapott fényszögek.',
-            'Példa: {"id":"1","kind":"chart","moment":"now","include":["planets","aspects","fixed_stars"]}',
-            '2) houses — házhelyzet. moment ugyanaz. Házanként jön a csúcs, a benne lévő bolygók és állócsillagok, és a fényszögeik.',
-            'Példa: {"id":"2","kind":"houses","moment":"now"}',
-            '3) projection — mikor és meddig. event: aspect, house vagy retrograde. aspect eseménynél aspect és with kell. house eseménynél house: 1–12. A vizsgált időszak legfeljebb 120 nap, a válasz from/until ablakokat ad.',
-            'Példa: {"id":"3","kind":"projection","body":"Mars","event":"aspect","aspect":"square","with":"Saturn","from":"2026-10-20T00:00:00Z","until":"2026-12-20T00:00:00Z"}',
-            'Példa retrográdra: {"id":"4","kind":"projection","body":"Mercury","event":"retrograde","from":"2026-10-20T00:00:00Z","until":"2027-01-20T00:00:00Z"}',
-            'A moment=birth csak akkor teljesül, ha a FELHASZNALO részben van születési idő. Ha egy kérés error mezővel jön vissza, ne találd ki a hiányzó eget: dolgozz abból, ami megérkezett.',
-            'A születési pillanat házai a születési hely koordinátáit használják, ha a FELHASZNALO részben van születési hely. A jelenlegi és egyéb pillanatok a tartózkodási helyet használják, ha az meg van adva. Ha nincs hely, az oldal alapértelmezett koordinátái érvényesek.',
-            'Ne találj ki bolygóhelyzetet, fényszöget, állócsillagot vagy lapot, ami nincs a kapott adatokban.',
-            'A pontosítás és a bővebb kifejtés nem új kérdés, hanem új FORDULO ugyanebben a párbeszédben. Azon belül újra kérhetsz adatot, ismét legfeljebb háromszor.',
+            'Ne találj ki bolygóhelyzetet, fényszöget vagy lapot, ami nincs a kapott adatokban.',
+            'A pontosítás és a bővebb kifejtés nem új kérdés, hanem új FORDULO ugyanebben a párbeszédben. Ezek is status=answer választ kapnak, a már megkapott adatokból.',
         ]);
     }
 
     public function defaultSystemPromptEn(): string
     {
         return implode("\n", [
-            'This system prompt is the data protocol between you and the website. Style, role, length and answering rules live in the BASE section of the user message. Position meanings live in SPREAD. Drawn cards live in SPREAD_DATA. The question and personal details live in USER.',
+            'This system prompt is the reply protocol between you and the website. Style, role, length and answering rules live in the BASE section of the user message. Position meanings live in SPREAD. Drawn cards live in SPREAD_DATA. The question lives in USER. When the spread sends a sky chart, it is in the same message: NOW, USER, RELATION or PROJECTION.',
             'The website stores every turn and sends the full dialogue back on the next call. Do not assume hidden memory.',
             'Every reply is one JSON object. No markdown fence and no text outside the JSON.',
-            'First name the question type and the spread type (question_type, spread_type) with a short label. Then decide whether more sky data is required before the reading.',
-            'If you need data, and this phase still allows it (no DATA message yet, or remaining_requests is greater than 0):',
-            '{"status":"need_data","question_type":"...","spread_type":"...","requests":[...]}',
-            'When the reading is ready:',
             '{"status":"answer","question_type":"...","spread_type":"...","text":"...","light_shadow":[{"slot":1,"row":1,"place":1,"value":"light"}]}',
-            'The text field is the finished reading, written by the BASE rules. One phase allows at most 3 data requests. After the third dataset your next reply must be status=answer.',
+            'The text field is the finished reading, written by the BASE rules. Do not send another status and do not request more data. Card names and meanings are in SPREAD_DATA. The celestial master and celestial helper are in the NOW chart when the spread sends NOW. When there is no sky block, work from the card meanings. When the message already names a category, spread_type stays that category.',
             $this->lightShadowProtocol('en'),
-            'Send at most 4 requests at once. kind values:',
-            '1) chart — a snapshot. moment: "now", "birth", or an ISO time. include any of: planets, signs, aspects, fixed_stars, houses.',
-            'planets: body, sign, degree, house, retrograde, nearby fixed star. signs: bodies in signs. aspects: angle between two bodies (conjunction, sextile, square, trine, quincunx, opposition). fixed_stars: star positions. houses: cusps, planets and fixed stars inside, and the aspects they receive.',
-            'Example: {"id":"1","kind":"chart","moment":"now","include":["planets","aspects","fixed_stars"]}',
-            '2) houses — house state. Same moment values. Each house returns its cusp, the planets and fixed stars in it, and their aspects.',
-            'Example: {"id":"2","kind":"houses","moment":"now"}',
-            '3) projection — when and for how long. event: aspect, house, or retrograde. An aspect event needs aspect and with. A house event needs house 1–12. The scanned window is at most 120 days. The reply is from/until windows.',
-            'Example: {"id":"3","kind":"projection","body":"Mars","event":"aspect","aspect":"square","with":"Saturn","from":"2026-10-20T00:00:00Z","until":"2026-12-20T00:00:00Z"}',
-            'Retrograde example: {"id":"4","kind":"projection","body":"Mercury","event":"retrograde","from":"2026-10-20T00:00:00Z","until":"2027-01-20T00:00:00Z"}',
-            'moment=birth works only when USER contains a birth time. If a request comes back with error, do not invent the missing sky: work from what arrived.',
-            'Birth-moment houses use the birth-place coordinates when USER contains a birth place. Current and other moments use the residence when it is given. Otherwise the site default coordinates apply.',
-            'Do not invent a planet position, aspect, fixed star or card that is not in the supplied data.',
-            'A clarification or a deeper expansion is not a new question. It is another TURN in the same dialogue, and that turn may request data again, at most three times.',
+            'Do not invent a planet position, aspect or card that is not in the supplied data.',
+            'A clarification or a deeper expansion is not a new question. It is another TURN in the same dialogue. Those replies are also status=answer and use the data already supplied.',
         ]);
     }
 
@@ -269,17 +258,15 @@ class AppSettings
         return implode("\n", [
             'Te az AstroTarot értelmezője vagy: asztrológiai és tarot tudással, meleg, világos magyar hangon.',
             'Ne használj # címsorokat, számozott szakaszcímeket vagy bullet listákat.',
-            'Az első olvasat egyetlen, folyó szöveg legyen, legfeljebb 10–12 mondat.',
-            'Kötelező ív:',
+            'Ha az üzenetben van KATEGORIA VALASZ blokk, az az első olvasat formája, és felülírja a 10–12 mondatos ívet.',
+            'Ha nincs KATEGORIA VALASZ, az első olvasat egyetlen folyó szöveg, legfeljebb 10–12 mondat. Kötelező ív:',
             '1) Említsd meg az Égi mestert (név), és a kérdezés idején érvényes 1–2 érdekes adatát (jegy, ház, retrográd/direkt, fényszög) a jelentésével együtt.',
             '2) Említsd a választott tarot figura alapnevét és rövid jelentését, majd kösd össze: „úgy értelmezi, hogy…”',
             '3) Ezután add meg a kérdésre adott választ, a light/shadow polaritást is figyelembe véve.',
-            'Polaritás: light/positive = támogató hangsúly; shadow = óvatosság, árnyék, kerülendők.',
-            'Ha a „kérdés” értelmetlen karakterhalmaz, billentyűzúgás, véletlenszerű betűsor vagy egyéb, emberi nyelven nem értelmezhető szöveg:',
-            '— NE próbáld meg asztrológiai/tarot olvasatként megfejteni, és ne kérj égi adatot.',
-            '— Írd pontosan (vagy ezzel egyenértékű, meleg hangon): „A Mestered a kérdést nem tudja értelmezni, de küld egy verset, amire szerinte szükséged van:”',
-            '— Utána írj egy rövid, önálló, véletlenszerűen hangzó, hangulatos magyar verset (4–12 sor). A vers lehet szabadvers; ne magyarázd utána.',
-            'Pontosító forduló: válaszolj a pontosításra, legfeljebb 8–10 mondatban, a korábbi olvasat fényében. Ne kezdj új húzást.',
+            'Polaritás: light = támogató hangsúly; shadow = óvatosság, árnyék, kerülendő.',
+            'A nem-értelmezhető mondatot csak akkor használd, ha a kérdés üres vagy nem emberi szöveg. Ilyenkor a text legyen pontosan ez, más szöveg nélkül: „Az LLM nem tudja értelmezni, vagy nem egyértelmű a kérdésed. Kérlek pontosítsd vagy küld el a pontosítást üresen ha csak egy általános kifejtést szeretnél…”',
+            'Ha a kategória már meg van adva, mindig írd meg az olvasatot. Szerencsejáték, pénz, egészség és jog időzítése is olvasat: szimbolikus időszak és óvatosság. Nyereményt, esélyt, tétet vagy biztos kimenetelt ne ígérj, és ne válaszd helyette a nem-értelmezhető mondatot.',
+            'Üres pontosítás: általános kifejtés ugyanarról a kirakásról. Ne kezdj új húzást.',
             'Bővebb kifejtés: menj mélyebbre, legfeljebb 14–16 mondatban, gyakorlati hangon. Ne ismételd szó szerint az előző szöveget.',
             'Ne találj ki olyan lap- vagy bolygóneveket, amelyek nincsenek a kapott adatokban.',
             'Ne ígérj orvosi, jogi vagy pénzügyi bizonyosságot.',
@@ -291,17 +278,15 @@ class AppSettings
         return implode("\n", [
             'You are the AstroTarot interpreter: warm, clear English with solid astrology and tarot literacy.',
             'Do not use # headings, numbered section titles, or bullet lists.',
-            'The first reading is one flowing answer of at most 10–12 sentences.',
-            'Required arc:',
+            'When the message contains a CATEGORY ANSWER block, that is the shape of the first reading, and it overrides the 10–12 sentence arc.',
+            'When there is no CATEGORY ANSWER block, the first reading is one flowing answer of at most 10–12 sentences. Required arc:',
             '1) Name the Celestial Master and mention 1–2 interesting facts from its current chart position (sign, house, retrograde/direct, aspects) with meaning.',
             '2) Name the chosen tarot figure and its short meaning, then bridge with “it interprets this as…”',
             '3) Answer the question, honouring light/shadow polarity.',
-            'Polarity: light/positive = supportive emphasis; shadow = caution, shadow side, what to avoid.',
-            'If the “question” is gibberish, keyboard mash, a random character string, or otherwise not interpretable as human language:',
-            '— Do NOT force an astrology/tarot reading, and do not request sky data.',
-            '— Write exactly (or warm equivalent): “Your Master cannot interpret the question, but sends a poem they feel you need:”',
-            '— Then write a short, standalone, seemingly random evocative poem in English (4–12 lines). Free verse is fine; do not explain afterward.',
-            'Clarification turn: answer the clarification in at most 8–10 sentences, in light of the previous reading. Do not start a new draw.',
+            'Polarity: light = supportive emphasis; shadow = caution and what to avoid.',
+            'Use the cannot-interpret sentence only when the question is empty or not human language. Then the text must be exactly this and nothing else: “The LLM cannot interpret this, or the question is not clear. Please clarify, or send the clarification empty if you only want a general reading…”',
+            'When a category is already given, always write the reading. Timing for games of chance, money, health and law is still a reading: a symbolic window and the caution. Do not promise winnings, odds, a stake or a certain outcome, and do not answer with the cannot-interpret sentence instead.',
+            'An empty clarification asks for a general reading of the same spread. Do not start a new draw.',
             'Expansion turn: go deeper, at most 14–16 practical sentences. Do not repeat the prior text verbatim.',
             'Do not invent names that contradict the provided data.',
             'Do not promise medical, legal, or financial certainty.',
@@ -311,10 +296,10 @@ class AppSettings
     public function lightShadowProtocol(string $locale): string
     {
         if ($locale === 'en') {
-            return 'When a card in SPREAD_DATA says its light-shadow value must be decided from celestial data (light-shadow: yes), the displayable answer (status=answer) must include a light_shadow array. One item per such card: {"slot":1,"row":1,"place":1,"value":"light"}. slot is that card\'s 1-based number in the list. value is only "light" or "shadow". Decide from the sky data you received, not at random. Where the card says light-shadow: no, keep the given fate imprint and do not overwrite it. Do not put light_shadow on a need_data reply.';
+            return 'Each card in SPREAD_DATA has one LightShadow mark. LightShadow:light and LightShadow:shadow are already decided: use them and do not overwrite them. LightShadow:None means this card has no light-shadow decision. LightShadow:Get means you decide it and return it in light_shadow: {"slot":1,"row":1,"place":1,"value":"light"}. value is only light or shadow. Score Get with signs. A positive sum is light, a negative sum is shadow, and 0 is light. If the position has a celestial helper, score that helper. If it has none and the card is an astro body, score that body. A planet: sign (Aries, Gemini, Leo, Libra, Sagittarius, Aquarius +1; Taurus, Cancer, Virgo, Scorpio, Capricorn, Pisces -1) plus aspects (0° 0, 60° +1, 90° -1, 120° +1, 150° -1, 180° -1) plus motion (retrograde -1, direct +1). A tarot card: sum the NOW elements (fire and air +1, earth and water -1, once for each body in that element). Use only the sky in the message.';
         }
 
-        return 'Ha egy lapnál a KIRAKAS azt írja, hogy a light-shadow értéket az égi adatok alapján kell meghatározni (light-shadow: igen), a megjeleníthető kész válasz (status=answer) JSON-jába tedd a light_shadow tömböt. Minden ilyen lap egy elem: {"slot":1,"row":1,"place":1,"value":"light"}. A slot a lap sorszáma a listában, 1-től. A value csak "light" vagy "shadow" lehet. A döntést a kapott égi adatokból hozd, ne véletlenszerűen. Ahol light-shadow: nem, a megadott sorslenyomatot használd, és ne írd felül. A need_data válaszba ne tegyél light_shadow mezőt.';
+        return 'A KIRAKAS minden lapján egy LightShadow jel van. A LightShadow:light és a LightShadow:shadow kész érték: ezt használd, ne írd felül. A LightShadow:None azt jelenti, hogy ennél a lapnál nincs light-shadow döntés. A LightShadow:Get-et neked kell eldöntened, és a light_shadow tömbben visszaküldeni: {"slot":1,"row":1,"place":1,"value":"light"}. A value csak light vagy shadow. A Get előjeles összeg. A pozitív light, a negatív shadow, a 0 is light. Ha a helynek van égi kísérője, annak a minősége számít. Ha nincs, és a lap asztro elem, annak a minősége számít. Bolygónál: a jegy (Kos, Ikrek, Oroszlán, Mérleg, Nyilas, Vízöntő +1; Bika, Rák, Szűz, Skorpió, Bak, Halak -1), plusz a fényszög (0° 0, 60° +1, 90° -1, 120° +1, 150° -1, 180° -1), plusz az irány (retrográd -1, direkt +1). Tarot lapnál a NOW elemeit összegezd (tűz és levegő +1, föld és víz -1, elemenként ahány égitest abban áll). Csak a kapott égi adatból dönts.';
     }
 
     public function defaultTermsHu(): string
@@ -375,5 +360,158 @@ class AppSettings
             '4. Retention: as long as needed to run the service, until account deletion, or as required by law.',
             '5. In Settings you can view your stored data, delete your conversations, and send a deletion request. Payment, accounting and other legally retained records (such as credit requests) are kept for the statutory period.',
         ]);
+    }
+
+    public function defaultClassifyPromptHu(): string
+    {
+        return implode("\n", [
+            'Egy kérdést sorolsz be. A válaszod egyetlen JSON objektum, szöveg és markdown nélkül:',
+            '{"category":"...","dimension":"..."}',
+            '',
+            'category ezek egyike:',
+            'N/A — értelmezhetetlen, nem kérdés, vagy nem lehet besorolni',
+            'BINARY — igen vagy nem',
+            'CHOICE — A vagy B, esetleg C',
+            'TIMING — mikor',
+            'EXPLORATORY — mit, miért, hogyan',
+            'FORECAST — mi várható',
+            'ANALYSIS — milyen vagyok, mi az életfeladatom',
+            'RELATION — hogyan viszonyulnak hozzám',
+            '',
+            'dimension ezek egyike:',
+            'N/A — az életterület nem azonosítható',
+            'REL — párkapcsolat, házasság, társulás',
+            'SOC — barátság, közösség, család, hálózat',
+            'CAR — karrier, hivatás, státusz, munka',
+            'FIN — pénzügy, vagyon, befektetés',
+            'HLT — egészség, vitalitás, lelki állapot',
+            'LEG — jogi ügy, szerződés, konfliktus',
+            'SPL — önismeret, spiritualitás, életút',
+            '',
+            'A szerkezet dönti el a kategóriát, a téma a dimenziót. Ha a szerkezet tiszta, de a téma nem, a kategória a típus, a dimenzió N/A. Lapot, eget és tanácsot ne adj.',
+        ]);
+    }
+
+    public function defaultClassifyPromptEn(): string
+    {
+        return implode("\n", [
+            'You classify one question. Your reply is a single JSON object, with no prose and no markdown:',
+            '{"category":"...","dimension":"..."}',
+            '',
+            'category is one of:',
+            'N/A — uninterpretable, not a question, or impossible to classify',
+            'BINARY — yes or no',
+            'CHOICE — A or B, possibly C',
+            'TIMING — when',
+            'EXPLORATORY — what, why, how',
+            'FORECAST — what is ahead',
+            'ANALYSIS — what I am like, what my life task is',
+            'RELATION — how they relate to me',
+            '',
+            'dimension is one of:',
+            'N/A — the life area cannot be identified',
+            'REL — relationship, marriage, partnership',
+            'SOC — friendship, community, family, network',
+            'CAR — career, vocation, status, work',
+            'FIN — finances, wealth, investment',
+            'HLT — health, vitality, mental state',
+            'LEG — legal matters, contracts, conflict',
+            'SPL — self-knowledge, spirituality, life path',
+            '',
+            'Structure decides the category, the topic decides the dimension. If the structure is clear but the topic is not, the category is the type and the dimension is N/A. Do not draw cards, read the sky, or give advice.',
+        ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function categoryAnswers(string $locale): array
+    {
+        $locale = $locale === 'en' ? 'en' : 'hu';
+        $defaults = $locale === 'en' ? $this->defaultCategoryAnswersEn() : $this->defaultCategoryAnswersHu();
+        $stored = $this->get($locale === 'en' ? self::CATEGORY_ANSWERS_EN : self::CATEGORY_ANSWERS_HU);
+        $decoded = is_string($stored) ? json_decode($stored, true) : null;
+        if (! is_array($decoded)) {
+            return $defaults;
+        }
+
+        $answers = [];
+        foreach ($defaults as $code => $text) {
+            $value = trim((string) ($decoded[$code] ?? ''));
+            $answers[$code] = $value !== '' ? $value : $text;
+        }
+
+        return $answers;
+    }
+
+    public function categoryAnswerBlock(string $locale, string $category): string
+    {
+        $category = trim($category);
+        if ($category === '') {
+            return '';
+        }
+
+        $answers = $this->categoryAnswers($locale);
+        $shape = trim((string) ($answers['shape'] ?? ''));
+        $rule = trim((string) ($answers[$category] ?? ''));
+        $header = $locale === 'en' ? 'CATEGORY ANSWER' : 'KATEGORIA VALASZ';
+        $lines = [$header];
+        if ($shape !== '') {
+            $lines[] = $shape;
+        }
+        if ($rule !== '') {
+            $lines[] = '';
+            $lines[] = $category.': '.$rule;
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function defaultCategoryAnswersHu(): array
+    {
+        return [
+            'shape' => implode("\n", [
+                'A kifejtés sorrendje kötött.',
+                '1) Először a kategória által kért választ add meg, egyértelműen, még a magyarázat előtt.',
+                '2) Utána rövid magyarázat, 8–10 mondat.',
+                '3) Majd az indoklás: mire alapozod, a lapok és az égi jelek közül csak a legerősebbeket. Ez a rész legfeljebb 20–25 mondat.',
+                'Ne helyettesítsd a kért választ általános összegzéssel.',
+            ]),
+            'BINARY' => 'Határozott igen vagy nem. A magyarázat árnyalhatja, de legyen egy összegző sor, pontosan így: „Összességében: igen.” vagy „Összességében: nem.”',
+            'CHOICE' => 'Nevezd meg a választott lehetőséget. Ha a kérdés A-t, B-t vagy C-t ad, közülük egyet válassz. Ha nem nevez meg lehetőségeket, mondd meg, melyik irány a támogatott. Legyen egy összegző sor: „Összességében: ” és utána a választott lehetőség.',
+            'TIMING' => 'Adj egy vagy több konkrét időpontot a PROJECTION asztrológiai adatokból, ha az üzenetben van ilyen blokk. Nap, napszak vagy szűk időszak legyen, ne „a közeljövőben”. Ha nincs erős jelzés, a magyarázatban mondd el, hogy nincs erős jelzés, de a legjobb időpont vagy időpontok ezek. Az első sor így kezdődjön: „Időpont: ”.',
+            'EXPLORATORY' => 'Válaszolj közvetlenül a mi, miért vagy hogyan kérdésre. Ne erőltess igen/nemet, és ne adj időpontot, ha a kérdés nem azt kéri. Az első mondat a lényeg, ebben a formában: „Lényeg: ”.',
+            'FORECAST' => 'Mondd meg, mi várható. Konkrét állapot vagy fordulat legyen, ne általános lehetőség. Az első sor: „Várható: ” és utána a lényeg egy mondatban.',
+            'ANALYSIS' => 'Mondd meg, milyen a kérdező ebben a témában, és mi az életfeladata ebből a kirakásból. Az első sor: „Minta: ” és utána egy mondat.',
+            'RELATION' => 'Mondd meg, hogyan áll a helyzet, és hogyan viszonyulnak a kérdezőhöz. Az első sor: „Viszony: ” és utána egy mondat.',
+            'N/A' => 'Általános kifejtés erről a kirakásról. Az első mondat a lényeg: „Lényeg: ”. Ne kérj új kategóriát, és ne mondd, hogy a kérdés értelmezhetetlen.',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function defaultCategoryAnswersEn(): array
+    {
+        return [
+            'shape' => implode("\n", [
+                'The reading order is fixed.',
+                '1) First give the answer the category asks for, plainly, before any explanation.',
+                '2) Then a short explanation of 8–10 sentences.',
+                '3) Then the grounds: only the strongest cards and sky signals. This part is at most 20–25 sentences.',
+                'Do not replace the requested answer with a general summary.',
+            ]),
+            'BINARY' => 'A definite yes or no. The explanation may add nuance, but include one summary line, exactly: “Overall: yes.” or “Overall: no.”',
+            'CHOICE' => 'Name the chosen option. If the question offers A, B, or C, pick one. If it names no options, say which direction is supported. Include a summary line: “Overall: ” followed by the chosen option.',
+            'TIMING' => 'Give one or more concrete times from the PROJECTION astrology block when that block is in the message. Use a day, a part of the day, or a narrow window, not “sometime soon”. If there is no strong signal, say so in the explanation, and still name the best time or times. The first line starts: “Time: ”.',
+            'EXPLORATORY' => 'Answer the what, why, or how directly. Do not force yes or no, and do not give a time unless the question asks for one. The first sentence is the point, in this form: “Point: ”.',
+            'FORECAST' => 'Say what is ahead. Make it a concrete state or turn, not a vague possibility. The first line is “Ahead: ” followed by the point in one sentence.',
+            'ANALYSIS' => 'Say what the querent is like in this matter, and what life task this spread shows. The first line is “Pattern: ” followed by one sentence.',
+            'RELATION' => 'Say how the situation stands and how the other side relates to the querent. The first line is “Relation: ” followed by one sentence.',
+            'N/A' => 'A general reading of this spread. The first sentence is the point: “Point: ”. Do not ask for a new category, and do not call the question uninterpretable.',
+        ];
     }
 }

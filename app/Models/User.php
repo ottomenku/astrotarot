@@ -109,6 +109,11 @@ class User extends Authenticatable
         return $this->hasMany(UserPackPreference::class);
     }
 
+    public function birthProfiles(): HasMany
+    {
+        return $this->hasMany(BirthProfile::class);
+    }
+
     public function spreadPreference(): HasOne
     {
         return $this->hasOne(UserSpreadPreference::class);

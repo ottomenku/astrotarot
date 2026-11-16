@@ -17,6 +17,9 @@
     data-locale="{{ app()->getLocale() }}"
     data-locale-switch-url="/locale/__LOCALE__"
     data-reading-url="{{ route('reading', absolute: false) }}"
+    data-classify-url="{{ route('reading.classify', absolute: false) }}"
+    data-birth-profile-url="{{ auth()->check() ? route('account.birth-profiles.store', absolute: false) : '' }}"
+    data-reading-feedback-url="{{ route('reading.feedback', absolute: false) }}"
     data-export-pdf-url="{{ auth()->check() ? route('reading.export.pdf', absolute: false) : '' }}"
     data-export-email-url="{{ auth()->check() ? route('reading.export.email', absolute: false) : '' }}"
     data-share-url="{{ auth()->check() ? route('reading.share.create', absolute: false) : '' }}"
@@ -110,6 +113,7 @@
                     <a href="{{ route('account.show') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.account_menu') }}<x-feature-marks feature="account.show" /></span><b>↗</b></a>
                     <a href="{{ route('account.introduction') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.intro_menu') }}<x-feature-marks feature="account.show" /></span><b>↗</b></a>
                 @endif
+                <a href="{{ route('account.astro') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.astro_menu') }}</span><b>↗</b></a>
                 @if(!empty($canViewHistory))
                     <a href="{{ route('readings.history') }}"><span>{{ str_pad((string) $menuIndex++, 2, '0', STR_PAD_LEFT) }}</span><span class="menu-link-text">{{ __('messages.history_menu') }}<x-feature-marks feature="readings.history" /></span><b>↗</b></a>
                 @endif
@@ -135,19 +139,101 @@
         </div>
     @endif
 
+    <div class="flow-modal" data-question-modal>
+        <form class="flow-modal-card" data-question-form>
+            <button type="button" class="flow-modal-close" data-question-close aria-label="Bezárás">×</button>
+            <h2 data-copy="questionHeading">Tedd fel a kérdésed, amire választ szeretnél kapni. Minél pontosabban leírod, annál pontosabb választ fogsz kapni.</h2>
+            <label class="question-field" data-question-wrap>
+                <textarea data-question rows="4" maxlength="280"></textarea>
+                <span>0/280</span>
+            </label>
+            <p class="flow-note" data-question-note></p>
+            <div class="flow-modal-actions">
+                <button type="submit" data-question-send data-copy="questionSend">Küldés</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="flow-modal" data-consent-modal hidden>
+        <div class="flow-modal-card">
+            <div data-consent-ask>
+                <h2 data-copy="consentTitle">Születési adat</h2>
+                <p data-consent-lead></p>
+                <div class="flow-modal-actions">
+                    <button type="button" data-consent-no data-copy="consentNo">Nem</button>
+                    <button type="button" data-consent-yes data-copy="consentYes">Igen</button>
+                </div>
+            </div>
+            <form data-consent-form hidden>
+                <h2 data-copy="consentFormTitle">Kit küldjünk?</h2>
+                <p class="flow-note" data-consent-saved-note hidden></p>
+                <div class="flow-fields" data-consent-user-block hidden>
+                    <p data-copy="consentSelf">Saját adat</p>
+                    <label>
+                        <span data-copy="consentWhen">Születés ideje</span>
+                        <input type="datetime-local" data-consent-user-at>
+                    </label>
+                    <label>
+                        <span data-copy="consentCountry">Ország</span>
+                        <input type="text" data-consent-user-country maxlength="80">
+                    </label>
+                    <label>
+                        <span data-copy="consentCity">Város</span>
+                        <input type="text" data-consent-user-city maxlength="120">
+                    </label>
+                    <label>
+                        <span data-copy="consentIntro">Bemutatkozás</span>
+                        <textarea data-consent-user-intro rows="2" maxlength="500"></textarea>
+                    </label>
+                </div>
+                <div class="flow-fields" data-consent-relation-block hidden>
+                    <label>
+                        <span data-copy="consentRelation">Kapcsolati személy</span>
+                        <select data-consent-relation-select></select>
+                    </label>
+                    <div data-consent-relation-new hidden>
+                        <label>
+                            <span data-copy="consentLabel">Név</span>
+                            <input type="text" data-consent-relation-label maxlength="80">
+                        </label>
+                        <label>
+                            <span data-copy="consentWhen">Születés ideje</span>
+                            <input type="datetime-local" data-consent-relation-at>
+                        </label>
+                        <label>
+                            <span data-copy="consentCountry">Ország</span>
+                            <input type="text" data-consent-relation-country maxlength="80">
+                        </label>
+                        <label>
+                            <span data-copy="consentCity">Város</span>
+                            <input type="text" data-consent-relation-city maxlength="120">
+                        </label>
+                        <label>
+                            <span data-copy="consentIntro">Bemutatkozás</span>
+                            <textarea data-consent-relation-intro rows="2" maxlength="500"></textarea>
+                        </label>
+                    </div>
+                </div>
+                <p class="flow-note" data-consent-note></p>
+                <div class="flow-modal-actions">
+                    <button type="button" data-consent-skip data-copy="consentSkip">Adat nélkül folytatom</button>
+                    <button type="submit" data-copy="consentContinue">Tovább</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <section class="deck-section" data-pick-stage aria-labelledby="deck-heading">
         <div class="compact-question">
             @php
                 $spreadChoices = $gameConfig['choices'] ?? [];
-                $spreadCount = count($gameConfig['slots'] ?? []);
-                $spreadName = $gameConfig['name'] ?? '';
             @endphp
             <div class="spread-bar">
                 <h1 id="deck-heading" class="game-description" data-game-description>
-                    <span class="spread-kicker" data-spread-kicker>{{ __('messages.spread_current') }}</span>
-                    <span class="spread-summary" data-spread-summary>{{ __('messages.spread_summary', ['name' => $spreadName, 'count' => $spreadCount]) }}</span>
+                    <span class="spread-kicker" data-spread-kicker hidden></span>
+                    <span class="spread-summary" data-spread-summary>{{ __('messages.pick_card') }}</span>
                 </h1>
-                <button class="spread-change" type="button" data-spread-open>{{ __('messages.spread_change') }}</button>
+                <button class="spread-change" type="button" data-spread-open hidden>{{ __('messages.spread_change') }}</button>
             </div>
             <form class="spread-panel" data-spread-panel method="get" action="{{ route('home') }}" hidden>
                 <input type="hidden" name="spread" value="1">
@@ -205,14 +291,6 @@
                     <button type="button" data-spread-close data-copy="spreadClose">{{ __('messages.spread_close') }}</button>
                 </div>
             </form>
-            <label
-                class="question-field"
-                data-question-wrap
-                @if (empty($gameConfig['has_question'])) hidden @endif
-            >
-                <textarea data-question rows="2" maxlength="280"></textarea>
-                <span>0/280</span>
-            </label>
             <div class="question-meta">
                 <p class="field-hint" data-hint></p>
                 <x-feature-marks feature="reading.initial" />
@@ -220,8 +298,13 @@
             </div>
         </div>
 
+        <aside class="slot-coach" data-slot-coach hidden>
+            <p class="slot-coach-kicker" data-slot-coach-kicker></p>
+            <h2 data-slot-coach-title></h2>
+            <p data-slot-coach-text></p>
+        </aside>
         <p class="deck-phase-label" data-deck-label></p>
-        <div class="deck-wrap" data-deck-wrap>
+        <div class="deck-wrap is-locked" data-deck-wrap>
             <button class="deck-arrow left" type="button" data-scroll-left aria-label="Balra görgetés">‹</button>
             <div class="deck-slider" data-deck-slider role="list"></div>
             <button class="deck-arrow right" type="button" data-scroll-right aria-label="Jobbra görgetés">›</button>
@@ -240,6 +323,38 @@
             <p class="reading-inline-kicker" data-reading-kicker></p>
             <h2 class="reading-inline-title" data-reading-title></h2>
             <div class="reading-inline-body" data-reading-body></div>
+            <form class="reading-feedback" data-reading-feedback hidden>
+                <p class="reading-feedback-title" data-copy="feedbackTitle">Adj visszajelzést a pontosabb válaszokért!</p>
+                <div class="reading-feedback-row">
+                    <label class="reading-feedback-label">
+                        <span data-copy="feedbackRating">Értékelés</span>
+                        <select data-feedback-rating>
+                            <option value="">—</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </label>
+                    <label class="reading-feedback-label">
+                        <span data-copy="feedbackVerdict">Minősítés</span>
+                        <select data-feedback-verdict>
+                            <option value="">—</option>
+                            <option value="useful" data-name-hu="hasznos" data-name-en="useful">hasznos</option>
+                            <option value="too_spiritual" data-name-hu="túl spiri" data-name-en="too spiritual">túl spiri</option>
+                            <option value="too_complex" data-name-hu="túl bonyolult" data-name-en="too complicated">túl bonyolult</option>
+                            <option value="too_general" data-name-hu="túl általános" data-name-en="too general">túl általános</option>
+                            <option value="useless" data-name-hu="haszontalan" data-name-en="useless">haszontalan</option>
+                        </select>
+                    </label>
+                </div>
+                <textarea class="reading-feedback-input" data-feedback-comment rows="3" maxlength="1000" placeholder="Megjegyzés"></textarea>
+                <div class="reading-followup-actions">
+                    <button type="button" class="reading-followup-send" data-feedback-send data-copy="feedbackSend">Elküldöm</button>
+                </div>
+                <p class="reading-feedback-status" data-feedback-status></p>
+            </form>
             <div class="reading-offer" data-reading-offer hidden>
                 <p class="reading-offer-text" data-reading-offer-text></p>
                 <div class="reading-offer-form" data-reading-offer-form hidden>
@@ -309,6 +424,10 @@
     <div class="draw-reveal" data-draw-reveal hidden>
         <figure class="draw-reveal-card">
             <img data-draw-reveal-image alt="">
+            <span class="celestial-helper" data-draw-reveal-helper-wrap hidden>
+                <span class="celestial-helper-label" data-draw-reveal-helper-label></span>
+                <img class="celestial-helper-card" data-draw-reveal-helper alt="" hidden>
+            </span>
         </figure>
     </div>
 

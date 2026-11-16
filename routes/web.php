@@ -28,7 +28,10 @@ use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PackPreferenceController;
 use App\Http\Controllers\PromoShareController;
+use App\Http\Controllers\BirthProfileController;
+use App\Http\Controllers\ReadingClassifyController;
 use App\Http\Controllers\ReadingController;
+use App\Http\Controllers\ReadingFeedbackController;
 use App\Http\Controllers\ReadingExportController;
 use App\Http\Controllers\ReadingHistoryController;
 use App\Support\FeatureCatalog;
@@ -40,9 +43,17 @@ Route::get('/promo', PromoShareController::class)->name('promo.share');
 
 Route::get('/locale/{locale}', LocaleController::class)->name('locale.switch');
 
+Route::post('/reading/classify', ReadingClassifyController::class)
+    ->middleware(['throttle:12,1'])
+    ->name('reading.classify');
+
 Route::post('/reading', ReadingController::class)
     ->middleware(['throttle:8,1'])
     ->name('reading');
+
+Route::post('/reading/feedback', ReadingFeedbackController::class)
+    ->middleware(['throttle:20,1'])
+    ->name('reading.feedback');
 
 Route::get('/aszf', [LegalPageController::class, 'terms'])->name('legal.terms');
 Route::get('/adatkezeles', [LegalPageController::class, 'privacy'])->name('legal.privacy');
@@ -111,6 +122,11 @@ Route::middleware('auth')->group(function () {
     Route::put('/account/introduction', [AccountController::class, 'updateIntroduction'])
         ->middleware('feature:'.FeatureCatalog::ACCOUNT)
         ->name('account.introduction.update');
+    Route::get('/account/astro', [AccountController::class, 'astro'])
+        ->name('account.astro');
+    Route::post('/account/birth-profiles', [BirthProfileController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('account.birth-profiles.store');
     Route::get('/my-readings', [ReadingHistoryController::class, 'index'])
         ->middleware('feature:'.FeatureCatalog::HISTORY)
         ->name('readings.history');

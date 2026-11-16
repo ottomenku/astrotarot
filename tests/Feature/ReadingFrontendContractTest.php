@@ -54,7 +54,9 @@ class ReadingFrontendContractTest extends TestCase
             ->assertSee('data-reading-followup-send', false)
             ->assertSee('data-reading-followup-expand', false)
             ->assertSee('data-reading-offer', false)
-            ->assertSee('data-reading-offer-yes', false);
+            ->assertSee('data-reading-offer-yes', false)
+            ->assertSee('data-reading-feedback', false)
+            ->assertSee('Adj visszajelzést a pontosabb válaszokért!', false);
     }
 
     public function test_reading_javascript_maps_backend_errors(): void
@@ -86,5 +88,7 @@ class ReadingFrontendContractTest extends TestCase
         $this->assertStringContainsString("mode === 'refine'", $js);
         $this->assertStringContainsString('function showReadingOffer(', $js);
         $this->assertStringContainsString('offerBirth', $js);
+        $this->assertStringContainsString('function sendReadingFeedback(', $js);
+        $this->assertStringContainsString('feedbackTitle', $js);
     }
 }

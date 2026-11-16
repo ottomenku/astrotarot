@@ -79,6 +79,7 @@ class PersonalDataService
     public function eraseStoredData(User $user): void
     {
         $this->eraseConversations($user);
+        $user->birthProfiles()->delete();
         $user->packPreferences()->delete();
         $user->spreadPreference()->delete();
         BlogComment::query()->where('user_id', $user->id)->delete();

@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsurePaidFeatures;
 use App\Http\Middleware\EnsureSiteOpen;
 use App\Http\Middleware\EnsureUserNotBanned;
 use App\Http\Middleware\RedirectToCanonicalHost;
+use App\Http\Middleware\ResetLlmTranscript;
 use App\Http\Middleware\RestrictGuestsWhenRegistrationClosed;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
@@ -32,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 RedirectToCanonicalHost::class,
             ],
             append: [
+                ResetLlmTranscript::class,
                 SetLocale::class,
                 EnsureUserNotBanned::class,
                 EnsureSiteOpen::class,

@@ -12,8 +12,10 @@ use Throwable;
 
 class OpenAIClient
 {
-    public function __construct(private readonly AppSettings $settings)
-    {
+    public function __construct(
+        private readonly AppSettings $settings,
+        private readonly LlmTranscript $transcript,
+    ) {
     }
 
     public function route(): string
@@ -149,7 +151,12 @@ class OpenAIClient
             'messages' => $messages,
         ], $options);
 
-        return $this->http($requireKey)->post($baseUrl.'/chat/completions', $payload);
+        return $this->transcript->send(
+            $this->http($requireKey),
+            'POST',
+            $baseUrl.'/chat/completions',
+            $payload,
+        );
     }
 
     /**

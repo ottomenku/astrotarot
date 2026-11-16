@@ -57,8 +57,6 @@ class GameRule extends Model
         'info_mode',
         'celestial_helper',
         'light_shadow',
-        'show_celestial_helper',
-        'send_celestial_helper',
         'row',
         'place',
         'draw_order',
@@ -67,8 +65,6 @@ class GameRule extends Model
     protected function casts(): array
     {
         return [
-            'show_celestial_helper' => 'boolean',
-            'send_celestial_helper' => 'boolean',
             'row' => 'integer',
             'place' => 'integer',
             'draw_order' => 'integer',

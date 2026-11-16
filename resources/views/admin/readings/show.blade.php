@@ -49,20 +49,30 @@
                     @endif
                 </p>
                 <p class="muted">{{ __('admin.readings.cost_note', ['rate' => \App\Services\ReadingCostEstimate::USD_HUF]) }}</p>
+                @if ($thread->count() > 1)
+                    <p class="muted">{{ __('admin.readings.cost_thread') }}</p>
+                @endif
             </div>
         </div>
 
-        <div class="field">
-            <label>{{ __('admin.readings.question') }}</label>
-            <p>{{ $log->question }}</p>
-        </div>
+        @include('admin.readings._feedback')
 
-        @if ($log->error)
+        <h2>{{ __('admin.readings.trace') }}</h2>
+        <p class="muted">{{ __('admin.readings.trace_note') }}</p>
+        @forelse ($exchanges as $exchange)
             <div class="field">
-                <label>{{ __('admin.readings.error') }}</label>
-                <pre style="white-space:pre-wrap">{{ $log->error }}</pre>
+                <label>{{ __('admin.readings.trace_sent') }} {{ $exchange->sequence }} · {{ $exchange->method }} {{ $exchange->url }}</label>
+                <pre class="llm-trace">{{ $exchange->request_body }}</pre>
             </div>
-        @endif
+            <div class="field">
+                <label>{{ __('admin.readings.trace_received') }} {{ $exchange->sequence }}@if ($exchange->status) · HTTP {{ $exchange->status }}@endif</label>
+                <pre class="llm-trace">{{ $exchange->response_body }}</pre>
+            </div>
+        @empty
+            <p class="muted">{{ __('admin.readings.trace_empty') }}</p>
+        @endforelse
+
+        @include('admin.readings._thread', ['technical' => true])
 
         <div class="field">
             <label>{{ __('admin.readings.cards') }}</label>
@@ -72,21 +82,6 @@
         <div class="field">
             <label>{{ __('admin.readings.astro') }}</label>
             <pre style="white-space:pre-wrap">{{ json_encode($log->astro, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
-        </div>
-
-        <div class="field">
-            <label>{{ __('admin.readings.system_prompt') }}</label>
-            <pre style="white-space:pre-wrap">{{ $log->system_prompt }}</pre>
-        </div>
-
-        <div class="field">
-            <label>{{ __('admin.readings.user_prompt') }}</label>
-            <pre style="white-space:pre-wrap">{{ $log->user_prompt }}</pre>
-        </div>
-
-        <div class="field">
-            <label>{{ __('admin.readings.response') }}</label>
-            <pre style="white-space:pre-wrap">{{ $log->response ?: '—' }}</pre>
         </div>
     </main>
 @endsection

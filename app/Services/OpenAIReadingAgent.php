@@ -17,7 +17,10 @@ class OpenAIReadingAgent
 
     public const AGENT_EN = 'openai_agent_en';
 
-    public function __construct(private readonly AppSettings $settings) {}
+    public function __construct(
+        private readonly AppSettings $settings,
+        private readonly LlmTranscript $transcript,
+    ) {}
 
     public function configured(): bool
     {
@@ -137,8 +140,8 @@ class OpenAIReadingAgent
         $header = $locale === 'en' ? '## BASE' : '## ALAPPROMPT';
 
         $round = $locale === 'en'
-            ? 'First round: the message contains the drawn cards and their catalog, and no astrology chart. Take card meanings from that catalog. Search the web for anything the message does not contain. You may ask once in the same reply: {"status":"answer","text":"...","need":"birth|relation|projection","requests":[...]}. The text is the reading they see if they decline. If they accept, the next message has a DATA section; work from that and do not ask again.'
-            : 'Első kör: az üzenet a húzott lapokat és a katalógusukat tartalmazza, asztrológiai képlet nincs benne. A lapjelentést a katalógusból vedd. Ami az üzenetből hiányzik, azt keresd a neten. Ugyanebben a válaszban egyszer kérhetsz pontosítást: {"status":"answer","text":"...","need":"birth|relation|projection","requests":[...]}. A text az előzetes olvasat, ezt látja, ha nem pontosít. Ha elfogadja, a következő üzenet ## ADAT része a megadott adat: abból dolgozz, és ne kérj új adatot.';
+            ? 'First round: the message contains the drawn cards and their catalog. Take card meanings from that catalog. Search the web for anything the message does not contain. Reply with status=answer. Do not request more data.'
+            : 'Első kör: az üzenet a húzott lapokat és a katalógusukat tartalmazza. A lapjelentést a katalógusból vedd. Ami az üzenetből hiányzik, azt keresd a neten. A válaszod status=answer. Adatot ne kérj.';
 
         return $system."\n\n".$header."\n".$base."\n\n".$round;
     }
@@ -270,9 +273,9 @@ class OpenAIReadingAgent
 
         $url = $this->baseUrl().$path;
         $response = match ($method) {
-            'GET' => $pending->get($url, $query),
-            'DELETE' => $pending->delete($url),
-            default => $pending->post($url, $query),
+            'GET' => $this->transcript->send($pending, 'GET', $url, $query),
+            'DELETE' => $this->transcript->send($pending, 'DELETE', $url),
+            default => $this->transcript->send($pending, 'POST', $url, $query),
         };
 
         if (! $response->successful()) {

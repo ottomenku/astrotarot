@@ -66,6 +66,43 @@ final class ReadingCostEstimate
         ];
     }
 
+    /**
+     * @param  iterable<ReadingLog>  $logs
+     * @return array{
+     *     model: string,
+     *     input_tokens: int,
+     *     output_tokens: int,
+     *     total_tokens: int,
+     *     huf: float|null,
+     *     huf_label: string,
+     *     local: bool
+     * }
+     */
+    public function forLogs(iterable $logs): array
+    {
+        $parts = [];
+        foreach ($logs as $log) {
+            $parts[] = $this->forLog($log);
+        }
+        if ($parts === []) {
+            return $this->forLog(new ReadingLog);
+        }
+
+        $hufParts = array_values(array_filter(array_column($parts, 'huf'), fn ($value) => $value !== null));
+        $huf = $hufParts === [] ? null : array_sum($hufParts);
+        $local = array_reduce($parts, fn (bool $carry, array $part): bool => $carry && $part['local'], true);
+
+        return [
+            'model' => (string) $parts[array_key_last($parts)]['model'],
+            'input_tokens' => array_sum(array_column($parts, 'input_tokens')),
+            'output_tokens' => array_sum(array_column($parts, 'output_tokens')),
+            'total_tokens' => array_sum(array_column($parts, 'total_tokens')),
+            'huf' => $huf,
+            'huf_label' => $this->hufLabel($huf, $local && $huf === null, $huf !== null),
+            'local' => $local && $huf === null,
+        ];
+    }
+
     private function tokens(string $text): int
     {
         $length = mb_strlen($text);

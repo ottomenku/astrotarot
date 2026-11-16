@@ -62,6 +62,20 @@ class ReadingController extends Controller
             'refine.relation_gender' => ['nullable', 'string', 'max:16'],
             'refine.relation_introduction' => ['nullable', 'string', 'max:500'],
             'session_id' => ['nullable', 'uuid'],
+            'sky_user' => ['nullable', 'array'],
+            'sky_user.source' => ['nullable', 'string', 'in:self'],
+            'sky_user.birth_at' => ['nullable', 'date'],
+            'sky_user.birth_country' => ['nullable', 'string', 'max:80'],
+            'sky_user.birth_city' => ['nullable', 'string', 'max:120'],
+            'sky_user.introduction' => ['nullable', 'string', 'max:500'],
+            'sky_user.label' => ['nullable', 'string', 'max:80'],
+            'sky_relation' => ['nullable', 'array'],
+            'sky_relation.profile_id' => ['nullable', 'integer'],
+            'sky_relation.birth_at' => ['nullable', 'date'],
+            'sky_relation.birth_country' => ['nullable', 'string', 'max:80'],
+            'sky_relation.birth_city' => ['nullable', 'string', 'max:120'],
+            'sky_relation.introduction' => ['nullable', 'string', 'max:500'],
+            'sky_relation.label' => ['nullable', 'string', 'max:80'],
             'previous_reading' => ['nullable', 'string', 'max:12000'],
             'follow_up' => ['nullable', 'string', 'max:500'],
             'astro' => ['nullable', 'array'],
@@ -98,14 +112,6 @@ class ReadingController extends Controller
                 'error' => $decision['message'],
                 'credits' => (int) ($user?->credits ?? 0),
             ], $decision['status']);
-        }
-
-        if ($mode === TarotReadingService::MODE_CLARIFY && trim((string) ($data['follow_up'] ?? '')) === '') {
-            return response()->json([
-                'error' => app()->getLocale() === 'en'
-                    ? 'Please write a clarification first.'
-                    : 'Írd be a pontosítást.',
-            ], 422);
         }
 
         if ($mode === TarotReadingService::MODE_REFINE && trim((string) ($data['session_id'] ?? '')) === '') {
@@ -147,6 +153,8 @@ class ReadingController extends Controller
                 'system_prompt' => $spreadPrompt !== '' ? $spreadPrompt : null,
                 'session_id' => $data['session_id'] ?? null,
                 'game_id' => $game?->id,
+                'sky_user' => $data['sky_user'] ?? null,
+                'sky_relation' => $data['sky_relation'] ?? null,
                 'refine' => $data['refine'] ?? null,
                 'ip' => $request->ip(),
                 'user_id' => $user?->id,
@@ -222,16 +230,21 @@ class ReadingController extends Controller
             $mode = $rule->effectiveLightShadow($game);
             $cards[$index]['light_shadow_mode'] = $mode;
             $cards[$index]['light_shadow_request'] = $mode === GameRule::LIGHT_SHADOW_LLM;
-            $helper = (string) ($card['celestial_helper'] ?? '');
-            if (! CelestialOracleCatalog::known($helper)) {
+            $configured = (string) ($rule->celestial_helper ?: 'none');
+            $drawn = (string) ($card['celestial_helper'] ?? '');
+            if (! CelestialOracleCatalog::known($drawn)) {
+                $drawn = '';
+            }
+            if ($configured === 'random') {
+                $helper = $drawn;
+            } elseif (CelestialOracleCatalog::known($configured)) {
+                $helper = $configured;
+            } else {
                 $helper = '';
             }
-            $sendHelper = (bool) $rule->send_celestial_helper
-                && (string) ($game->astro_data_mode ?: Game::ASTRO_DATA_NONE) !== Game::ASTRO_DATA_NONE
-                && $helper !== '';
-            $cards[$index]['celestial_helper'] = $sendHelper ? $helper : '';
-            $cards[$index]['include_celestial_helper'] = $sendHelper;
-            if ($sendHelper) {
+            $cards[$index]['celestial_helper'] = $helper;
+            $cards[$index]['include_celestial_helper'] = $helper !== '';
+            if ($helper !== '') {
                 $polarity = strtolower((string) ($card['celestial_polarity'] ?? ''));
                 $cards[$index]['celestial_polarity'] = in_array($polarity, ['shadow', 'negative', 'negatív'], true)
                     ? 'shadow'

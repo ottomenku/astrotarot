@@ -15,15 +15,21 @@ class ReadingSession extends Model
         'game_id',
         'locale',
         'question',
+        'category',
+        'dimension',
         'cards',
         'llm_session_id',
         'llm_reply_id',
+        'feedback_rating',
+        'feedback_verdict',
+        'feedback_comment',
     ];
 
     protected function casts(): array
     {
         return [
             'cards' => 'array',
+            'feedback_rating' => 'integer',
         ];
     }
 
@@ -44,5 +50,10 @@ class ReadingSession extends Model
     public function turns(): HasMany
     {
         return $this->hasMany(ReadingTurn::class)->orderBy('sequence');
+    }
+
+    public function exchanges(): HasMany
+    {
+        return $this->hasMany(LlmExchange::class)->orderBy('sequence');
     }
 }

@@ -77,8 +77,6 @@ class GameController extends Controller
                 'info_mode' => $rule->info_mode,
                 'celestial_helper' => $rule->celestial_helper ?: 'none',
                 'light_shadow' => $rule->light_shadow ?: $rule->effectiveLightShadow($game),
-                'show_celestial_helper' => (bool) $rule->show_celestial_helper,
-                'send_celestial_helper' => (bool) $rule->send_celestial_helper,
                 'row' => $rule->row,
                 'place' => $rule->place,
                 'draw_order' => $rule->draw_order,
@@ -174,9 +172,12 @@ class GameController extends Controller
             'icon' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'has_question' => ['sometimes', 'boolean'],
             'light_shadow_mode' => ['nullable', 'string', Rule::in(Game::LIGHT_SHADOW_MODES)],
-            'astro_data_mode' => ['nullable', 'string', Rule::in(Game::ASTRO_DATA_MODES)],
+            'astro_data_modes' => ['nullable', 'array'],
+            'astro_data_modes.*' => ['string', Rule::in(Game::ASTRO_DATA_MODES)],
             'spread_types' => ['nullable', 'array'],
             'spread_types.*' => ['string', Rule::in(Game::SPREAD_TYPES)],
+            'spread_dimensions' => ['nullable', 'array'],
+            'spread_dimensions.*' => ['string', Rule::in(Game::DIMENSIONS)],
             'prompt_hu' => ['nullable', 'string', 'max:20000'],
             'prompt_en' => ['nullable', 'string', 'max:20000'],
             'is_default' => ['sometimes', 'boolean'],
@@ -203,8 +204,6 @@ class GameController extends Controller
             'rules.*.info_mode' => ['nullable', 'string', Rule::in(GameRule::INFO_MODES)],
             'rules.*.celestial_helper' => ['nullable', 'string', Rule::in(CelestialOracleCatalog::choices())],
             'rules.*.light_shadow' => ['nullable', 'string', Rule::in(GameRule::LIGHT_SHADOW_VALUES)],
-            'rules.*.show_celestial_helper' => ['sometimes', 'boolean'],
-            'rules.*.send_celestial_helper' => ['sometimes', 'boolean'],
             'rules.*.row' => ['required', 'integer', 'min:1', 'max:12'],
             'rules.*.place' => ['required', 'integer', 'min:1', 'max:7'],
             'rules.*.draw_order' => ['nullable', 'integer', 'min:1', 'max:49'],
@@ -222,16 +221,9 @@ class GameController extends Controller
         $data['light_shadow_mode'] = in_array($lightShadowMode, Game::LIGHT_SHADOW_MODES, true)
             ? $lightShadowMode
             : Game::LIGHT_SHADOW_FULL_RANDOM;
-        $astroDataMode = (string) ($data['astro_data_mode'] ?? '');
-        $data['astro_data_mode'] = in_array($astroDataMode, Game::ASTRO_DATA_MODES, true)
-            ? $astroDataMode
-            : Game::ASTRO_DATA_NONE;
-        $spreadTypes = array_values(array_unique(array_map('strval', $data['spread_types'] ?? [])));
-        $spreadTypes = array_values(array_filter(
-            $spreadTypes,
-            fn (string $type): bool => in_array($type, Game::SPREAD_TYPES, true),
-        ));
-        $data['spread_types'] = $spreadTypes === [] ? null : $spreadTypes;
+        $data['astro_data_modes'] = $this->selectedCodes($data['astro_data_modes'] ?? [], Game::ASTRO_DATA_SENDS) ?? [];
+        $data['spread_types'] = $this->selectedCodes($data['spread_types'] ?? [], Game::SPREAD_TYPES);
+        $data['spread_dimensions'] = $this->selectedCodes($data['spread_dimensions'] ?? [], Game::DIMENSIONS);
         $data['is_default'] = $request->boolean('is_default');
         $data['is_active'] = $request->boolean('is_active');
         $data['prompt_hu'] = (string) ($data['prompt_hu'] ?? '');
@@ -416,11 +408,25 @@ class GameController extends Controller
             'info_mode' => $infoMode,
             'celestial_helper' => $helper,
             'light_shadow' => $lightShadow,
-            'show_celestial_helper' => filter_var($rule['show_celestial_helper'] ?? false, FILTER_VALIDATE_BOOLEAN),
-            'send_celestial_helper' => filter_var($rule['send_celestial_helper'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'row' => (int) $rule['row'],
             'place' => (int) $rule['place'],
             'draw_order' => (int) $rule['draw_order'],
         ];
+    }
+
+    /**
+     * @param  mixed  $values
+     * @param  list<string>  $allowed
+     * @return list<string>|null
+     */
+    private function selectedCodes(mixed $values, array $allowed): ?array
+    {
+        $codes = array_values(array_unique(array_map('strval', is_array($values) ? $values : [])));
+        $codes = array_values(array_filter(
+            $codes,
+            fn (string $code): bool => in_array($code, $allowed, true),
+        ));
+
+        return $codes === [] ? null : $codes;
     }
 }

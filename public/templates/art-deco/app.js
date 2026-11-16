@@ -5,6 +5,9 @@
   const assetBase = root.dataset.assetBase.replace(/\/$/, '');
   const localeSwitchUrl = root.dataset.localeSwitchUrl;
   const readingUrl = root.dataset.readingUrl;
+  const classifyUrl = root.dataset.classifyUrl || '';
+  const birthProfileUrl = root.dataset.birthProfileUrl || '';
+  const feedbackUrl = root.dataset.readingFeedbackUrl || '';
   const exportPdfUrl = root.dataset.exportPdfUrl || '';
   const exportEmailUrl = root.dataset.exportEmailUrl || '';
   const shareCreateUrl = root.dataset.shareUrl || '';
@@ -83,12 +86,12 @@
     { pack_slug: 'egi-orakulum', title_hu: 'Égi Orákulum', title_en: 'Celestial Oracle', info_mode: 'astro', row: 1, place: 1, draw_order: 1, full_bleed: true },
     { pack_slug: 'tarot', title_hu: 'Tarot figura', title_en: 'Tarot figure', info_mode: 'meaning', row: 1, place: 2, draw_order: 2, full_bleed: true },
   ];
-  const gameSlots = (Array.isArray(gameConfig.slots) && gameConfig.slots.length)
+  let gameSlots = (Array.isArray(gameConfig.slots) && gameConfig.slots.length)
     ? gameConfig.slots
     : fallbackSlots;
-  const SLOT_COUNT = gameSlots.length;
-  const hasQuestion = gameConfig.has_question !== false;
-  const gameId = gameConfig.id || null;
+  let SLOT_COUNT = gameSlots.length;
+  let hasQuestion = gameConfig.has_question !== false;
+  let gameId = gameConfig.id || null;
 
   const copy = {
     hu: {
@@ -100,6 +103,7 @@
       reading: 'Választott lapjaid',
       waiting: 'Rád vár',
       reset: 'Új húzás',
+      pickCard: 'Egy kattintással válassz lapot a felső sorból!',
       spreadKicker: 'A jelenleg kiválasztott kirakás:',
       spreadSummary: ':name — :count lapot kell húzni',
       spreadChange: 'Változtatás',
@@ -137,10 +141,17 @@
       ruler: 'Uralkodó',
       noChartData: 'A részletes égi adatok most nem elérhetők.',
       followupLabel: 'Pontosítást kérek…',
-      followupPlaceholder: 'Pontosítást kérek…',
+      followupPlaceholder: 'Pontosítás, vagy hagyd üresen az általános kifejtéshez',
       followupSend: 'Elküld',
       followupExpand: 'Bővebb kifejtést kérek',
       followupNeedText: 'Írd be a pontosítást, mielőtt elküldöd.',
+      feedbackTitle: 'Adj visszajelzést a pontosabb válaszokért!',
+      feedbackRating: 'Értékelés',
+      feedbackVerdict: 'Minősítés',
+      feedbackPlaceholder: 'Megjegyzés',
+      feedbackSend: 'Elküldöm',
+      feedbackNeed: 'Válassz értékelést, minősítést, vagy írj megjegyzést.',
+      feedbackSaved: 'Köszönjük, a visszajelzést mentettük.',
       offerBirth: 'A pontosabb válaszhoz születési adat kell. Megadod? Ha nem, az eddigi olvasat jelenik meg.',
       offerRelation: 'A pontosabb válaszhoz egy másik személy születési adata kell. Megadod? Ha nem, az eddigi olvasat jelenik meg.',
       offerProjection: 'A pontosabb válaszhoz égi előrejelzés kell. A program kiszámolja. Elküldjem? Ez plusz kreditbe kerülhet.',
@@ -171,6 +182,35 @@
       answerClarify: 'Pontosítás',
       answerExpand: 'Bővebb kifejtés',
       sourcePrefix: 'Forrás',
+      questionHeading: 'Tedd fel a kérdésed, amire választ szeretnél kapni. Minél pontosabban leírod, annál pontosabb választ fogsz kapni.',
+      questionClose: 'Bezárás',
+      questionSend: 'Küldés',
+      questionWorking: 'A kérdés besorolása folyamatban…',
+      questionUnclear: 'A kérdés így nem értelmezhető. Fogalmazd át pontosabban.',
+      questionUnmatched: 'Ehhez a kérdéshez most nincs megfelelő kirakás.',
+      questionFailed: 'A besorolás most nem elérhető. Próbáld újra.',
+      consentTitle: 'Születési adat',
+      consentSaved: 'Elküldjük a mentett születési adatot?',
+      consentMissing: 'Megadod a születési adatot ehhez a kirakáshoz?',
+      consentYes: 'Igen',
+      consentNo: 'Nem',
+      consentFormTitle: 'Kit küldjünk?',
+      consentSelf: 'Saját adat',
+      consentRelation: 'Kapcsolati személy',
+      consentWhen: 'Születés ideje',
+      consentCountry: 'Ország',
+      consentCity: 'Város',
+      consentIntro: 'Bemutatkozás',
+      consentLabel: 'Név',
+      consentSavedNote: 'A saját mentett adat megy.',
+      consentNone: 'Nem küldöm',
+      consentNew: 'Új személy',
+      consentContinue: 'Tovább',
+      consentSkip: 'Adat nélkül folytatom',
+      consentNeedBirth: 'A születés ideje hiányzik.',
+      consentNeedName: 'A név hiányzik.',
+      slotCoachKicker: 'Most ezt a lapot húzd',
+      helperCaption: 'Égi segítő',
     },
     en: {
       navLabel: 'Open navigation',
@@ -181,6 +221,7 @@
       reading: 'Your chosen cards',
       waiting: 'Waiting for you',
       reset: 'New reading',
+      pickCard: 'Pick a card from the top row with one click!',
       spreadKicker: 'Current spread:',
       spreadSummary: ':name — draw :count cards',
       spreadChange: 'Change',
@@ -218,10 +259,17 @@
       ruler: 'Ruler',
       noChartData: 'Detailed sky data is unavailable right now.',
       followupLabel: 'I need a clarification…',
-      followupPlaceholder: 'I need a clarification…',
+      followupPlaceholder: 'Clarification, or leave empty for a general reading',
       followupSend: 'Send',
       followupExpand: 'Ask for a deeper reading',
       followupNeedText: 'Write a clarification before sending.',
+      feedbackTitle: 'Give feedback for more accurate answers!',
+      feedbackRating: 'Rating',
+      feedbackVerdict: 'Verdict',
+      feedbackPlaceholder: 'Note',
+      feedbackSend: 'Send',
+      feedbackNeed: 'Choose a rating, a verdict, or write a note.',
+      feedbackSaved: 'Thank you, the feedback is saved.',
       offerBirth: 'A more precise answer needs a birth time. Will you add it? If not, the reading so far is shown.',
       offerRelation: 'A more precise answer needs another person’s birth data. Will you add it? If not, the reading so far is shown.',
       offerProjection: 'A more precise answer needs a sky forecast. The program calculates it. Send it? This can cost extra credits.',
@@ -252,6 +300,35 @@
       answerClarify: 'Clarification',
       answerExpand: 'Deeper reading',
       sourcePrefix: 'Source',
+      questionHeading: 'Ask the question you want answered. The more precisely you describe it, the more precise the answer will be.',
+      questionClose: 'Close',
+      questionSend: 'Send',
+      questionWorking: 'Classifying the question…',
+      questionUnclear: 'This question cannot be interpreted. Please rephrase it more precisely.',
+      questionUnmatched: 'No spread matches this question right now.',
+      questionFailed: 'Classification is unavailable right now. Please try again.',
+      consentTitle: 'Birth data',
+      consentSaved: 'Shall we send the saved birth data?',
+      consentMissing: 'Will you give the birth data for this spread?',
+      consentYes: 'Yes',
+      consentNo: 'No',
+      consentFormTitle: 'Whom shall we send?',
+      consentSelf: 'My data',
+      consentRelation: 'Related person',
+      consentWhen: 'Time of birth',
+      consentCountry: 'Country',
+      consentCity: 'City',
+      consentIntro: 'Introduction',
+      consentLabel: 'Name',
+      consentSavedNote: 'Your saved data will be sent.',
+      consentNone: 'Do not send',
+      consentNew: 'New person',
+      consentContinue: 'Continue',
+      consentSkip: 'Continue without data',
+      consentNeedBirth: 'The time of birth is missing.',
+      consentNeedName: 'The name is missing.',
+      slotCoachKicker: 'Draw this card now',
+      helperCaption: 'Celestial helper',
     },
   };
 
@@ -302,6 +379,29 @@
     spreadBackPreview: root.querySelector('[data-spread-back-preview]'),
     questionWrap: root.querySelector('[data-question-wrap]'),
     question: root.querySelector('[data-question]'),
+    questionModal: root.querySelector('[data-question-modal]'),
+    questionForm: root.querySelector('[data-question-form]'),
+    questionNote: root.querySelector('[data-question-note]'),
+    questionSend: root.querySelector('[data-question-send]'),
+    questionClose: root.querySelector('[data-question-close]'),
+    consentModal: root.querySelector('[data-consent-modal]'),
+    consentAsk: root.querySelector('[data-consent-ask]'),
+    consentLead: root.querySelector('[data-consent-lead]'),
+    consentYes: root.querySelector('[data-consent-yes]'),
+    consentNo: root.querySelector('[data-consent-no]'),
+    consentForm: root.querySelector('[data-consent-form]'),
+    consentSavedNote: root.querySelector('[data-consent-saved-note]'),
+    consentUserBlock: root.querySelector('[data-consent-user-block]'),
+    consentRelationBlock: root.querySelector('[data-consent-relation-block]'),
+    consentRelationSelect: root.querySelector('[data-consent-relation-select]'),
+    consentRelationNew: root.querySelector('[data-consent-relation-new]'),
+    consentNote: root.querySelector('[data-consent-note]'),
+    consentSkip: root.querySelector('[data-consent-skip]'),
+    slotCoach: root.querySelector('[data-slot-coach]'),
+    slotCoachKicker: root.querySelector('[data-slot-coach-kicker]'),
+    slotCoachTitle: root.querySelector('[data-slot-coach-title]'),
+    slotCoachText: root.querySelector('[data-slot-coach-text]'),
+    deckWrap: root.querySelector('[data-deck-wrap]'),
     counter: root.querySelector('[data-counter]'),
     hint: root.querySelector('[data-hint]'),
     deckLabel: root.querySelector('[data-deck-label]'),
@@ -313,6 +413,9 @@
     chosen: root.querySelector('[data-chosen-grid]'),
     drawReveal: root.querySelector('[data-draw-reveal]'),
     drawRevealImage: root.querySelector('[data-draw-reveal-image]'),
+    drawRevealHelper: root.querySelector('[data-draw-reveal-helper]'),
+    drawRevealHelperWrap: root.querySelector('[data-draw-reveal-helper-wrap]'),
+    drawRevealHelperLabel: root.querySelector('[data-draw-reveal-helper-label]'),
     readingResult: root.querySelector('[data-reading-result]'),
     readingKicker: root.querySelector('[data-reading-kicker]'),
     readingTitle: root.querySelector('[data-reading-title]'),
@@ -324,6 +427,12 @@
     readingFollowupInput: root.querySelector('[data-reading-followup-input]'),
     readingFollowupSend: root.querySelector('[data-reading-followup-send]'),
     readingFollowupExpand: root.querySelector('[data-reading-followup-expand]'),
+    readingFeedback: root.querySelector('[data-reading-feedback]'),
+    feedbackRating: root.querySelector('[data-feedback-rating]'),
+    feedbackVerdict: root.querySelector('[data-feedback-verdict]'),
+    feedbackComment: root.querySelector('[data-feedback-comment]'),
+    feedbackSend: root.querySelector('[data-feedback-send]'),
+    feedbackStatus: root.querySelector('[data-feedback-status]'),
     readingOffer: root.querySelector('[data-reading-offer]'),
     readingOfferText: root.querySelector('[data-reading-offer-text]'),
     readingOfferForm: root.querySelector('[data-reading-offer-form]'),
@@ -356,6 +465,10 @@
   let activeReading = null;
   let pendingOffer = null;
   let lockedQuestion = '';
+  let readingSessionId = '';
+  let drawReady = false;
+  let skyChoice = { user: null, relation: null };
+  let consentNeeds = { user: false, relation: false, hasUser: false, profiles: [] };
   let shareBusy = false;
   let polarityTimer = null;
   let polarityFrame = 'positive';
@@ -423,10 +536,19 @@
     return item[language] || item.en || item.hu || id;
   }
 
-  function helperHtml(draw) {
-    if (!draw?.showCelestialHelper || !draw.celestialHelper) return '';
-    const prefix = language === 'en' ? 'Celestial helper' : 'Égi segítő';
-    return `<p class="celestial-helper">${escapeHtml(prefix)}: ${escapeHtml(celestialHelperName(draw.celestialHelper))}</p>`;
+  function helperSrc(draw) {
+    const tone = draw?.helperPolarity === 'shadow' ? 'shadow' : 'light';
+    return `${packBase}/egi-orakulum-ls/figures/${draw.celestialHelper}-${tone}.png`;
+  }
+
+  function helperLabel(draw) {
+    return `${t().helperCaption}: ${celestialHelperName(draw.celestialHelper)}`;
+  }
+
+  function helperCardHtml(draw) {
+    if (!draw?.celestialHelper) return '';
+    const name = celestialHelperName(draw.celestialHelper);
+    return `<span class="celestial-helper"><span class="celestial-helper-label">${escapeHtml(helperLabel(draw))}</span><img class="celestial-helper-card" src="${helperSrc(draw)}" alt="${escapeHtml(name)}" decoding="async"></span>`;
   }
 
   function skyWord(variant) {
@@ -558,58 +680,24 @@
     return slot.description_hu || slot.description || slot.description_en || '';
   }
 
-  function ordinalWord(n) {
-    const value = Math.max(1, Number(n) || 1);
-    const hu = [
-      '',
-      'első', 'második', 'harmadik', 'negyedik', 'ötödik',
-      'hatodik', 'hetedik', 'nyolcadik', 'kilencedik', 'tizedik',
-      'tizenegyedik', 'tizenkettedik', 'tizenharmadik', 'tizennegyedik', 'tizenötödik',
-      'tizenhatodik', 'tizenhetedik', 'tizennyolcadik', 'tizenkilencedik', 'huszadik',
-      'huszonegyedik', 'huszonkettedik', 'huszonharmadik', 'huszonnegyedik', 'huszonötödik',
-      'huszonhatodik', 'huszonhetedik', 'huszonnyolcadik', 'huszonkilencedik', 'harmincadik',
-      'harmincegyedik', 'harminckettedik', 'harmincharmadik', 'harmincnegyedik', 'harmincötödik',
-      'harminchatodik', 'harminchetedik', 'harmincnyolcadik', 'harminckilencedik', 'negyvenedik',
-      'negyvenegyedik', 'negyvenkettedik', 'negyvenharmadik', 'negyvennegyedik', 'negyvenötödik',
-      'negyvenhatodik', 'negyvenhetedik', 'negyvennyolcadik', 'negyvenkilencedik',
-    ];
-    const en = [
-      '',
-      'first', 'second', 'third', 'fourth', 'fifth',
-      'sixth', 'seventh', 'eighth', 'ninth', 'tenth',
-      'eleventh', 'twelfth', 'thirteenth', 'fourteenth', 'fifteenth',
-      'sixteenth', 'seventeenth', 'eighteenth', 'nineteenth', 'twentieth',
-    ];
-    if (language === 'en') return en[value] || String(value);
-    return hu[value] || `${value}.`;
+  function updateSlotCoach() {
+    if (!els.slotCoach) return;
+    if (!drawReady || revealing || selected.length >= SLOT_COUNT) {
+      els.slotCoach.hidden = true;
+      return;
+    }
+    const index = currentSlotIndex();
+    if (els.slotCoachKicker) els.slotCoachKicker.textContent = t().slotCoachKicker;
+    if (els.slotCoachTitle) els.slotCoachTitle.textContent = slotTitle(index).trim();
+    if (els.slotCoachText) els.slotCoachText.textContent = slotDescription(index).trim();
+    els.slotCoach.hidden = false;
   }
 
   function updateDrawPrompt() {
+    updateSlotCoach();
     if (!els.deckLabel) return;
-    const index = currentSlotIndex();
-    const slot = slotDef(index);
-    if (!slot || selected.length >= SLOT_COUNT) {
-      els.deckLabel.textContent = '';
-      els.deckLabel.hidden = true;
-      return;
-    }
-    const order = drawSequence().findIndex((item) => item.index === index) + 1;
-    const ordinal = ordinalWord(order);
-    const name = slotTitle(index).trim();
-    const description = slotDescription(index).trim();
-    const place = [name, description].filter(Boolean).join(' — ');
-    const text = t();
-    const parts = [];
-    if (hasQuestion && questionText().length < minQuestionChars) {
-      parts.push(text.drawNeedQuestion.replace('{n}', String(minQuestionChars)));
-    }
-    const article = /^[aáeéiíoóöőuúüű]/i.test(ordinal) ? 'az' : 'a';
-    parts.push(text.drawPick
-      .replace('{article}', article)
-      .replace('{ordinal}', ordinal)
-      .replace('{place}', place));
-    els.deckLabel.hidden = false;
-    els.deckLabel.textContent = parts.join(' ');
+    els.deckLabel.textContent = '';
+    els.deckLabel.hidden = true;
   }
 
   function drawSequence() {
@@ -951,14 +1039,19 @@
     const heading = gameDescription();
     const hint = drawSequence().map((item) => slotTitle(item.index)).filter(Boolean).join(' → ') || text.hint;
     if (els.menuButton) els.menuButton.setAttribute('aria-label', text.navLabel);
+    if (els.questionClose) els.questionClose.setAttribute('aria-label', text.questionClose);
     const spreadName = language === 'en'
       ? (gameConfig.name_en || gameConfig.name || '')
       : (gameConfig.name_hu || gameConfig.name || '');
-    if (els.spreadKicker) els.spreadKicker.textContent = text.spreadKicker;
+    const spreadKnown = drawReady || Boolean(readingSessionId);
+    if (els.spreadKicker) {
+      els.spreadKicker.hidden = !spreadKnown;
+      els.spreadKicker.textContent = spreadKnown ? text.spreadKicker : '';
+    }
     if (els.spreadSummary) {
-      els.spreadSummary.textContent = text.spreadSummary
-        .replace(':name', spreadName)
-        .replace(':count', String(SLOT_COUNT));
+      els.spreadSummary.textContent = spreadKnown
+        ? text.spreadSummary.replace(':name', spreadName).replace(':count', String(SLOT_COUNT))
+        : text.pickCard;
     }
     if (els.spreadOpen) els.spreadOpen.textContent = text.spreadChange;
     root.querySelectorAll('[data-copy]').forEach((node) => {
@@ -972,7 +1065,7 @@
     });
     if (els.gameDescription) els.gameDescription.hidden = spreadName.trim() === '' && !els.spreadKicker;
     if (els.title && els.title !== els.gameDescription) els.title.textContent = heading;
-    if (els.questionWrap) els.questionWrap.hidden = !hasQuestion;
+    if (els.questionWrap) els.questionWrap.hidden = false;
     if (els.question) {
       els.question.placeholder = text.placeholder;
     }
@@ -986,6 +1079,7 @@
     if (els.readingFollowupInput) els.readingFollowupInput.placeholder = text.followupPlaceholder;
     if (els.readingFollowupSend) els.readingFollowupSend.textContent = text.followupSend;
     if (els.readingFollowupExpand) els.readingFollowupExpand.textContent = text.followupExpand;
+    if (els.feedbackComment) els.feedbackComment.placeholder = text.feedbackPlaceholder;
     const offerWhen = root.querySelector('[data-offer-when-label]');
     const offerCountry = root.querySelector('[data-offer-country-label]');
     const offerCity = root.querySelector('[data-offer-city-label]');
@@ -1100,7 +1194,7 @@
       group.items.forEach(({ slot, index }) => {
         const draw = drawForSlot(index);
         const article = document.createElement('article');
-        article.className = `chosen-card${draw ? ' has-card' : ' is-placeholder'}`;
+        article.className = `chosen-card${draw ? ' has-card' : ' is-placeholder'}${draw?.celestialHelper ? ' has-helper' : ''}`;
         article.dataset.slotIndex = String(index);
         const deckKey = packSlug(draw?.deck || slot.pack_slug);
 
@@ -1130,11 +1224,11 @@
             : '<p class="polarity-label is-light">—</p>';
           article.innerHTML = `
           <h3 class="slot-title">${escapeHtml(slotTitle(index))}</h3>
-          ${helperHtml(draw)}
           ${polarityHtml}
           <div class="card-art is-full-bleed">
             <img class="card-figure${reversed ? ' is-reversed' : ''}" src="${figureSrc(draw.deck, draw.figureId, polar ? shownVariant : 'positive')}" alt="" decoding="async">
             <span class="roman">${roman(drawOrderOf(index))}</span>
+            ${helperCardHtml(draw)}
           </div>
           <div class="card-caption">
             ${fateLabelHtml(draw)}
@@ -1184,6 +1278,20 @@
     const meta = figureMeta(draw.deck, draw.figureId);
     paintFigure(els.drawRevealImage, draw, draw.polarityPending ? 'positive' : draw.variant);
     els.drawRevealImage.alt = meta ? (meta[language] || meta.en || '') : '';
+    if (els.drawRevealHelper) {
+      if (draw.celestialHelper) {
+        els.drawRevealHelper.hidden = false;
+        els.drawRevealHelper.src = helperSrc(draw);
+        els.drawRevealHelper.alt = celestialHelperName(draw.celestialHelper);
+        if (els.drawRevealHelperWrap) els.drawRevealHelperWrap.hidden = false;
+        if (els.drawRevealHelperLabel) els.drawRevealHelperLabel.textContent = helperLabel(draw);
+      } else {
+        els.drawRevealHelper.hidden = true;
+        els.drawRevealHelper.removeAttribute('src');
+        if (els.drawRevealHelperWrap) els.drawRevealHelperWrap.hidden = true;
+        if (els.drawRevealHelperLabel) els.drawRevealHelperLabel.textContent = '';
+      }
+    }
     els.drawReveal.hidden = false;
     document.body.classList.add('is-revealing');
     syncPolarityMotion();
@@ -1196,6 +1304,12 @@
       els.drawRevealImage.classList.remove('is-reversed');
       els.drawRevealImage.removeAttribute('src');
     }
+    if (els.drawRevealHelper) {
+      els.drawRevealHelper.hidden = true;
+      els.drawRevealHelper.removeAttribute('src');
+    }
+    if (els.drawRevealHelperWrap) els.drawRevealHelperWrap.hidden = true;
+    if (els.drawRevealHelperLabel) els.drawRevealHelperLabel.textContent = '';
     document.body.classList.remove('is-revealing');
     syncPolarityMotion();
   }
@@ -1285,6 +1399,10 @@
   }
 
   function toggleBack(backIndex) {
+    if (!drawReady) {
+      if (!readingSessionId) openQuestion();
+      return;
+    }
     if (revealing || selected.length >= SLOT_COUNT) return;
     const deckKey = currentPackSlug();
     if (selected.some((item) => packSlug(item.deck) === deckKey && item.backIndex === backIndex)) {
@@ -1301,6 +1419,7 @@
     if (!deck) return;
 
     const slot = slotDef(currentSlotIndex());
+    if (els.slotCoach) els.slotCoach.hidden = true;
     const helper = resolveCelestialHelper(slot);
     const shadowMode = slotLightShadow(slot);
     let variant = 'positive';
@@ -1329,7 +1448,6 @@
       figureId: figure.id,
       celestialHelper: helper,
       helperPolarity: helper ? oracleFace(helper) : '',
-      showCelestialHelper: Boolean(slot?.show_celestial_helper) && Boolean(helper),
       variant,
       polarityPending,
       polaritySource,
@@ -1358,6 +1476,16 @@
     lastReadingKey = '';
     activeReading = null;
     lockedQuestion = '';
+    readingSessionId = '';
+    drawReady = false;
+    skyChoice = { user: null, relation: null };
+    els.deckWrap?.classList.add('is-locked');
+    if (els.slotCoach) els.slotCoach.hidden = true;
+    if (els.consentModal) els.consentModal.hidden = true;
+    if (els.questionModal) {
+      els.questionModal.hidden = false;
+      showQuestionNote('');
+    }
     if (readingRequest) {
       readingRequest.abort();
       readingRequest = null;
@@ -1595,7 +1723,59 @@
       setFollowupBusy(false);
     }
     showShareActions(!error && Boolean(body));
+    syncReadingFeedback();
     els.readingResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function resetReadingFeedback() {
+    if (els.feedbackRating) els.feedbackRating.value = '';
+    if (els.feedbackVerdict) els.feedbackVerdict.value = '';
+    if (els.feedbackComment) els.feedbackComment.value = '';
+    if (els.feedbackStatus) els.feedbackStatus.textContent = '';
+  }
+
+  function syncReadingFeedback() {
+    if (!els.readingFeedback) return;
+    const bodyVisible = Boolean(els.readingBody)
+      && !els.readingBody.hidden
+      && !els.readingBody.classList.contains('is-error')
+      && (els.readingBody.textContent || '').trim() !== '';
+    els.readingFeedback.hidden = !(bodyVisible && activeReading?.sessionId && feedbackUrl);
+  }
+
+  async function sendReadingFeedback() {
+    const sessionId = activeReading?.sessionId || '';
+    if (!feedbackUrl || !sessionId) return;
+    const rating = els.feedbackRating?.value || '';
+    const verdict = els.feedbackVerdict?.value || '';
+    const comment = (els.feedbackComment?.value || '').trim();
+    if (!rating && !verdict && !comment) {
+      showToast(t().feedbackNeed, false);
+      return;
+    }
+    if (els.feedbackSend) els.feedbackSend.disabled = true;
+    try {
+      const response = await fetch(feedbackUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: jsonHeaders(),
+        body: JSON.stringify({
+          session_id: sessionId,
+          rating: rating ? Number(rating) : null,
+          verdict: verdict || null,
+          comment,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(jsonErrorMessage(data, t().messageError));
+      }
+      if (els.feedbackStatus) els.feedbackStatus.textContent = t().feedbackSaved;
+    } catch (error) {
+      showToast(error?.message || t().messageError, false);
+    } finally {
+      if (els.feedbackSend) els.feedbackSend.disabled = false;
+    }
   }
 
   function clearReadingResult() {
@@ -1607,6 +1787,8 @@
     setReadingSource(null);
     if (els.readingFollowup) els.readingFollowup.hidden = true;
     hideReadingOffer();
+    resetReadingFeedback();
+    syncReadingFeedback();
     showShareActions(false);
   }
 
@@ -1637,6 +1819,7 @@
     els.readingOffer.hidden = false;
     if (els.readingFollowup) els.readingFollowup.hidden = true;
     showShareActions(false);
+    syncReadingFeedback();
   }
 
   function offerPayload() {
@@ -1786,12 +1969,6 @@
       return;
     }
 
-    if (mode === 'clarify' && !followUp.trim()) {
-      showToast(t().followupNeedText, false);
-      els.readingFollowupInput?.focus();
-      return;
-    }
-
     if ((mode === 'clarify' || mode === 'expand') && !activeReading?.reading) {
       showToast(t().messageError, false);
       return;
@@ -1825,7 +2002,11 @@
           game_id: gameId || undefined,
           follow_up: followUp || undefined,
           previous_reading: mode === 'initial' ? undefined : (pendingOffer?.reading || activeReading?.reading),
-          session_id: mode === 'initial' ? undefined : (pendingOffer?.sessionId || activeReading?.sessionId || undefined),
+          session_id: mode === 'initial'
+            ? (readingSessionId || undefined)
+            : (pendingOffer?.sessionId || activeReading?.sessionId || undefined),
+          sky_user: mode === 'initial' && readingSessionId ? (skyChoice.user || undefined) : undefined,
+          sky_relation: mode === 'initial' && readingSessionId ? (skyChoice.relation || undefined) : undefined,
           cards,
           astro: readingAstroPayload(),
           refine: mode === 'refine' ? refine : undefined,
@@ -2029,7 +2210,10 @@
       if (activeReading) activeReading.reading = held;
       if (els.readingFollowup) els.readingFollowup.hidden = !held;
       showShareActions(Boolean(held));
+      syncReadingFeedback();
     });
+    els.readingFeedback?.addEventListener('submit', (event) => event.preventDefault());
+    els.feedbackSend?.addEventListener('click', () => { sendReadingFeedback(); });
 
     els.sharePdf?.addEventListener('click', () => { downloadPdf(); });
     els.shareEmail?.addEventListener('click', () => { sendEmail(); });
@@ -2045,6 +2229,9 @@
     els.language?.addEventListener('change', () => {
       language = els.language.value === 'en' ? 'en' : 'hu';
       applyCopy();
+      if (els.consentModal && !els.consentModal.hidden && els.consentAsk && !els.consentAsk.hidden && els.consentLead) {
+        els.consentLead.textContent = consentNeeds.hasUser ? t().consentSaved : t().consentMissing;
+      }
       if (localeSwitchUrl) {
         const url = localeSwitchUrl.replace('__LOCALE__', language);
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).catch(() => {});
@@ -2069,6 +2256,278 @@
         reset();
       });
     });
+
+    els.questionForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      submitQuestion();
+    });
+    els.questionClose?.addEventListener('click', () => closeQuestion());
+    els.questionModal?.addEventListener('click', (event) => {
+      if (event.target === els.questionModal) closeQuestion();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && els.questionModal && !els.questionModal.hidden) closeQuestion();
+    });
+    els.consentYes?.addEventListener('click', () => acceptConsent());
+    els.consentNo?.addEventListener('click', () => declineConsent());
+    els.consentSkip?.addEventListener('click', () => declineConsent());
+    els.consentForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      submitConsent();
+    });
+    els.consentRelationSelect?.addEventListener('change', () => {
+      if (els.consentRelationNew) els.consentRelationNew.hidden = els.consentRelationSelect.value !== 'new';
+    });
+  }
+
+  function openQuestion() {
+    if (!els.questionModal || drawReady || readingSessionId) return;
+    els.questionModal.hidden = false;
+    els.deckWrap?.classList.add('is-locked');
+  }
+
+  function closeQuestion() {
+    if (!els.questionModal || els.questionModal.hidden || drawReady) return;
+    els.questionModal.hidden = true;
+    if (!readingSessionId) els.deckWrap?.classList.remove('is-locked');
+  }
+
+  function showQuestionNote(message) {
+    if (!els.questionNote) return;
+    els.questionNote.textContent = message || '';
+  }
+
+  function showConsentNote(message) {
+    if (!els.consentNote) return;
+    els.consentNote.textContent = message || '';
+  }
+
+  function startDraw() {
+    drawReady = true;
+    els.deckWrap?.classList.remove('is-locked');
+    if (els.questionModal) els.questionModal.hidden = true;
+    if (els.consentModal) els.consentModal.hidden = true;
+    applyCopy();
+    renderChosen();
+    renderDeck(true);
+    updateDrawPrompt();
+  }
+
+  async function ensureDecks(slots) {
+    const slugs = [...new Set(slots.map((slot) => packSlug(slot.pack_slug)))].filter((slug) => !decksBySlug[slug]);
+    if (!slugs.length) return;
+    const responses = await Promise.all(slugs.map((slug) => fetch(`${packBase}/${slug}/deck.json`)));
+    if (responses.some((response) => !response.ok)) {
+      throw new Error('Deck assets unavailable');
+    }
+    await Promise.all(responses.map(async (response, index) => {
+      decksBySlug[slugs[index]] = await response.json();
+    }));
+  }
+
+  async function applyMatchedGame(config) {
+    if (config && typeof config === 'object') gameConfig = config;
+    if (Array.isArray(gameConfig.slots) && gameConfig.slots.length) {
+      gameSlots = gameConfig.slots;
+      SLOT_COUNT = gameSlots.length;
+    }
+    gameId = gameConfig.id || gameId;
+    hasQuestion = true;
+    await ensureDecks(gameSlots);
+    applyCopy();
+    renderChosen();
+    renderDeck(true);
+  }
+
+  function birthFields(prefix) {
+    const at = root.querySelector(`[data-consent-${prefix}-at]`)?.value || '';
+    const country = root.querySelector(`[data-consent-${prefix}-country]`)?.value?.trim() || '';
+    const city = root.querySelector(`[data-consent-${prefix}-city]`)?.value?.trim() || '';
+    const introduction = root.querySelector(`[data-consent-${prefix}-intro]`)?.value?.trim() || '';
+    const label = prefix === 'relation'
+      ? (root.querySelector('[data-consent-relation-label]')?.value?.trim() || '')
+      : '';
+    if (!at) return null;
+    const fields = { birth_at: at };
+    if (country) fields.birth_country = country;
+    if (city) fields.birth_city = city;
+    if (introduction) fields.introduction = introduction;
+    if (label) fields.label = label;
+    return fields;
+  }
+
+  async function saveBirthProfile(role, fields) {
+    const response = await fetch(birthProfileUrl, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: jsonHeaders(),
+      body: JSON.stringify({ role, ...fields }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(jsonErrorMessage(data, t().questionFailed));
+    }
+    return data;
+  }
+
+  function fillRelationChoices() {
+    if (!els.consentRelationSelect) return;
+    const text = t();
+    const options = [`<option value="">${text.consentNone}</option>`];
+    consentNeeds.profiles.forEach((profile) => {
+      const label = String(profile.label || '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[char]));
+      options.push(`<option value="${profile.id}">${label}</option>`);
+    });
+    options.push(`<option value="new">${text.consentNew}</option>`);
+    els.consentRelationSelect.innerHTML = options.join('');
+    if (els.consentRelationNew) els.consentRelationNew.hidden = true;
+  }
+
+  function openConsent(data) {
+    consentNeeds = {
+      user: Boolean(data.needs_user),
+      relation: Boolean(data.needs_relation),
+      hasUser: Boolean(data.has_user),
+      profiles: Array.isArray(data.profiles) ? data.profiles : [],
+    };
+    skyChoice = { user: null, relation: null };
+    if (els.questionModal) els.questionModal.hidden = true;
+    if (els.consentModal) els.consentModal.hidden = false;
+    if (els.consentAsk) els.consentAsk.hidden = false;
+    if (els.consentForm) els.consentForm.hidden = true;
+    if (els.consentLead) {
+      els.consentLead.textContent = consentNeeds.hasUser ? t().consentSaved : t().consentMissing;
+    }
+    showConsentNote('');
+  }
+
+  function declineConsent() {
+    skyChoice = { user: null, relation: null };
+    startDraw();
+  }
+
+  function acceptConsent() {
+    if (consentNeeds.hasUser && consentNeeds.user && !consentNeeds.relation) {
+      skyChoice = { user: { source: 'self' }, relation: null };
+      startDraw();
+      return;
+    }
+    if (els.consentAsk) els.consentAsk.hidden = true;
+    if (els.consentForm) els.consentForm.hidden = false;
+    if (els.consentSavedNote) {
+      els.consentSavedNote.hidden = !(consentNeeds.hasUser && consentNeeds.user);
+      els.consentSavedNote.textContent = t().consentSavedNote;
+    }
+    if (els.consentUserBlock) els.consentUserBlock.hidden = !(consentNeeds.user && !consentNeeds.hasUser);
+    if (els.consentRelationBlock) els.consentRelationBlock.hidden = !consentNeeds.relation;
+    fillRelationChoices();
+    showConsentNote('');
+  }
+
+  async function submitConsent() {
+    showConsentNote('');
+    try {
+      let user = null;
+      if (consentNeeds.user) {
+        if (consentNeeds.hasUser) {
+          user = { source: 'self' };
+        } else {
+          const fields = birthFields('user');
+          if (!fields) {
+            showConsentNote(t().consentNeedBirth);
+            return;
+          }
+          if (isAuthenticated && birthProfileUrl) {
+            await saveBirthProfile('self', fields);
+            user = { source: 'self' };
+          } else {
+            user = fields;
+          }
+        }
+      }
+
+      let relation = null;
+      if (consentNeeds.relation) {
+        const choice = els.consentRelationSelect?.value || '';
+        if (choice === 'new') {
+          const fields = birthFields('relation');
+          if (!fields) {
+            showConsentNote(t().consentNeedBirth);
+            return;
+          }
+          if (!fields.label) {
+            showConsentNote(t().consentNeedName);
+            return;
+          }
+          if (isAuthenticated && birthProfileUrl) {
+            const saved = await saveBirthProfile('relation', fields);
+            relation = { profile_id: saved.id };
+          } else {
+            relation = fields;
+          }
+        } else if (choice) {
+          relation = { profile_id: Number(choice) };
+        }
+      }
+
+      skyChoice = { user, relation };
+      startDraw();
+    } catch (error) {
+      showConsentNote(error?.message || t().questionFailed);
+    }
+  }
+
+  async function submitQuestion() {
+    const question = (els.question?.value || '').trim();
+    if (question.length < minQuestionChars) {
+      showQuestionNote(t().drawNeedQuestion.replace('{n}', String(minQuestionChars)));
+      els.question?.focus();
+      return;
+    }
+    if (!classifyUrl) {
+      showQuestionNote(t().questionFailed);
+      return;
+    }
+    if (els.questionSend) els.questionSend.disabled = true;
+    showQuestionNote(t().questionWorking);
+    try {
+      const response = await fetch(classifyUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: jsonHeaders(),
+        body: JSON.stringify({ question, locale: language }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(jsonErrorMessage(data, t().questionFailed));
+      }
+      if (data.status === 'unclear') {
+        showQuestionNote(t().questionUnclear);
+        return;
+      }
+      if (data.status === 'unmatched') {
+        showQuestionNote(t().questionUnmatched);
+        return;
+      }
+      if (data.status !== 'ready' || !data.game) {
+        throw new Error(t().questionFailed);
+      }
+      readingSessionId = data.session_id || '';
+      lockedQuestion = question;
+      await applyMatchedGame(data.game);
+      if (data.needs_user || data.needs_relation) {
+        openConsent(data);
+      } else {
+        skyChoice = { user: null, relation: null };
+        startDraw();
+      }
+    } catch (error) {
+      showQuestionNote(error?.message || t().questionFailed);
+    } finally {
+      if (els.questionSend) els.questionSend.disabled = false;
+    }
   }
 
   async function boot() {
@@ -2078,16 +2537,11 @@
     if (!isAuthenticated) markGuestContinue();
 
     try {
-      const slugs = [...new Set(gameSlots.map((slot) => packSlug(slot.pack_slug)))];
-      const responses = await Promise.all(slugs.map((slug) => fetch(`${packBase}/${slug}/deck.json`)));
-      if (responses.some((response) => !response.ok)) {
-        throw new Error('Deck assets unavailable');
-      }
-      await Promise.all(responses.map(async (response, index) => {
-        decksBySlug[slugs[index]] = await response.json();
-      }));
+      await ensureDecks(gameSlots);
       renderDeck(true);
       renderChosen();
+      if (els.questionModal) els.questionModal.hidden = false;
+      els.deckWrap?.classList.add('is-locked');
     } catch (error) {
       console.error(error);
       showToast(language === 'en'

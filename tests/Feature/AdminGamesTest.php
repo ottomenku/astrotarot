@@ -42,7 +42,10 @@ class AdminGamesTest extends TestCase
             ->assertSee(__('admin.games.celestial_helper'), false)
             ->assertSee(__('admin.games.slot_light_shadow'), false)
             ->assertSee('Random60', false)
-            ->assertSee('YES_NO', false)
+            ->assertSee(__('admin.games.category_binary'), false)
+            ->assertSee(__('admin.games.dimension_rel'), false)
+            ->assertDontSee('Égi segítő megjelenítése', false)
+            ->assertDontSee('Égi segítő adatainak küldése', false)
             ->assertSee('data-remove-rule', false)
             ->assertSee('window.confirm(removeConfirm)', false)
             ->assertDontSee('Laphely infó', false)
@@ -59,8 +62,9 @@ class AdminGamesTest extends TestCase
                 'prompt_hu' => 'Magyar prompt',
                 'prompt_en' => 'English prompt',
                 'light_shadow_mode' => 'oracle-astro',
-                'astro_data_mode' => 'personal',
-                'spread_types' => ['YES_NO', 'GENERAL', 'YES_NO'],
+                'astro_data_modes' => ['personal', 'now'],
+                'spread_types' => ['BINARY', 'EXPLORATORY', 'BINARY'],
+                'spread_dimensions' => ['REL', 'FIN', 'REL'],
                 'is_active' => '1',
                 'sort_order' => 4,
                 'rules' => [
@@ -71,8 +75,6 @@ class AdminGamesTest extends TestCase
                         'info_mode' => GameRule::INFO_MEANING,
                         'celestial_helper' => 'sun',
                         'light_shadow' => 'astro',
-                        'show_celestial_helper' => '1',
-                        'send_celestial_helper' => '1',
                         'row' => 1,
                         'place' => 1,
                     ],
@@ -91,13 +93,12 @@ class AdminGamesTest extends TestCase
         $game = Game::query()->where('slug', 'hetnapos')->firstOrFail();
         $this->assertSame('Hétnapos', $game->name_hu);
         $this->assertSame('oracle-astro', $game->light_shadow_mode);
-        $this->assertSame('personal', $game->astro_data_mode);
-        $this->assertSame(['YES_NO', 'GENERAL'], $game->spread_types);
+        $this->assertSame(['personal', 'now'], $game->astroModes());
+        $this->assertSame(['BINARY', 'EXPLORATORY'], $game->spread_types);
+        $this->assertSame(['REL', 'FIN'], $game->spread_dimensions);
         $firstRule = $game->rules()->orderBy('place')->first();
         $this->assertSame('sun', $firstRule->celestial_helper);
         $this->assertSame('astro', $firstRule->light_shadow);
-        $this->assertTrue($firstRule->show_celestial_helper);
-        $this->assertTrue($firstRule->send_celestial_helper);
         $this->assertSame(GameRule::LIGHT_SHADOW_ASTRO, $firstRule->effectiveLightShadow($game));
         $secondRule = $game->rules()->orderBy('place')->skip(1)->first();
         $this->assertNull($secondRule->light_shadow);

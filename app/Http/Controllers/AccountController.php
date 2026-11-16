@@ -124,6 +124,17 @@ class AccountController extends Controller
             ->with('status', __('messages.account_erasure_sent'));
     }
 
+    public function astro(Request $request): View
+    {
+        $user = $request->user();
+
+        return view('account.astro', [
+            'user' => $user,
+            'profiles' => $user->birthProfiles()->orderBy('label')->orderBy('id')->get(),
+            'assetBase' => asset('templates/art-deco'),
+        ]);
+    }
+
     public function introduction(Request $request): View
     {
         $user = $request->user();

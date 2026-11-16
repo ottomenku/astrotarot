@@ -45,6 +45,57 @@
                     <p class="muted" style="color:#b33">{{ $message }}</p>
                 @enderror
             </div>
+            <div class="field" data-lang="hu">
+                <label for="classify_prompt_hu">{{ __('admin.prompts.classify_prompt_hu') }}</label>
+                <textarea id="classify_prompt_hu" name="classify_prompt_hu" rows="14" required>{{ old('classify_prompt_hu', $classifyPromptHu) }}</textarea>
+                <p class="muted">{{ __('admin.prompts.classify_hint') }}</p>
+                @error('classify_prompt_hu')
+                    <p class="muted" style="color:#b33">{{ $message }}</p>
+                @enderror
+            </div>
+            <div class="field" data-lang="en">
+                <label for="classify_prompt_en">{{ __('admin.prompts.classify_prompt_en') }}</label>
+                <textarea id="classify_prompt_en" name="classify_prompt_en" rows="14" required>{{ old('classify_prompt_en', $classifyPromptEn) }}</textarea>
+                @error('classify_prompt_en')
+                    <p class="muted" style="color:#b33">{{ $message }}</p>
+                @enderror
+            </div>
+            @php
+                $categoryAnswersHuOld = old('category_answers_hu', $categoryAnswersHu);
+                $categoryAnswersEnOld = old('category_answers_en', $categoryAnswersEn);
+            @endphp
+            <div class="field" data-lang="hu">
+                <label for="category_answers_hu_shape">{{ __('admin.prompts.category_answers') }}</label>
+                <p class="muted">{{ __('admin.prompts.category_answers_hint') }}</p>
+                <textarea id="category_answers_hu_shape" name="category_answers_hu[shape]" rows="6" required>{{ $categoryAnswersHuOld['shape'] ?? '' }}</textarea>
+                @error('category_answers_hu.shape')
+                    <p class="muted" style="color:#b33">{{ $message }}</p>
+                @enderror
+            </div>
+            <div class="field" data-lang="en">
+                <label for="category_answers_en_shape">{{ __('admin.prompts.category_answers') }}</label>
+                <p class="muted">{{ __('admin.prompts.category_answers_hint') }}</p>
+                <textarea id="category_answers_en_shape" name="category_answers_en[shape]" rows="6" required>{{ $categoryAnswersEnOld['shape'] ?? '' }}</textarea>
+                @error('category_answers_en.shape')
+                    <p class="muted" style="color:#b33">{{ $message }}</p>
+                @enderror
+            </div>
+            @foreach ($categoryCodes as $code)
+                <div class="field" data-lang="hu">
+                    <label for="category_answers_hu_{{ str_replace('/', '_', $code) }}">{{ $code }}</label>
+                    <textarea id="category_answers_hu_{{ str_replace('/', '_', $code) }}" name="category_answers_hu[{{ $code }}]" rows="4" required>{{ $categoryAnswersHuOld[$code] ?? '' }}</textarea>
+                    @error('category_answers_hu.'.$code)
+                        <p class="muted" style="color:#b33">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="field" data-lang="en">
+                    <label for="category_answers_en_{{ str_replace('/', '_', $code) }}">{{ $code }}</label>
+                    <textarea id="category_answers_en_{{ str_replace('/', '_', $code) }}" name="category_answers_en[{{ $code }}]" rows="4" required>{{ $categoryAnswersEnOld[$code] ?? '' }}</textarea>
+                    @error('category_answers_en.'.$code)
+                        <p class="muted" style="color:#b33">{{ $message }}</p>
+                    @enderror
+                </div>
+            @endforeach
             <button type="submit">{{ __('admin.prompts.save') }}</button>
         </form>
 
