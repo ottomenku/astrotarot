@@ -325,7 +325,7 @@ class ReadingClassifyTest extends TestCase
         $this->assertStringContainsString('Kategória: TIMING (alkalmas időpont, mikor). A spread_type ez maradjon.', $prompt);
         $this->assertStringContainsString('Dimenzió: REL (párkapcsolat, házasság, társulás). A kifejtés ezen belül maradjon.', $prompt);
         $this->assertStringContainsString('KATEGORIA VALASZ', $prompt);
-        $this->assertStringContainsString('TIMING: Adj egy vagy több konkrét időpontot', $prompt);
+        $this->assertStringContainsString('TIMING: A legelső mondat KÖTELEZŐEN így kezdődjön: „Időpont:', $prompt);
         $this->assertStringNotContainsString('Összességében: igen.', $prompt);
         $this->assertStringNotContainsString('BINARY', $prompt);
         $this->assertStringNotContainsString('A spread_type ezek egyike legyen.', $prompt);

@@ -126,13 +126,13 @@ class ReadingControllerTest extends TestCase
         $this->assertStringContainsString('1. sor 1. lap', $log->user_prompt);
         $this->assertStringContainsString('1. sor 2. lap', $log->user_prompt);
         $this->assertStringContainsString('asztrológiai adat:', $log->user_prompt);
-        $this->assertStringContainsString('katalógus: tudást kereső ember', $log->user_prompt);
+        $this->assertStringContainsString('jelentés: tudást kereső ember', $log->user_prompt);
         $this->assertStringContainsString('Ebben a körben asztrológiai képlet nincs.', $log->user_prompt);
         $this->assertStringNotContainsString('elem: tűz', $log->user_prompt);
         $this->assertStringNotContainsString('minőség: szilárd', $log->user_prompt);
         $this->assertStringNotContainsString('need_data', $log->system_prompt);
         $this->assertStringContainsString('status":"answer"', $log->system_prompt);
-        $this->assertStringContainsString('10–12 mondat', $log->user_prompt);
+        $this->assertStringContainsString('8–12 mondat', $log->user_prompt);
         $this->assertNotEmpty($response->json('session_id'));
     }
 
@@ -197,7 +197,7 @@ class ReadingControllerTest extends TestCase
         $created = collect($seen)->first(fn ($call) => $call['path'] === '/v1/agents' && $call['method'] === 'POST');
         $opened = collect($seen)->first(fn ($call) => $call['path'] === '/v1/agents/sessions');
         $this->assertIsArray($created);
-        $this->assertStringContainsString('10–12 mondat', (string) $created['data']['instructions']);
+        $this->assertStringContainsString('8–12 mondat', (string) $created['data']['instructions']);
         $this->assertStringNotContainsString('need_data', (string) $created['data']['instructions']);
         $this->assertStringContainsString('status":"answer"', (string) $created['data']['instructions']);
         $this->assertStringContainsString('keresd a neten', (string) $created['data']['instructions']);
@@ -206,16 +206,16 @@ class ReadingControllerTest extends TestCase
         $this->assertIsArray($opened);
         $this->assertStringContainsString('Mars', (string) $opened['data']['input']);
         $this->assertStringContainsString('Húzott lapok:', (string) $opened['data']['input']);
-        $this->assertStringContainsString('katalógus: tudást kereső ember', (string) $opened['data']['input']);
+        $this->assertStringContainsString('jelentés: tudást kereső ember', (string) $opened['data']['input']);
         $this->assertStringContainsString('Ebben a körben asztrológiai képlet nincs.', (string) $opened['data']['input']);
         $this->assertStringNotContainsString('positions:', (string) $opened['data']['input']);
         $this->assertStringContainsString('Mit tegyek most a kapcsolatommal?', (string) $opened['data']['input']);
-        $this->assertStringNotContainsString('10–12 mondat', (string) $opened['data']['input']);
+        $this->assertStringNotContainsString('8–12 mondat', (string) $opened['data']['input']);
         $this->assertStringContainsString($game->prompt('hu'), (string) data_get($opened, 'data.agent.instructions'));
         $this->assertStringContainsString($game->prompt('hu'), (string) $opened['data']['input']);
 
         $log = ReadingLog::query()->first();
-        $this->assertStringNotContainsString('10–12 mondat', (string) $log->user_prompt);
+        $this->assertStringNotContainsString('8–12 mondat', (string) $log->user_prompt);
         $this->assertStringContainsString('Mars', (string) $log->user_prompt);
 
         $seen = [];
@@ -232,7 +232,7 @@ class ReadingControllerTest extends TestCase
         $sent = json_encode($event['data'], JSON_UNESCAPED_UNICODE);
         $this->assertStringContainsString('Mit jelent ez pontosan?', $sent);
         $this->assertStringNotContainsString('Húzott lapok:', $sent);
-        $this->assertStringNotContainsString('10–12 mondat', $sent);
+        $this->assertStringNotContainsString('8–12 mondat', $sent);
     }
 
     public function test_reading_sends_game_prompt_places_and_moment_scoring(): void
@@ -273,7 +273,7 @@ class ReadingControllerTest extends TestCase
         $this->assertStringContainsString('1. sor 2. lap — Tarot figura', $log->user_prompt);
         $this->assertStringContainsString('asztrológiai adat:', $log->user_prompt);
         $this->assertStringContainsString('jelentés:', $log->user_prompt);
-        $this->assertStringContainsString('katalógus: tudást kereső ember', $log->user_prompt);
+        $this->assertStringContainsString('jelentés: tudást kereső ember', $log->user_prompt);
         $this->assertStringContainsString('Ebben a körben asztrológiai képlet nincs.', $log->user_prompt);
         $this->assertStringNotContainsString('positions:', $log->user_prompt);
         $this->assertStringNotContainsString('elem: tűz (11.5)', $log->user_prompt);
@@ -371,7 +371,8 @@ class ReadingControllerTest extends TestCase
         ])->assertOk()
             ->assertJsonPath('reading', 'Általános kifejtés.');
 
-        $this->assertStringContainsString('Pontosítás: üres.', ReadingLog::query()->first()->user_prompt);
+        $this->assertStringContainsString('Pontosító kérdés: üres.', ReadingLog::query()->first()->user_prompt);
+        $this->assertStringNotContainsString('Korábbi olvasat:', ReadingLog::query()->first()->user_prompt);
 
         $this->actingAs($user)->postJson(route('reading'), [
             'question' => 'Mit tegyek most a kapcsolatommal?',
@@ -423,7 +424,8 @@ class ReadingControllerTest extends TestCase
         $log = ReadingLog::query()->latest('id')->first();
         $this->assertSame('success', $log->status);
         $this->assertStringContainsString('[bővebb kifejtés]', $log->question);
-        $this->assertStringContainsString('Korábbi olvasat:', $log->user_prompt);
+        $this->assertStringContainsString('## FORDULO — BŐVEBB KIFEJTÉS', $log->user_prompt);
+        $this->assertStringNotContainsString('Korábbi olvasat:', $log->user_prompt);
     }
 
     public function test_credit_package_request_is_stored(): void
@@ -722,7 +724,8 @@ class ReadingControllerTest extends TestCase
 
         $followUp = ReadingLog::query()->latest('id')->first();
         $this->assertStringNotContainsString('## ALAPPROMPT', $followUp->user_prompt);
-        $this->assertStringContainsString('Pontosítás:', $followUp->user_prompt);
+        $this->assertStringContainsString('Pontosító kérdés: Mit jelent ez a kapcsolatban?', $followUp->user_prompt);
+        $this->assertStringNotContainsString('Korábbi olvasat:', $followUp->user_prompt);
     }
 
     public function test_long_astro_caption_is_accepted(): void

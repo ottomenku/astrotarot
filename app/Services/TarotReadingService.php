@@ -141,11 +141,7 @@ class TarotReadingService
         ]);
         $this->transcript->attach($session, $log);
 
-        $maxTokens = match ($mode) {
-            self::MODE_EXPAND => 2200,
-            self::MODE_CLARIFY => 1400,
-            default => $this->looksMeaningless($question) ? 1200 : 1800,
-        };
+        $maxTokens = $mode === self::MODE_INITIAL ? 800 : 700;
         $options = [
             'temperature' => 0.6,
             'max_tokens' => $maxTokens,
@@ -677,39 +673,66 @@ class TarotReadingService
         };
     }
 
-    private function turnMessage(string $locale, string $mode, string $followUp, string $previousReading): string
+    private function turnMessage(string $locale, string $mode, string $followUp, string $_previousReading): string
     {
-        $lines = [];
-        $lines[] = $locale === 'en' ? '## TURN' : '## FORDULO';
+        $en = $locale === 'en';
         if ($mode === self::MODE_CLARIFY) {
-            $lines[] = $locale === 'en'
-                ? 'This is a clarification of the same reading, not a new question.'
-                : 'Ez ugyanannak a kifejtésnek a pontosítása, nem új kérdés.';
-            $lines[] = $followUp === ''
-                ? ($locale === 'en'
-                    ? 'Clarification: empty. Give a general reading of this same spread.'
-                    : 'Pontosítás: üres. Általános kifejtést kér ugyanerről a kirakásról.')
-                : ($locale === 'en' ? 'Clarification: ' : 'Pontosítás: ').$followUp;
-        } elseif ($mode === self::MODE_EXPAND) {
-            $lines[] = $locale === 'en'
-                ? 'This is a deeper expansion of the same reading, not a new question.'
-                : 'Ez ugyanannak a kifejtésnek a bővebb kifejtése, nem új kérdés.';
-            if ($followUp !== '') {
-                $lines[] = ($locale === 'en' ? 'Optional focus: ' : 'Opcionális fókusz: ').$followUp;
-            }
-        } else {
-            $lines[] = $locale === 'en'
-                ? 'Write the first reading for this question.'
-                : 'Írd meg ennek a kérdésnek az első olvasatát.';
+            $question = $followUp !== ''
+                ? $followUp
+                : ($en
+                    ? 'empty. Give a general reading of this same spread.'
+                    : 'üres. Általános kifejtést kér ugyanerről a kirakásról.');
+
+            return implode("\n", $en ? [
+                '## TURN — CLARIFICATION',
+                'This is a clarification of the same spread with a new sub-question, not a new draw.',
+                'Clarifying question: '.$question,
+                '',
+                'TASK: Answer the clarifying question directly in 6–8 sentences, using ONLY the cards already drawn and the astrology already supplied!',
+                'The first sentence answers the clarifying question plainly, then show how the drawn cards and sky aspects illuminate this new angle. Do not repeat the text of the earlier readings!',
+            ] : [
+                '## FORDULO — PONTOSÍTÁS',
+                'Ez ugyanannak a kirakásnak a pontosítása egy új alkérdéssel, nem új húzás.',
+                'Pontosító kérdés: '.$question,
+                '',
+                'FELADAT: Válaszolj közvetlenül a pontosító kérdésre 6–8 mondatban, KIZÁRÓLAG a már kihúzott lapok és a meglévő asztrológiai képletek alapján!',
+                'Az első mondatban adj egyértelmű választ a pontosító kérdésre, majd mutasd meg, hogy a húzott lapok és égi fényszögek hogyan világítják meg ezt az új szempontot. Ne ismételd meg a korábbi olvasatok szövegét!',
+            ]);
         }
 
-        if ($previousReading !== '') {
-            $lines[] = '';
-            $lines[] = $locale === 'en' ? 'Previous reading:' : 'Korábbi olvasat:';
-            $lines[] = $previousReading;
+        if ($mode === self::MODE_EXPAND) {
+            $focus = $followUp !== ''
+                ? $followUp
+                : ($en ? 'General deepening' : 'Általános elmélyítés');
+
+            return implode("\n", $en ? [
+                '## TURN — DEEPER READING',
+                'This is a deeper reading of the same spread, not a new question.',
+                'Optional focus: '.$focus,
+                '',
+                'TASK: Deepen the reading in 6–8 new, practical sentences!',
+                'STRICT RULE: Do not summarize again or rephrase what you already wrote in the previous reply or replies!',
+                'Bring in NEW layers from the data already supplied:',
+                '1. Look at how the drawn cards act on each other, and at light/shadow details not yet mentioned.',
+                '2. Bring in further concrete planet positions, houses, or aspects from the supplied charts (NOW / USER / RELATION / PROJECTION).',
+                '3. Give concrete, practical advice for daily life.',
+            ] : [
+                '## FORDULO — BŐVEBB KIFEJTÉS',
+                'Ez ugyanannak a kirakásnak a mélyebb kifejtése, nem új kérdés.',
+                'Opcionális fókusz: '.$focus,
+                '',
+                'FELADAT: Mélyítsd el az olvasatot 6–8 új, gyakorlati hangvételű mondatban!',
+                'SZIGORÚ SZABÁLY: Tilos újra összefoglalni vagy más szavakkal megismételni azt, amit az előző válasz(ok)ban már leírtál!',
+                'Ehelyett hozz be ÚJ rétegeket a már megkapott adatokból:',
+                '1. Vizsgáld meg a kihúzott lapok egymásra hatását és a még nem említett fény/árnyék részleteket.',
+                '2. Emelj be további konkrét bolygóállásokat, házhelyzeteket vagy fényszögeket a kapott képletekből (NOW / USER / RELATION / PROJECTION).',
+                '3. Adj konkrét, gyakorlati tanácsot a mindennapi megéléshez.',
+            ]);
         }
 
-        return implode("\n", $lines);
+        return $en
+            ? 'Write the first reading for this question.'
+            : 'Írd meg ennek a kérdésnek az első olvasatát.';
     }
 
     /**
@@ -817,12 +840,20 @@ class TarotReadingService
             $figure = trim((string) ($card['figure_name'] ?? $card['figure_id'] ?? ''));
             $figureId = trim((string) ($card['figure_id'] ?? ''));
 
+            $brief = TarotCardBrief::lines($locale, $figureId);
+            $meaningLabel = $locale === 'en' ? 'meaning: ' : 'jelentés: ';
+            $briefHasMeaning = false;
+            foreach ($brief as $briefLine) {
+                if (str_starts_with($briefLine, $meaningLabel)) {
+                    $briefHasMeaning = true;
+                    break;
+                }
+            }
             $lines = [
                 $header,
                 ($locale === 'en' ? 'slot: ' : 'lap sorszám: ').($index + 1),
                 ($locale === 'en' ? 'pack: ' : 'pakli: ').(string) ($card['deck'] ?? ''),
                 ($locale === 'en' ? 'figure: ' : 'figura: ').$figure.($figureId !== '' ? ' ('.$figureId.')' : ''),
-                ...TarotCardBrief::lines($locale, $figureId),
             ];
 
             $keyword = trim((string) ($card['keyword'] ?? ''));
@@ -831,9 +862,10 @@ class TarotReadingService
             }
 
             $blurb = trim((string) ($card['blurb'] ?? ''));
-            if ($blurb !== '' && ($infoMode !== 'astro' || $omitExtraAstro)) {
-                $lines[] = ($locale === 'en' ? 'meaning: ' : 'jelentés: ').$blurb;
+            if (! $briefHasMeaning && $blurb !== '' && ($infoMode !== 'astro' || $omitExtraAstro)) {
+                $lines[] = $meaningLabel.$blurb;
             }
+            array_push($lines, ...$brief);
 
             $lines[] = 'LightShadow:'.$this->lightShadowMark($card, $polarity);
 

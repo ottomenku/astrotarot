@@ -18,20 +18,28 @@ final class TarotCardBrief
         }
 
         $en = $locale === 'en';
-        $pairs = [
-            [$en ? 'catalog' : 'katalógus', $row[$en ? 'meaning_en' : 'meaning_hu'] ?? ''],
-            [$en ? 'description' : 'leírás', $row[$en ? 'description_en' : 'description_hu'] ?? ''],
-            [$en ? 'light' : 'fény', $row[$en ? 'light_en' : 'light_hu'] ?? ''],
-            [$en ? 'shadow' : 'árnyék', $row[$en ? 'shadow_en' : 'shadow_hu'] ?? ''],
-            [$en ? 'life' : 'élet', $row[$en ? 'life_en' : 'life_hu'] ?? ''],
-        ];
+        $meaning = trim((string) ($row[$en ? 'meaning_en' : 'meaning_hu'] ?? ''));
+        $light = trim((string) ($row[$en ? 'light_en' : 'light_hu'] ?? ''));
+        $shadow = trim((string) ($row[$en ? 'shadow_en' : 'shadow_hu'] ?? ''));
+        $description = trim((string) ($row[$en ? 'description_en' : 'description_hu'] ?? ''));
+        $life = trim((string) ($row[$en ? 'life_en' : 'life_hu'] ?? ''));
+        $complete = $meaning !== '' && $light !== '' && $shadow !== '';
 
         $lines = [];
-        foreach ($pairs as [$label, $value]) {
-            $value = trim((string) $value);
-            if ($value !== '') {
-                $lines[] = $label.': '.$value;
-            }
+        if ($meaning !== '') {
+            $lines[] = ($en ? 'meaning' : 'jelentés').': '.$meaning;
+        }
+        if ($light !== '') {
+            $lines[] = ($en ? 'light' : 'fény').': '.$light;
+        }
+        if ($shadow !== '') {
+            $lines[] = ($en ? 'shadow' : 'árnyék').': '.$shadow;
+        }
+        if (! $complete && $description !== '') {
+            $lines[] = ($en ? 'description' : 'leírás').': '.$description;
+        }
+        if (! $complete && $life !== '') {
+            $lines[] = ($en ? 'life' : 'élet').': '.$life;
         }
 
         return $lines;

@@ -11,8 +11,10 @@ class TarotCardBriefTest extends TestCase
     {
         $lines = TarotCardBrief::lines('hu', '01-the-magician');
 
-        $this->assertContains('katalógus: tudást kereső ember', $lines);
+        $this->assertContains('jelentés: tudást kereső ember', $lines);
         $this->assertContains('fény: A tudás eszközei a kézben vannak.', $lines);
+        $this->assertNotContains('leírás: Tudást kereső ember.', $lines);
+        $this->assertFalse(collect($lines)->contains(fn (string $line): bool => str_starts_with($line, 'élet:')));
         $this->assertSame([], TarotCardBrief::lines('hu', 'mars'));
         $this->assertSame([], TarotCardBrief::lines('hu', 'minor-suits'));
     }
@@ -21,7 +23,8 @@ class TarotCardBriefTest extends TestCase
     {
         $lines = TarotCardBrief::lines('en', 'cups-ace');
 
-        $this->assertContains('catalog: new emotional beginning', $lines);
+        $this->assertContains('meaning: new emotional beginning', $lines);
+        $this->assertFalse(collect($lines)->contains(fn (string $line): bool => str_starts_with($line, 'life:')));
         $this->assertNotContains('katalógus: új érzelmi kezdet', $lines);
     }
 }
