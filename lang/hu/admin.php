@@ -372,6 +372,8 @@ return [
         'prompt_en' => 'Kirakásprompt (EN)',
         'prompt_hint' => 'A kirakás helyeinek jelentése és az instrukciók. Üresen csak a lapok, a helyek nevei és a húzás adatai mennek.',
         'sort_order' => 'Sorrend',
+        'category_order' => 'Kategória sorrend',
+        'category_order_hint' => '1–10, alapból 1. A kisebb szám a fontosabb. Több illő kirakásnál a kevesebb dimenziójú nyer; ha a dimenziók száma egyforma, ez dönt. N/A-nál szintén a kisebb szám nyer, egyezésnél véletlen. N/A kategória dimenzió nélkül az alapértelmezett kirakás marad.',
         'active' => 'Aktív',
         'activate' => 'Bekapcsolás',
         'deactivate' => 'Kikapcsolás',

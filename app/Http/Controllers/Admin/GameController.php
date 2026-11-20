@@ -32,6 +32,7 @@ class GameController extends Controller
                 'is_active' => true,
                 'is_default' => false,
                 'sort_order' => (int) Game::query()->max('sort_order') + 1,
+                'category_order' => 1,
             ]),
             'rules' => [],
             'packs' => $this->figurePacks(),
@@ -183,6 +184,7 @@ class GameController extends Controller
             'is_default' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:9999'],
+            'category_order' => ['nullable', 'integer', 'min:1', 'max:10'],
             'rules' => ['required', 'array', 'min:1', 'max:49'],
             'rules.*.pack_type' => ['nullable', 'string', Rule::in(CardPack::FIGURE_TYPES)],
             'rules.*.default_pack_id' => [
@@ -224,6 +226,7 @@ class GameController extends Controller
         $data['astro_data_modes'] = $this->selectedCodes($data['astro_data_modes'] ?? [], Game::ASTRO_DATA_SENDS) ?? [];
         $data['spread_types'] = $this->selectedCodes($data['spread_types'] ?? [], Game::SPREAD_TYPES);
         $data['spread_dimensions'] = $this->selectedCodes($data['spread_dimensions'] ?? [], Game::DIMENSIONS);
+        $data['category_order'] = (int) ($data['category_order'] ?? 1);
         $data['is_default'] = $request->boolean('is_default');
         $data['is_active'] = $request->boolean('is_active');
         $data['prompt_hu'] = (string) ($data['prompt_hu'] ?? '');

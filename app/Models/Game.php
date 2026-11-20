@@ -126,6 +126,7 @@ class Game extends Model
         'is_default',
         'is_active',
         'sort_order',
+        'category_order',
     ];
 
     protected function casts(): array
@@ -138,6 +139,7 @@ class Game extends Model
             'is_default' => 'boolean',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            'category_order' => 'integer',
         ];
     }
 

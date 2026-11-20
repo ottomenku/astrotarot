@@ -39,6 +39,10 @@ class AdminGamesTest extends TestCase
             ->assertSee('orákulum-astro', false)
             ->assertSee(__('admin.games.astro_data_mode'), false)
             ->assertSee(__('admin.games.spread_types'), false)
+            ->assertSee(__('admin.games.category_order'), false)
+            ->assertSee('name="category_order"', false)
+            ->assertSee('min="1"', false)
+            ->assertSee('max="10"', false)
             ->assertSee(__('admin.games.celestial_helper'), false)
             ->assertSee(__('admin.games.slot_light_shadow'), false)
             ->assertSee('Random60', false)
@@ -107,6 +111,7 @@ class AdminGamesTest extends TestCase
         $this->assertFalse($game->requestsCelestialLightShadow('tarot'));
         $this->assertTrue($game->has_question);
         $this->assertFalse($game->is_default);
+        $this->assertSame(1, $game->category_order);
         $this->assertSame(2, $game->rules()->count());
         $this->assertSame('cigany-kartya', $game->rules()->first()->pack_slug);
         $this->assertSame('tarot', $game->rules()->first()->pack_type);

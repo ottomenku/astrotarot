@@ -28,6 +28,7 @@ class GameFactory extends Factory
             'is_default' => false,
             'is_active' => true,
             'sort_order' => 10,
+            'category_order' => 1,
         ];
     }
 

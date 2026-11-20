@@ -18,6 +18,7 @@
             <thead>
                 <tr>
                     <th>{{ __('admin.games.name') }}</th>
+                    <th>{{ __('admin.games.category_order') }}</th>
                     <th>{{ __('admin.games.rules') }}</th>
                     <th>{{ __('admin.games.question') }}</th>
                     <th>{{ __('admin.games.default') }}</th>
@@ -37,6 +38,7 @@
                             </span>
                             <div class="muted">{{ $game->slug }}</div>
                         </td>
+                        <td>{{ $game->category_order ?: 1 }}</td>
                         <td>{{ $game->rules_count }}</td>
                         <td>{{ $game->has_question ? '✓' : '—' }}</td>
                         <td>{{ $game->is_default ? '✓' : '—' }}</td>
@@ -59,7 +61,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="muted">{{ __('admin.games.empty') }}</td>
+                        <td colspan="7" class="muted">{{ __('admin.games.empty') }}</td>
                     </tr>
                 @endforelse
             </tbody>

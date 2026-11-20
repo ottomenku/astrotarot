@@ -71,9 +71,7 @@ class ReadingClassifyController extends Controller
         ]);
         $transcript->attach($session);
 
-        $game = $classified['category'] === Game::SPREAD_NA
-            ? null
-            : $matcher->match($classified['category'], $classified['dimension']);
+        $game = $matcher->match((string) $classified['category'], (string) $classified['dimension']);
         $game ??= Game::query()->active()->where('is_default', true)->first()
             ?? Game::query()->active()->ordered()->first();
         if ($game === null) {

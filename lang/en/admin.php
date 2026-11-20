@@ -372,6 +372,8 @@ return [
         'prompt_en' => 'Spread prompt (EN)',
         'prompt_hint' => 'Position meanings and instructions for this spread. Leave empty to send only the cards, position names and the draw.',
         'sort_order' => 'Order',
+        'category_order' => 'Category order',
+        'category_order_hint' => '1–10, default 1. A lower number is more important. When several spreads fit, the one with fewer dimensions wins; if that count is the same, this number decides. For N/A the lower number wins as well, and a tie is random. An N/A category with no dimension stays on the default spread.',
         'active' => 'Active',
         'activate' => 'Enable',
         'deactivate' => 'Disable',

@@ -59,6 +59,12 @@
                     <label for="sort_order">{{ __('admin.games.sort_order') }}</label>
                     <input id="sort_order" name="sort_order" type="number" min="0" max="9999" value="{{ old('sort_order', $game->sort_order ?? 0) }}" required>
                 </div>
+                <div class="field">
+                    <label for="category_order">{{ __('admin.games.category_order') }}</label>
+                    <input id="category_order" name="category_order" type="number" min="1" max="10" value="{{ old('category_order', $game->category_order ?? 1) }}" required>
+                    <p class="muted">{{ __('admin.games.category_order_hint') }}</p>
+                    @error('category_order') <p class="muted" style="color:#b33">{{ $message }}</p> @enderror
+                </div>
             </div>
 
             <div class="field" data-lang="hu">
